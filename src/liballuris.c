@@ -22,9 +22,9 @@ along with liballuris.  If not, see <http://www.gnu.org/licenses/>.
 #include "liballuris.h"
 
 // minimum length of "in" is 2 bytes
-static int char_to_uint16 (unsigned char* in)
+static short char_to_uint16 (unsigned char* in)
 {
-  int ret;
+  short ret;
   memcpy (&ret, in, 2);
   return ret;
 }
@@ -56,13 +56,8 @@ static int device_bulk_transfer (libusb_device_handle* dev_handle,
   int actual;
   int r = 0;
 
-  //check length in out_buf
-  if (out_buf [1] != out_buf_length)
-    {
-      fprintf(stderr, "Error: Output buffer length doesn't match length in data.\n");
-      return LIBALLURIS_MALFORMED_SEND_BUFFER;
-    }
-
+  // check length in out_buf
+  assert (out_buf [1] == out_buf_length);
   r = libusb_bulk_transfer (dev_handle, (0x1 | LIBUSB_ENDPOINT_OUT), out_buf, out_buf_length, &actual, SEND_TIMEOUT);
 
 #ifdef PRINT_DEBUG_MSG
@@ -127,6 +122,10 @@ static int device_bulk_transfer (libusb_device_handle* dev_handle,
 // check permissions if a device isn't returned (see Readme.md)
 int get_alluris_device_list (struct alluris_device_description* alluris_devs, size_t length)
 {
+  size_t k = 0;
+  for (k=0; k<length; ++k)
+    alluris_devs[k].dev = NULL;
+
   size_t num_alluris_devices = 0;
   libusb_device **devs;
   ssize_t cnt = libusb_get_device_list (NULL, &devs);
@@ -189,24 +188,46 @@ int get_alluris_device_list (struct alluris_device_description* alluris_devs, si
   return num_alluris_devices;
 }
 
-// Open device with specified serial_number or the first available if NULL
-libusb_device* get_alluris_device (const char* serial_number)
+void free_alluris_device_list (struct alluris_device_description* alluris_devs, size_t length)
 {
+  size_t k = 0;
+  for (k=0; k < length; ++k)
+    if (alluris_devs[k].dev)
+      {
+        libusb_unref_device (alluris_devs[k].dev);
+        alluris_devs[k].dev = NULL;
+      }
+}
+
+// Open device with specified serial_number or the first available if NULL
+int open_alluris_device (const char* serial_number, libusb_device_handle** h)
+{
+  int k;
+  libusb_device *dev = NULL;
   struct alluris_device_description alluris_devs[MAX_NUM_DEVICES];
   int cnt = get_alluris_device_list (alluris_devs, MAX_NUM_DEVICES);
 
-  if (serial_number == NULL && cnt >= 1)
-    return alluris_devs[0].dev;
+  if (cnt >= 1)
+    {
+      if (serial_number == NULL)
+        dev = alluris_devs[0].dev;
+      else
+        for (k=0; k < cnt; k++)
+          if (! strncmp (serial_number, alluris_devs[k].serial_number, sizeof (alluris_devs[0].serial_number)))
+            dev = alluris_devs[k].dev;
+    }
+  else
+    //no device found
+    return LIBUSB_ERROR_NOT_FOUND;
 
-  int k;
-  for (k=0; k < cnt; k++)
-    if (! strncmp (serial_number, alluris_devs[k].serial_number, sizeof (alluris_devs[0].serial_number)))
-      return alluris_devs[k].dev;
-  return NULL;
+  int ret = libusb_open (dev, h);
+  free_alluris_device_list (alluris_devs, MAX_NUM_DEVICES);
+  return ret;
 }
 
 // Return serial number of the device which is also laser-engraved on the back.
 // For example "P.25412"
+// Return LIBALLURIS_DEVICE_BUSY if measurement is running
 int serial_number (libusb_device_handle *dev_handle, char* buf, size_t length)
 {
   unsigned char data[6];
@@ -215,7 +236,28 @@ int serial_number (libusb_device_handle *dev_handle, char* buf, size_t length)
   data[2] = 6;
   int ret = device_bulk_transfer (dev_handle, data, 3, data, 6);
   if (ret == LIBUSB_SUCCESS)
-    snprintf (buf, length, "%c.%i", data[5] + 'A', char_to_uint16 (data + 3));
+    {
+      short tmp = char_to_uint16 (data + 3);
+      if (tmp == -1)
+        {
+          snprintf (buf, length, "---");
+          return LIBALLURIS_DEVICE_BUSY;
+        }
+      else
+        snprintf (buf, length, "%c.%i", data[5] + 'A', tmp);
+    }
+  return ret;
+}
+
+// Number of digits after radix point or -1 if device is busy (running measurement)
+int digits (libusb_device_handle *dev_handle, int* v)
+{
+  unsigned char data[6];
+  data[0] = 0x08;
+  data[1] = 3;
+  data[2] = 3;
+  int ret = device_bulk_transfer (dev_handle, data, 3, data, 6);
+  *v = char_to_int24 (data + 3);
   return ret;
 }
 
@@ -225,6 +267,28 @@ int raw_value (libusb_device_handle *dev_handle, int* v)
   data[0] = 0x46;
   data[1] = 3;
   data[2] = 3;
+  int ret = device_bulk_transfer (dev_handle, data, 3, data, 6);
+  *v = char_to_int24 (data + 3);
+  return ret;
+}
+
+int raw_pos_peak (libusb_device_handle *dev_handle, int* v)
+{
+  unsigned char data[6];
+  data[0] = 0x46;
+  data[1] = 3;
+  data[2] = 4;
+  int ret = device_bulk_transfer (dev_handle, data, 3, data, 6);
+  *v = char_to_int24 (data + 3);
+  return ret;
+}
+
+int raw_neg_peak (libusb_device_handle *dev_handle, int* v)
+{
+  unsigned char data[6];
+  data[0] = 0x46;
+  data[1] = 3;
+  data[2] = 5;
   int ret = device_bulk_transfer (dev_handle, data, 3, data, 6);
   *v = char_to_int24 (data + 3);
   return ret;

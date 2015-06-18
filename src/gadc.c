@@ -35,29 +35,49 @@ int main()
   ssize_t cnt;
   r = libusb_init (&ctx);
   if (r < 0)
-    return r;
+    {
+      fprintf (stderr, "Couldn't init libusb %s\n", libusb_error_name (r));
+      return EXIT_FAILURE;
+    }
+
   cnt = get_alluris_device_list (alluris_devs, 4);
 
   // list all found devices
   for (k=0; k<cnt; k++)
     printf ("Device %i: %s %s\n", k+1, alluris_devs[k].product, alluris_devs[k].serial_number);
-  // TODO: hier noch unref machen, oder in den struct nur ne Beschreibung, kein dev
+  // free device list
+  free_alluris_device_list (alluris_devs, 4);
 
   // open first device
-  libusb_device* dev = get_alluris_device (NULL);
   libusb_device_handle* h;
-  r = libusb_open (dev, &h);
-  r = libusb_claim_interface (h, 0);
-
-  if (r == LIBUSB_SUCCESS)
+  r = open_alluris_device (NULL, &h);
+  if (r)
     {
-      int v;
-      r = raw_value (h, &v);
-      printf ("value = %i\n", v);
+      fprintf (stderr, "Couldn't open device: %s\n", libusb_error_name (r));
+      return EXIT_FAILURE;
     }
-  else
-    fprintf (stderr, "Couldn't open device: %s\n", libusb_error_name(r));
 
+  r = libusb_claim_interface (h, 0);
+  if (r)
+    {
+      fprintf (stderr, "Couldn't claim interface: %s\n", libusb_error_name (r));
+      return EXIT_FAILURE;
+    }
+
+  /************************************************************************************/
+  int v;
+  r = digits (h, &v);
+  printf ("digits = %i\n", v);
+  r = raw_value (h, &v);
+  printf ("raw value = %i\n", v);
+
+  r = raw_pos_peak (h, &v);
+  printf ("raw pos peak = %i\n", v);
+
+  r = raw_neg_peak (h, &v);
+  printf ("raw neg peak = %i\n", v);
+
+  libusb_release_interface (h, 0);
   libusb_close (h);
   return EXIT_SUCCESS;
 }

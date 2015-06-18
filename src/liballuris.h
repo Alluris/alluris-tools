@@ -22,12 +22,13 @@ along with liballuris.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 #include "libusb.h"
 
 #ifndef liballuris_h
 #define liballuris_h
 
-#define PRINT_DEBUG_MSG
+//#define PRINT_DEBUG_MSG
 #define MAX_NUM_DEVICES 4
 #define SEND_TIMEOUT 10
 #define RECEIVE_TIMEOUT 10
@@ -35,8 +36,8 @@ along with liballuris.  If not, see <http://www.gnu.org/licenses/>.
 enum liballuris_error
 {
   LIBALLURIS_SUCCESS = 0,
-  LIBALLURIS_MALFORMED_SEND_BUFFER = 1,
-  LIBALLURIS_MALFORMED_REPLY = 2
+  LIBALLURIS_MALFORMED_REPLY = 1,
+  LIBALLURIS_DEVICE_BUSY = 2
 };
 
 struct alluris_device_description
@@ -47,10 +48,12 @@ struct alluris_device_description
 };
 
 int get_alluris_device_list (struct alluris_device_description* alluris_devs, size_t length);
-libusb_device* get_alluris_device (const char* serial_number);
+int open_alluris_device (const char* serial_number, libusb_device_handle** h);
+void free_alluris_device_list (struct alluris_device_description* alluris_devs, size_t length);
 
 int serial_number (libusb_device_handle *dev_handle, char* buf, size_t length);
-
+int digits (libusb_device_handle *dev_handle, int* v);
 int raw_value (libusb_device_handle *dev_handle, int* v);
-
+int raw_pos_peak (libusb_device_handle *dev_handle, int* v);
+int raw_neg_peak (libusb_device_handle *dev_handle, int* v);
 #endif
