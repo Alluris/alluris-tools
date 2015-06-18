@@ -28,6 +28,16 @@ along with liballuris.  If not, see <http://www.gnu.org/licenses/>.
 #define liballuris_h
 
 #define PRINT_DEBUG_MSG
+#define MAX_NUM_DEVICES 4
+#define SEND_TIMEOUT 10
+#define RECEIVE_TIMEOUT 10
+
+enum liballuris_error
+{
+  LIBALLURIS_SUCCESS = 0,
+  LIBALLURIS_MALFORMED_SEND_BUFFER = 1,
+  LIBALLURIS_MALFORMED_REPLY = 2
+};
 
 struct alluris_device_description
 {
@@ -37,6 +47,10 @@ struct alluris_device_description
 };
 
 int get_alluris_device_list (struct alluris_device_description* alluris_devs, size_t length);
+libusb_device* get_alluris_device (const char* serial_number);
+
 int serial_number (libusb_device_handle *dev_handle, char* buf, size_t length);
+
+int raw_value (libusb_device_handle *dev_handle, int* v);
 
 #endif

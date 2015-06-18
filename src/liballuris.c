@@ -21,7 +21,7 @@ along with liballuris.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "liballuris.h"
 
-// minimum length of in is 2 bytes
+// minimum length of "in" is 2 bytes
 static int char_to_uint16 (unsigned char* in)
 {
   int ret;
@@ -29,7 +29,7 @@ static int char_to_uint16 (unsigned char* in)
   return ret;
 }
 
-// minimum length of in is 3 bytes
+// minimum length of "in" is 3 bytes
 static int char_to_uint24 (unsigned char* in)
 {
   int ret;
@@ -37,7 +37,7 @@ static int char_to_uint24 (unsigned char* in)
   return ret;
 }
 
-// minimum length of in is 3 bytes
+// minimum length of "in" is 3 bytes
 static int char_to_int24 (unsigned char* in)
 {
   int ret = char_to_uint24 (in);
@@ -58,9 +58,12 @@ static int device_bulk_transfer (libusb_device_handle* dev_handle,
 
   //check length in out_buf
   if (out_buf [1] != out_buf_length)
-    fprintf(stderr, "Error: Output buffer length doesn't match length in data.\n");
+    {
+      fprintf(stderr, "Error: Output buffer length doesn't match length in data.\n");
+      return LIBALLURIS_MALFORMED_SEND_BUFFER;
+    }
 
-  r = libusb_bulk_transfer (dev_handle, (0x1 | LIBUSB_ENDPOINT_OUT), out_buf, out_buf_length, &actual, 10);
+  r = libusb_bulk_transfer (dev_handle, (0x1 | LIBUSB_ENDPOINT_OUT), out_buf, out_buf_length, &actual, SEND_TIMEOUT);
 
 #ifdef PRINT_DEBUG_MSG
   if ( r == LIBUSB_SUCCESS)
@@ -83,7 +86,7 @@ static int device_bulk_transfer (libusb_device_handle* dev_handle,
       return r;
     }
 
-  r = libusb_bulk_transfer (dev_handle, 0x81 | LIBUSB_ENDPOINT_IN, in_buf, in_buf_length, &actual, 10);
+  r = libusb_bulk_transfer (dev_handle, 0x81 | LIBUSB_ENDPOINT_IN, in_buf, in_buf_length, &actual, RECEIVE_TIMEOUT);
 
 #ifdef PRINT_DEBUG_MSG
   if ( r == LIBUSB_SUCCESS)
@@ -108,9 +111,12 @@ static int device_bulk_transfer (libusb_device_handle* dev_handle,
 
   // check reply
   if (in_buf[0] != out_buf[0]
-      || in_buf[2] != actual
-      || in_buf[3] != out_buf[3])
-    fprintf(stderr, "Error: Malformed reply header. Check physical connection and EMI.\n");
+      || in_buf[1] != actual
+      || in_buf[2] != out_buf[2])
+    {
+      fprintf(stderr, "Error: Malformed reply header. Check physical connection and EMI.\n");
+      return LIBALLURIS_MALFORMED_REPLY;
+    }
 
   return r;
 }
@@ -134,7 +140,7 @@ int get_alluris_device_list (struct alluris_device_description* alluris_devs, si
           int r = libusb_get_device_descriptor (dev, &desc);
           if (r < 0)
             {
-              fprintf(stderr, "failed to get device descriptor: %s", libusb_error_name(r));
+              fprintf (stderr, "failed to get device descriptor: %s", libusb_error_name(r));
               continue;
             }
 
@@ -148,20 +154,28 @@ int get_alluris_device_list (struct alluris_device_description* alluris_devs, si
               r = libusb_open (dev, &h);
               if (r == LIBUSB_SUCCESS)
                 {
-                  if(desc.iProduct)
-                    r = libusb_get_string_descriptor_ascii(h, desc.iProduct, (unsigned char*)alluris_devs[num_alluris_devices].product, 30);
+                  r = libusb_claim_interface (h, 0);
+                  if (r == LIBUSB_SUCCESS)
+                    {
+
+                      if(desc.iProduct)
+                        r = libusb_get_string_descriptor_ascii(h, desc.iProduct, (unsigned char*)alluris_devs[num_alluris_devices].product, sizeof (alluris_devs[0].product));
+                      else
+                        strncpy (alluris_devs[num_alluris_devices].product, "No product information available", sizeof (alluris_devs[0].product));
+
+                      // get serial number from device
+                      serial_number (h, alluris_devs[num_alluris_devices].serial_number, sizeof (alluris_devs[0].serial_number));
+
+                      num_alluris_devices++;
+                      libusb_release_interface (h, 0);
+                      libusb_close (h);
+                    }
                   else
-                    strncpy (alluris_devs[num_alluris_devices].product, "No product information available", 30);
+                    fprintf (stderr, "Couldn't claim interface: %s\n", libusb_error_name(r));
 
-                  // get serial number from device
-                  serial_number (h, alluris_devs[num_alluris_devices].serial_number, 30);
-
-                  num_alluris_devices++;
-                  libusb_close (h);
                 }
               else
-                fprintf(stderr, "Couldn't open device: %s\n", libusb_error_name(r));
-
+                fprintf (stderr, "Couldn't open device: %s\n", libusb_error_name(r));
             }
           else
             // unref non Alluris device
@@ -175,6 +189,22 @@ int get_alluris_device_list (struct alluris_device_description* alluris_devs, si
   return num_alluris_devices;
 }
 
+// Open device with specified serial_number or the first available if NULL
+libusb_device* get_alluris_device (const char* serial_number)
+{
+  struct alluris_device_description alluris_devs[MAX_NUM_DEVICES];
+  int cnt = get_alluris_device_list (alluris_devs, MAX_NUM_DEVICES);
+
+  if (serial_number == NULL && cnt >= 1)
+    return alluris_devs[0].dev;
+
+  int k;
+  for (k=0; k < cnt; k++)
+    if (! strncmp (serial_number, alluris_devs[k].serial_number, sizeof (alluris_devs[0].serial_number)))
+      return alluris_devs[k].dev;
+  return NULL;
+}
+
 // Return serial number of the device which is also laser-engraved on the back.
 // For example "P.25412"
 int serial_number (libusb_device_handle *dev_handle, char* buf, size_t length)
@@ -186,5 +216,16 @@ int serial_number (libusb_device_handle *dev_handle, char* buf, size_t length)
   int ret = device_bulk_transfer (dev_handle, data, 3, data, 6);
   if (ret == LIBUSB_SUCCESS)
     snprintf (buf, length, "%c.%i", data[5] + 'A', char_to_uint16 (data + 3));
+  return ret;
+}
+
+int raw_value (libusb_device_handle *dev_handle, int* v)
+{
+  unsigned char data[6];
+  data[0] = 0x46;
+  data[1] = 3;
+  data[2] = 3;
+  int ret = device_bulk_transfer (dev_handle, data, 3, data, 6);
+  *v = char_to_int24 (data + 3);
   return ret;
 }
