@@ -20,6 +20,11 @@ If not, see <http://www.gnu.org/licenses/>.
 
 */
 
+/*!
+ * \file liballuris.h
+ * \brief Header for generic Alluris device driver
+*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -38,14 +43,14 @@ enum liballuris_error
 {
   LIBALLURIS_SUCCESS = 0,
   LIBALLURIS_MALFORMED_REPLY = 1,
-  LIBALLURIS_DEVICE_BUSY = 2
+  LIBALLURIS_DEVICE_BUSY = 2      //!< Device is in a state where it cannot process the request
 };
 
 struct alluris_device_description
 {
-  libusb_device* dev;
-  char product[30];
-  char serial_number[30];
+  libusb_device* dev;     //!< pointer to a structure representing a USB device detected on the system
+  char product[30];       //!< product identification, for exmample "FMI-S Force-Gauge"
+  char serial_number[30]; //!< serial number of device, for example "P.25412"
 };
 
 int get_alluris_device_list (struct alluris_device_description* alluris_devs, size_t length);

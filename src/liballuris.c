@@ -20,6 +20,11 @@ If not, see <http://www.gnu.org/licenses/>.
 
 */
 
+/*!
+ * \file liballuris.c
+ * \brief Implementation of generic Alluris device driver
+*/
+
 #include "liballuris.h"
 
 // minimum length of "in" is 2 bytes
@@ -226,9 +231,20 @@ int open_alluris_device (const char* serial_number, libusb_device_handle** h)
   return ret;
 }
 
-// Return serial number of the device which is also laser-engraved on the back.
-// For example "P.25412"
-// Return LIBALLURIS_DEVICE_BUSY if measurement is running
+/*!
+ * \brief Query the serial number
+ *
+ * Return the serial number of the device which is also laser-engraved on the back.
+ * For example "P.25412"
+ *
+ * Query the serial number is only possible if the measurement is not running,
+ * else LIBALLURIS_DEVICE_BUSY is returned.
+ *
+ * \param dev_handle a handle for the device to communicate with
+ * \param buf output location for the serial number. Only populated when the return code is 0.
+ * \param length length of buffer in bytes
+ * \return 0 if successful else error code. LIBALLURIS_DEVICE_BUSY if measurement is running
+ */
 int serial_number (libusb_device_handle *dev_handle, char* buf, size_t length)
 {
   unsigned char data[6];
@@ -240,17 +256,28 @@ int serial_number (libusb_device_handle *dev_handle, char* buf, size_t length)
     {
       short tmp = char_to_uint16 (data + 3);
       if (tmp == -1)
-        {
-          snprintf (buf, length, "---");
-          return LIBALLURIS_DEVICE_BUSY;
-        }
+        return LIBALLURIS_DEVICE_BUSY;
       else
         snprintf (buf, length, "%c.%i", data[5] + 'A', tmp);
     }
   return ret;
 }
 
-// Number of digits after radix point or -1 if device is busy (running measurement)
+/*!
+ * \brief Query the number of digits for the interpretation of the raw fixed-point numbers
+ *
+ * All raw_* functions returns fixed-point numbers. This function queries the number
+ * of digits after the radix point. For example if raw_value returns 123 and digits returns 1
+ * the real value is 12.3
+ *
+ * Query this value is only possible if the measurement is not running,
+ * else LIBALLURIS_DEVICE_BUSY is returned.
+ *
+ * \param dev_handle a handle for the device to communicate with
+ * \param v output location for the returned number of digits. Only populated when the return code is 0.
+ * \return 0 if successful else error code
+ * \sa raw_value (libusb_device_handle *dev_handle, int* v)
+ */
 int digits (libusb_device_handle *dev_handle, int* v)
 {
   unsigned char data[6];
@@ -258,10 +285,25 @@ int digits (libusb_device_handle *dev_handle, int* v)
   data[1] = 3;
   data[2] = 3;
   int ret = device_bulk_transfer (dev_handle, data, 3, data, 6);
-  *v = char_to_int24 (data + 3);
+  if (ret == LIBUSB_SUCCESS)
+    {
+      int tmp = char_to_int24 (data + 3);
+      if (tmp == -1)
+        return LIBALLURIS_DEVICE_BUSY;
+      else
+        *v = tmp;
+    }
   return ret;
 }
 
+/*!
+ * \brief Query the current measurement value
+ *
+ * \param dev_handle a handle for the device to communicate with
+ * \param v output location for the measurement value. Only populated when the return code is 0.
+ * \return 0 if successful else error code
+ * \sa digits (libusb_device_handle *dev_handle, int* v)
+ */
 int raw_value (libusb_device_handle *dev_handle, int* v)
 {
   unsigned char data[6];
@@ -269,10 +311,19 @@ int raw_value (libusb_device_handle *dev_handle, int* v)
   data[1] = 3;
   data[2] = 3;
   int ret = device_bulk_transfer (dev_handle, data, 3, data, 6);
-  *v = char_to_int24 (data + 3);
+  if (ret == LIBUSB_SUCCESS)
+    *v = char_to_int24 (data + 3);
   return ret;
 }
 
+/*!
+ * \brief Query positive peak value
+ *
+ * \param dev_handle a handle for the device to communicate with
+ * \param v output location for the peak value. Only populated when the return code is 0.
+ * \return 0 if successful else error code
+ * \sa digits (libusb_device_handle *dev_handle, int* v)
+ */
 int raw_pos_peak (libusb_device_handle *dev_handle, int* v)
 {
   unsigned char data[6];
@@ -280,10 +331,19 @@ int raw_pos_peak (libusb_device_handle *dev_handle, int* v)
   data[1] = 3;
   data[2] = 4;
   int ret = device_bulk_transfer (dev_handle, data, 3, data, 6);
-  *v = char_to_int24 (data + 3);
+  if (ret == LIBUSB_SUCCESS)
+    *v = char_to_int24 (data + 3);
   return ret;
 }
 
+/*!
+ * \brief Query negative peak value
+ *
+ * \param dev_handle a handle for the device to communicate with
+ * \param v output location for the peak value. Only populated when the return code is 0.
+ * \return 0 if successful else error code
+ * \sa digits (libusb_device_handle *dev_handle, int* v)
+ */
 int raw_neg_peak (libusb_device_handle *dev_handle, int* v)
 {
   unsigned char data[6];
@@ -291,6 +351,7 @@ int raw_neg_peak (libusb_device_handle *dev_handle, int* v)
   data[1] = 3;
   data[2] = 5;
   int ret = device_bulk_transfer (dev_handle, data, 3, data, 6);
-  *v = char_to_int24 (data + 3);
+  if (ret == LIBUSB_SUCCESS)
+    *v = char_to_int24 (data + 3);
   return ret;
 }
