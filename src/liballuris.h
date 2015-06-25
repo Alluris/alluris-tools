@@ -35,17 +35,28 @@ If not, see <http://www.gnu.org/licenses/>.
 #define liballuris_h
 
 //#define PRINT_DEBUG_MSG
+//! Number of device which can be enumerated and simultaneously opened
 #define MAX_NUM_DEVICES 4
+//! Timeout in milliseconds while writing to the device
 #define SEND_TIMEOUT 10
+//! Timeout in milliseconds while reading from the device
 #define RECEIVE_TIMEOUT 10
 
+//! liballuris specific errors
 enum liballuris_error
 {
   LIBALLURIS_SUCCESS = 0,
-  LIBALLURIS_MALFORMED_REPLY = 1,
+  LIBALLURIS_MALFORMED_REPLY = 1, //!< The received reply contains a malformed header. This should never happen, check EMI and physical connection
   LIBALLURIS_DEVICE_BUSY = 2      //!< Device is in a state where it cannot process the request
 };
 
+/*!
+ * \brief composition of libusdb device and alluris device informations
+ *
+ * product and serial_number should help to identify a specific alluris device if more than one
+ * device is connected via USB.
+ * \sa get_alluris_device_list, open_alluris_device, free_alluris_device_list
+ */
 struct alluris_device_description
 {
   libusb_device* dev;     //!< pointer to a structure representing a USB device detected on the system

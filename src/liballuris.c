@@ -124,8 +124,18 @@ static int device_bulk_transfer (libusb_device_handle* dev_handle,
 
 /****************************************************************************************/
 
-// List accessible alluris devices
-// check permissions if a device isn't returned (see Readme.md)
+/*!
+ * \brief List accessible alluris devices
+ *
+ * The product field in alluris_device_description is filled via the USB descriptor.
+ * After this the device is opened and the serial_number is read from the device.
+ * Thus this function only lists devices where the application has sufficient rights to open
+ * and read from the device. Check permissions if a device isn't returned.
+ *
+ * \param[out] alluris_devs pointer to storage for the device list
+ * \param[in] length number of elements in alluris_devs
+ * \return 0 if successful else error code
+ */
 int get_alluris_device_list (struct alluris_device_description* alluris_devs, size_t length)
 {
   size_t k = 0;
@@ -194,6 +204,9 @@ int get_alluris_device_list (struct alluris_device_description* alluris_devs, si
   return num_alluris_devices;
 }
 
+/*!
+ * \brief free list filled from get_alluris_device_list
+ */
 void free_alluris_device_list (struct alluris_device_description* alluris_devs, size_t length)
 {
   size_t k = 0;
@@ -205,7 +218,12 @@ void free_alluris_device_list (struct alluris_device_description* alluris_devs, 
       }
 }
 
-// Open device with specified serial_number or the first available if NULL
+/*!
+ * \brief Open device with specified serial_number or the first available if NULL
+ * \param[in] serial_number of device or NULL
+ * \param[out] h storage for handle to communicate with the device
+ * \return 0 if successful else error code
+ */
 int open_alluris_device (const char* serial_number, libusb_device_handle** h)
 {
   int k;
@@ -240,9 +258,9 @@ int open_alluris_device (const char* serial_number, libusb_device_handle** h)
  * Query the serial number is only possible if the measurement is not running,
  * else LIBALLURIS_DEVICE_BUSY is returned.
  *
- * \param dev_handle a handle for the device to communicate with
- * \param buf output location for the serial number. Only populated when the return code is 0.
- * \param length length of buffer in bytes
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[out] buf output location for the serial number. Only populated when the return code is 0.
+ * \param[in] length length of buffer in bytes
  * \return 0 if successful else error code. LIBALLURIS_DEVICE_BUSY if measurement is running
  */
 int serial_number (libusb_device_handle *dev_handle, char* buf, size_t length)
@@ -273,8 +291,8 @@ int serial_number (libusb_device_handle *dev_handle, char* buf, size_t length)
  * Query this value is only possible if the measurement is not running,
  * else LIBALLURIS_DEVICE_BUSY is returned.
  *
- * \param dev_handle a handle for the device to communicate with
- * \param v output location for the returned number of digits. Only populated when the return code is 0.
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[out] v output location for the returned number of digits. Only populated when the return code is 0.
  * \return 0 if successful else error code
  * \sa raw_value (libusb_device_handle *dev_handle, int* v)
  */
@@ -299,8 +317,8 @@ int digits (libusb_device_handle *dev_handle, int* v)
 /*!
  * \brief Query the current measurement value
  *
- * \param dev_handle a handle for the device to communicate with
- * \param v output location for the measurement value. Only populated when the return code is 0.
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[out] v output location for the measurement value. Only populated when the return code is 0.
  * \return 0 if successful else error code
  * \sa digits (libusb_device_handle *dev_handle, int* v)
  */
@@ -319,8 +337,8 @@ int raw_value (libusb_device_handle *dev_handle, int* v)
 /*!
  * \brief Query positive peak value
  *
- * \param dev_handle a handle for the device to communicate with
- * \param v output location for the peak value. Only populated when the return code is 0.
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[out] v output location for the peak value. Only populated when the return code is 0.
  * \return 0 if successful else error code
  * \sa digits (libusb_device_handle *dev_handle, int* v)
  */
@@ -339,8 +357,8 @@ int raw_pos_peak (libusb_device_handle *dev_handle, int* v)
 /*!
  * \brief Query negative peak value
  *
- * \param dev_handle a handle for the device to communicate with
- * \param v output location for the peak value. Only populated when the return code is 0.
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[out] v output location for the peak value. Only populated when the return code is 0.
  * \return 0 if successful else error code
  * \sa digits (libusb_device_handle *dev_handle, int* v)
  */
