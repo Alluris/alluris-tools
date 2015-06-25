@@ -132,9 +132,11 @@ static int device_bulk_transfer (libusb_device_handle* dev_handle,
  * Thus this function only lists devices where the application has sufficient rights to open
  * and read from the device. Check permissions if a device isn't returned.
  *
+ * The retrieved list has to be freed with \ref free_alluris_device_list before the application exits.
  * \param[out] alluris_devs pointer to storage for the device list
  * \param[in] length number of elements in alluris_devs
  * \return 0 if successful else error code
+ * \sa free_alluris_device_list
  */
 int get_alluris_device_list (struct alluris_device_description* alluris_devs, size_t length)
 {
@@ -318,11 +320,11 @@ int digits (libusb_device_handle *dev_handle, int* v)
  * \brief Query the current measurement value
  *
  * \param[in] dev_handle a handle for the device to communicate with
- * \param[out] v output location for the measurement value. Only populated when the return code is 0.
+ * \param[out] value output location for the measurement value. Only populated when the return code is 0.
  * \return 0 if successful else error code
  * \sa digits (libusb_device_handle *dev_handle, int* v)
  */
-int raw_value (libusb_device_handle *dev_handle, int* v)
+int raw_value (libusb_device_handle *dev_handle, int* value)
 {
   unsigned char data[6];
   data[0] = 0x46;
@@ -330,7 +332,7 @@ int raw_value (libusb_device_handle *dev_handle, int* v)
   data[2] = 3;
   int ret = device_bulk_transfer (dev_handle, data, 3, data, 6);
   if (ret == LIBUSB_SUCCESS)
-    *v = char_to_int24 (data + 3);
+    *value = char_to_int24 (data + 3);
   return ret;
 }
 
@@ -338,11 +340,11 @@ int raw_value (libusb_device_handle *dev_handle, int* v)
  * \brief Query positive peak value
  *
  * \param[in] dev_handle a handle for the device to communicate with
- * \param[out] v output location for the peak value. Only populated when the return code is 0.
+ * \param[out] peak output location for the peak value. Only populated when the return code is 0.
  * \return 0 if successful else error code
  * \sa digits (libusb_device_handle *dev_handle, int* v)
  */
-int raw_pos_peak (libusb_device_handle *dev_handle, int* v)
+int raw_pos_peak (libusb_device_handle *dev_handle, int* peak)
 {
   unsigned char data[6];
   data[0] = 0x46;
@@ -350,7 +352,7 @@ int raw_pos_peak (libusb_device_handle *dev_handle, int* v)
   data[2] = 4;
   int ret = device_bulk_transfer (dev_handle, data, 3, data, 6);
   if (ret == LIBUSB_SUCCESS)
-    *v = char_to_int24 (data + 3);
+    *peak = char_to_int24 (data + 3);
   return ret;
 }
 
@@ -358,11 +360,11 @@ int raw_pos_peak (libusb_device_handle *dev_handle, int* v)
  * \brief Query negative peak value
  *
  * \param[in] dev_handle a handle for the device to communicate with
- * \param[out] v output location for the peak value. Only populated when the return code is 0.
+ * \param[out] peak output location for the peak value. Only populated when the return code is 0.
  * \return 0 if successful else error code
  * \sa digits (libusb_device_handle *dev_handle, int* v)
  */
-int raw_neg_peak (libusb_device_handle *dev_handle, int* v)
+int raw_neg_peak (libusb_device_handle *dev_handle, int* peak)
 {
   unsigned char data[6];
   data[0] = 0x46;
@@ -370,6 +372,6 @@ int raw_neg_peak (libusb_device_handle *dev_handle, int* v)
   data[2] = 5;
   int ret = device_bulk_transfer (dev_handle, data, 3, data, 6);
   if (ret == LIBUSB_SUCCESS)
-    *v = char_to_int24 (data + 3);
+    *peak = char_to_int24 (data + 3);
   return ret;
 }

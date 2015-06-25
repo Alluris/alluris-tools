@@ -25,6 +25,14 @@ If not, see <http://www.gnu.org/licenses/>.
  * \brief Header for generic Alluris device driver
 */
 
+/*! \mainpage liballuris API Reference
+ *
+ * Generic driver for Alluris devices with USB measurement interface.
+ *
+ * - \ref liballuris.h
+ * - \ref liballuris.c
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -70,7 +78,7 @@ void free_alluris_device_list (struct alluris_device_description* alluris_devs, 
 
 int serial_number (libusb_device_handle *dev_handle, char* buf, size_t length);
 int digits (libusb_device_handle *dev_handle, int* v);
-int raw_value (libusb_device_handle *dev_handle, int* v);
-int raw_pos_peak (libusb_device_handle *dev_handle, int* v);
-int raw_neg_peak (libusb_device_handle *dev_handle, int* v);
+int raw_value (libusb_device_handle *dev_handle, int* value);
+int raw_pos_peak (libusb_device_handle *dev_handle, int* peak);
+int raw_neg_peak (libusb_device_handle *dev_handle, int* peak);
 #endif
