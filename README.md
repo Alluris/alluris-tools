@@ -15,7 +15,7 @@ See the comment header in the appropriate source files as well as COPYING and CO
 ## USB access permissions
 
 If you get an error "access denied" you can create a udev rule to change permissions.
-In the example above anyone in the group "plugdev" can access the device:
+In the example below anyone in the group "plugdev" can access the device:
 
 ```
 $ cat /etc/udev/rules.d/90-alluris-usb.rules
