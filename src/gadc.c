@@ -21,64 +21,188 @@ If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
+#include <argp.h>
 #include "liballuris.h"
 
-//int main(int argc, char* argv[])
-int main()
-{
-  // Discover up to 4 Alluris devices
-  struct alluris_device_description alluris_devs[4];
-  int k;
+const char *argp_program_version =
+  "gadc 0.1";
 
-  libusb_context *ctx = NULL;
+const char *argp_program_bug_address =
+  "<software@alluris.de>";
+
+static char doc[] =
+  "Generic Alluris device control";
+
+/* A description of the arguments we accept. */
+static char args_doc[] = "--list | [--device=SERIAL] CMD1 CMD2";
+
+/* The options we understand. */
+static struct argp_option options[] =
+{
+  {"device",       'd', "SERIAL",   0, "Connect to specific alluris device", 0},
+  {"list",         'l', 0,          0, "List accessible devices", 0},
+  {0, 0, 0, 0, "Measurement:", 1 },
+  {"value",        'v', 0,          0, "Value", 1 },
+  {"pos-peak",     'p', 0,          0, "Positive peak", 1 },
+  {"neg-peak",     'n', 0,          0, "Negative peak", 1 },
+  {0, 0, 0, 0, "Tare:", 2 },
+  {"tare",         't', 0,          0, "Tare measurement", 2 },
+  {"clear-pos",    1000, 0,         0, "Clear positive peak", 2},
+  {"clear-neg",    1001, 0,         0, "Clear negative peak", 2},
+  {0, 0, 0, 0, "Settings:", 3 },
+  {"set-pos-limit", 1002, "P3",     0, "Param P3, positive limit", 3},
+  {"set-neg-limit", 1003, "P4",     0, "Param P4, negative limit", 3},
+  {"get-pos-limit", 1004, 0,        0, "Param P3, positive limit", 3},
+  {"get-neg-limit", 1005, 0,        0, "Param P4, negative limit", 3},
+  { 0,0,0,0,0,0 }
+};
+
+/* Used by main to communicate with parse_opt. */
+struct arguments
+{
+  char *device;
+  libusb_context* ctx;
+  libusb_device_handle* h;
+};
+
+/* Parse a single option. */
+static error_t
+parse_opt (int key, char *arg, struct argp_state *state)
+{
+  /* Get the input argument from argp_parse, which we
+     know is a pointer to our arguments structure. */
+  struct arguments *arguments = state->input;
+
+  char *endptr = NULL;
+  int r, value;
+  double tmp;
+
+  if (key == 'l')
+    {
+      // list accessible devices and exit
+      // FIXME: document that a running measurement prohibits reading the serial_number
+#define MAX_NUM_DEVICES 4
+      struct alluris_device_description alluris_devs[MAX_NUM_DEVICES];
+      ssize_t cnt = get_alluris_device_list (alluris_devs, MAX_NUM_DEVICES);
+
+      int k;
+      printf ("Device list:\n");
+      for (k=0; k < cnt; k++)
+        printf ("  # %2i: %s %s\n", k+1, alluris_devs[k].product, alluris_devs[k].serial_number);
+
+      if (!cnt)
+        printf ("No accessible device found");
+
+      // free device list
+      free_alluris_device_list (alluris_devs, MAX_NUM_DEVICES);
+
+      exit (0);
+    }
+
+  if (key == 'd')
+    {
+      arguments->device = arg;
+      return 0;
+    }
+
+  if (arguments->h)
+    switch (key)
+      {
+      case 'v':
+        r = raw_value (arguments->h, &value);
+        printf ("%i,", value);
+        break;
+      case 'p':
+        r = raw_pos_peak (arguments->h, &value);
+        printf ("%i,", value);
+        break;
+      case 'n':
+        r = raw_neg_peak (arguments->h, &value);
+        printf ("%i,", value);
+        break;
+      case 't':
+        r = tare (arguments->h);
+        break;
+      case 1000:
+        clear_pos_peak (arguments->h);
+        break;
+      case 1001:
+        clear_neg_peak (arguments->h);
+        break;
+      case 1002:  //set-pos-limit
+        tmp = strtod (arg, &endptr);
+        break;
+      case 1003:  //set-neg-limit
+        tmp = strtod (arg, &endptr);
+        break;
+      case 1004:
+        break;
+      case 1005:
+        break;
+      default:
+        return ARGP_ERR_UNKNOWN;
+      }
+
+  return 0;
+}
+
+/* Our argp parser. */
+static struct argp argp = { options, parse_opt, args_doc, doc, 0, 0, 0};
+
+int main(int argc, char** argv)
+{
+  struct arguments arguments;
+
+  arguments.device       = NULL;
+  arguments.ctx          = NULL;
+  arguments.h            = NULL;
 
   int r;
-  ssize_t cnt;
-  r = libusb_init (&ctx);
+
+  r = libusb_init (&arguments.ctx);
   if (r < 0)
     {
       fprintf (stderr, "Couldn't init libusb %s\n", libusb_error_name (r));
       return EXIT_FAILURE;
     }
 
-  cnt = get_alluris_device_list (alluris_devs, 4);
+  /* First parse to get optional device serial number or list devices*/
+  argp_parse (&argp, argc, argv, ARGP_NO_ARGS | ARGP_IN_ORDER, 0, &arguments);
 
-  // list all found devices
-  for (k=0; k<cnt; k++)
-    printf ("Device %i: %s %s\n", k+1, alluris_devs[k].product, alluris_devs[k].serial_number);
-  // free device list
-  free_alluris_device_list (alluris_devs, 4);
+  //printf ("Device    = %s\n", arguments.device);
 
-  // open first device
-  libusb_device_handle* h;
-  r = open_alluris_device (NULL, &h);
+  // open device
+  r = open_alluris_device (arguments.device, &arguments.h);
   if (r)
     {
-      fprintf (stderr, "Couldn't open device: %s\n", libusb_error_name (r));
+      fprintf (stderr, "Couldn't open device '%s': %s\n", arguments.device, libusb_error_name (r));
       return EXIT_FAILURE;
     }
 
-  r = libusb_claim_interface (h, 0);
+  r = libusb_claim_interface (arguments.h, 0);
   if (r)
     {
       fprintf (stderr, "Couldn't claim interface: %s\n", libusb_error_name (r));
       return EXIT_FAILURE;
     }
 
-  /************************************************************************************/
-  int v;
-  r = digits (h, &v);
-  printf ("digits = %i\n", v);
-  r = raw_value (h, &v);
-  printf ("raw value = %i\n", v);
+  // Second parse, now execute the commands
+  argp_parse (&argp, argc, argv, ARGP_NO_ARGS | ARGP_IN_ORDER, 0, &arguments);
 
-  r = raw_pos_peak (h, &v);
+  /************************************************************************************/
+  /*
+  int v;
+  r = digits (arguments.h, &v);
+  printf ("digits = %i\n", v);
+
+  r = raw_pos_peak (arguments.h, &v);
   printf ("raw pos peak = %i\n", v);
 
-  r = raw_neg_peak (h, &v);
+  r = raw_neg_peak (arguments.h, &v);
   printf ("raw neg peak = %i\n", v);
+  */
 
-  libusb_release_interface (h, 0);
-  libusb_close (h);
+  libusb_release_interface (arguments.h, 0);
+  libusb_close (arguments.h);
   return EXIT_SUCCESS;
 }

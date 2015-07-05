@@ -21,3 +21,8 @@ In the example below anyone in the group "plugdev" can access the device:
 $ cat /etc/udev/rules.d/90-alluris-usb.rules
 ACTION=="add", ATTRS{idVendor}=="04d8", ATTRS{idProduct}=="fc30", MODE="0660", OWNER="root", GROUP="plugdev"
 ```
+
+## Dependencies
+
+* libusb 1.0 (http://www.libusb.org/)
+

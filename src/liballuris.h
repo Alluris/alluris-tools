@@ -81,4 +81,8 @@ int digits (libusb_device_handle *dev_handle, int* v);
 int raw_value (libusb_device_handle *dev_handle, int* value);
 int raw_pos_peak (libusb_device_handle *dev_handle, int* peak);
 int raw_neg_peak (libusb_device_handle *dev_handle, int* peak);
+
+int tare (libusb_device_handle *dev_handle);
+int clear_pos_peak (libusb_device_handle *dev_handle);
+int clear_neg_peak (libusb_device_handle *dev_handle);
 #endif

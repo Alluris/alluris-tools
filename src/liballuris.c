@@ -242,7 +242,8 @@ int open_alluris_device (const char* serial_number, libusb_device_handle** h)
           if (! strncmp (serial_number, alluris_devs[k].serial_number, sizeof (alluris_devs[0].serial_number)))
             dev = alluris_devs[k].dev;
     }
-  else
+
+  if (! dev)
     //no device found
     return LIBUSB_ERROR_NOT_FOUND;
 
@@ -375,3 +376,64 @@ int raw_neg_peak (libusb_device_handle *dev_handle, int* peak)
     *peak = char_to_int24 (data + 3);
   return ret;
 }
+
+/*!
+ * \brief tare measurement
+ * FIXME: Genaue Funktion untersuchen
+ */
+int tare (libusb_device_handle *dev_handle)
+{
+  unsigned char data[3];
+  data[0] = 0x15;
+  data[1] = 3;
+  data[2] = 0;
+  return device_bulk_transfer (dev_handle, data, 3, data, 3);
+}
+
+int clear_pos_peak (libusb_device_handle *dev_handle)
+{
+  unsigned char data[3];
+  data[0] = 0x15;
+  data[1] = 3;
+  data[2] = 1;
+  return device_bulk_transfer (dev_handle, data, 3, data, 3);
+}
+
+int clear_neg_peak (libusb_device_handle *dev_handle)
+{
+  unsigned char data[3];
+  data[0] = 0x15;
+  data[1] = 3;
+  data[2] = 2;
+  return device_bulk_transfer (dev_handle, data, 3, data, 3);
+}
+
+/*
+void ReqStartStopp (libusb_device_handle *dev_handle, char zStart)
+{
+  unsigned char data[3];
+  data[0]=0x1C;
+  data[1]=3;
+  data[2]=zStart;
+
+void ReqSetGrenzwert (libusb_device_handle *dev_handle, char id, int grenzpar)
+{
+  unsigned char data[6];
+  data[0]=0x18;
+  data[1]=4;
+  data[2]=id;
+
+int ReqGetGrenzwert (libusb_device_handle *dev_handle, char id)
+{
+  unsigned char data[7];
+  data[0]=0x19;
+  data[1]=4;
+  data[2]=id;
+
+void ReqSetDigout (libusb_device_handle *dev_handle, char zDigital)
+{
+  unsigned char data[7]; //um 1 größer als Antwort
+  data[0] = 0x21;
+  data[1] = 3;
+  data[2] = zDigital;
+*/
