@@ -26,3 +26,15 @@ ACTION=="add", ATTRS{idVendor}=="04d8", ATTRS{idProduct}=="fc30", MODE="0660", O
 
 * libusb 1.0 (http://www.libusb.org/)
 
+##  Mac OS X Yosemite (10.10.4) Installation
+
+You first need to install MacPorts for the argp-Library: https://www.macports.org/
+Then run
+$ port install argp-standalone
+
+Secondly you need to install Homebrew for the libusb-Library: http://brew.sh/
+Then run
+$ brew install libusb
+
+Now, you can compile the driver in src-dir with:
+$ make -f Makefile.mac
