@@ -38,7 +38,7 @@ Secondly you need to install Homebrew for the libusb-Library: http://brew.sh/, t
 $ brew install libusb
 ```
 
-Now, you can compile the driver in src-dir
+Now you can compile the driver in src-dir
 ```
 $ make -f Makefile.mac
 ```
