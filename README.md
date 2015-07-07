@@ -34,17 +34,14 @@ sudo apt-get install libusb-1.0-0-dev
 
 ###  Mac OS X Yosemite (10.10.4) Installation
 
-You first need to install MacPorts for the argp-Library: https://www.macports.org/, then run
+You need to install Homebrew: http://brew.sh/, then run
+
 ```
-$ port install argp-standalone
+$ brew install libusb argp-standalone
 ```
 
-Secondly you need to install Homebrew for the libusb-Library: http://brew.sh/, then run
-```
-$ brew install libusb
-```
+Now you can compile the driver in the `src`-directory
 
-Now you can compile the driver and the gadc CLI in the src dir
 ```
 $ make -f Makefile.mac
 ```
