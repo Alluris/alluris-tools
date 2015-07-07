@@ -45,6 +45,7 @@ static struct argp_option options[] =
   {"value",        'v', 0,          0, "Value", 1 },
   {"pos-peak",     'p', 0,          0, "Positive peak", 1 },
   {"neg-peak",     'n', 0,          0, "Negative peak", 1 },
+  {"sample",       's', "NUM",      0, "Capture NUM values", 1 },
   {0, 0, 0, 0, "Tare:", 2 },
   {"tare",         't', 0,          0, "Tare measurement", 2 },
   {"clear-pos",    1000, 0,         0, "Clear positive peak", 2},
@@ -65,6 +66,46 @@ struct arguments
   libusb_device_handle* h;
 };
 
+// FIXME: Im Falle eines Fehlers, sollte libusb geschlossen und das Programm beendet werden
+static void print_value (int ret, int value)
+{
+  if (ret != LIBUSB_SUCCESS)
+    fprintf(stderr, "Error: '%s'\n", libusb_error_name (ret));
+  else
+    printf ("%i\n", value);
+}
+
+static void print_multiple (libusb_device_handle *dev_handle, int num)
+{
+  int block_size = num;
+  if (block_size > 19)
+    block_size = 19;
+
+  int tempx[block_size];
+
+  // enable
+  cyclic_measurement (dev_handle, 1, block_size);
+  int k, j;
+  //printf ("Reading %i samples with block_size %i...\n", num, block_size);
+
+  while (num > 0)
+    {
+      //printf ("polling %i, %i left\n", block_size, num);
+      poll_measurement (dev_handle, tempx, block_size);
+      int j = (num < block_size)? num : block_size;
+      for (k=0; k < j; ++k)
+        printf ("%i\n", tempx[k]);
+      num = num - block_size;
+    }
+
+  // disable
+  //printf ("disable measurement\n");
+  cyclic_measurement (dev_handle, 0, block_size);
+  // emtpy read
+  poll_measurement (dev_handle, tempx, 19);
+
+}
+
 /* Parse a single option. */
 static error_t
 parse_opt (int key, char *arg, struct argp_state *state)
@@ -74,16 +115,17 @@ parse_opt (int key, char *arg, struct argp_state *state)
   struct arguments *arguments = state->input;
 
   char *endptr = NULL;
-  int r, value;
-  double tmp;
+  int r;
+  int value, num_samples;
 
   if (key == 'l')
     {
       // list accessible devices and exit
       // FIXME: document that a running measurement prohibits reading the serial_number
+
 #define MAX_NUM_DEVICES 4
       struct alluris_device_description alluris_devs[MAX_NUM_DEVICES];
-      ssize_t cnt = get_alluris_device_list (alluris_devs, MAX_NUM_DEVICES);
+      ssize_t cnt = get_alluris_device_list (alluris_devs, MAX_NUM_DEVICES, 1);
 
       int k;
       printf ("Device list:\n");
@@ -110,15 +152,19 @@ parse_opt (int key, char *arg, struct argp_state *state)
       {
       case 'v':
         r = raw_value (arguments->h, &value);
-        printf ("%i,", value);
+        print_value (r, value);
         break;
       case 'p':
         r = raw_pos_peak (arguments->h, &value);
-        printf ("%i,", value);
+        print_value (r, value);
         break;
       case 'n':
         r = raw_neg_peak (arguments->h, &value);
-        printf ("%i,", value);
+        print_value (r, value);
+        break;
+      case 's':
+        num_samples = strtol (arg, &endptr, 10);
+        print_multiple (arguments->h, num_samples);
         break;
       case 't':
         r = tare (arguments->h);
@@ -130,10 +176,10 @@ parse_opt (int key, char *arg, struct argp_state *state)
         clear_neg_peak (arguments->h);
         break;
       case 1002:  //set-pos-limit
-        tmp = strtod (arg, &endptr);
+        value = strtol (arg, &endptr, 10);
         break;
       case 1003:  //set-neg-limit
-        tmp = strtod (arg, &endptr);
+        value = strtol (arg, &endptr, 10);
         break;
       case 1004:
         break;
@@ -190,6 +236,7 @@ int main(int argc, char** argv)
   argp_parse (&argp, argc, argv, ARGP_NO_ARGS | ARGP_IN_ORDER, 0, &arguments);
 
   /************************************************************************************/
+
   /*
   int v;
   r = digits (arguments.h, &v);
@@ -202,7 +249,9 @@ int main(int argc, char** argv)
   printf ("raw neg peak = %i\n", v);
   */
 
+  //printf ("libusb_release_interface\n");
   libusb_release_interface (arguments.h, 0);
+  //printf ("libusb_close\n");
   libusb_close (arguments.h);
   return EXIT_SUCCESS;
 }

@@ -47,8 +47,15 @@ If not, see <http://www.gnu.org/licenses/>.
 #define MAX_NUM_DEVICES 4
 //! Timeout in milliseconds while writing to the device
 #define SEND_TIMEOUT 10
-//! Timeout in milliseconds while reading from the device
-#define RECEIVE_TIMEOUT 10
+
+/*!
+ * \brief Timeout in milliseconds while reading from the device
+ *
+ * The sampling frequency can be selected between 10Hz and 990Hz
+ * Therefore the maximum delay until the measurement completes is 1/10Hz = 100ms.
+ * Additional 10% -> 110ms
+ */
+#define RECEIVE_TIMEOUT 110
 
 //! liballuris specific errors
 enum liballuris_error
@@ -72,7 +79,7 @@ struct alluris_device_description
   char serial_number[30]; //!< serial number of device, for example "P.25412"
 };
 
-int get_alluris_device_list (struct alluris_device_description* alluris_devs, size_t length);
+int get_alluris_device_list (struct alluris_device_description* alluris_devs, size_t length, char read_serial);
 int open_alluris_device (const char* serial_number, libusb_device_handle** h);
 void free_alluris_device_list (struct alluris_device_description* alluris_devs, size_t length);
 
@@ -81,6 +88,9 @@ int digits (libusb_device_handle *dev_handle, int* v);
 int raw_value (libusb_device_handle *dev_handle, int* value);
 int raw_pos_peak (libusb_device_handle *dev_handle, int* peak);
 int raw_neg_peak (libusb_device_handle *dev_handle, int* peak);
+
+int cyclic_measurement (libusb_device_handle *dev_handle, char enable, size_t length);
+int poll_measurement (libusb_device_handle *dev_handle, int* buf, size_t length);
 
 int tare (libusb_device_handle *dev_handle);
 int clear_pos_peak (libusb_device_handle *dev_handle);
