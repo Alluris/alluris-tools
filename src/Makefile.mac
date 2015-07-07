@@ -5,7 +5,7 @@
 all: gadc
 
 gadc: gadc.c liballuris.c liballuris.h
-	gcc -Wall -Wextra -ggdb -I/usr/local/include/libusb-1.0 -I/opt/local/include -L/opt/local/lib $< liballuris.c -lusb-1.0 -largp -o $@
+	gcc -Wall -Wextra -ggdb -I/usr/local/include/libusb-1.0 $< liballuris.c -lusb-1.0 -largp -o $@
 
 style:
 	find .. \( -name "*.m" -or -name "*.c" -or -name "*.h" \) -exec sed -i 's/[[:space:]]*$$//' {} \;
