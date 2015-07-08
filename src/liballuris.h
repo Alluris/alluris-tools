@@ -83,6 +83,8 @@ int get_alluris_device_list (struct alluris_device_description* alluris_devs, si
 int open_alluris_device (const char* serial_number, libusb_device_handle** h);
 void free_alluris_device_list (struct alluris_device_description* alluris_devs, size_t length);
 
+void clear_RX (libusb_device_handle* dev_handle);
+
 int serial_number (libusb_device_handle *dev_handle, char* buf, size_t length);
 int digits (libusb_device_handle *dev_handle, int* v);
 int raw_value (libusb_device_handle *dev_handle, int* value);

@@ -83,27 +83,31 @@ static void print_multiple (libusb_device_handle *dev_handle, int num)
 
   int tempx[block_size];
 
-  // enable
+  // FIXME: check if measurement is running before
+  // enabling data stream. Abort if device is idle
+
+  // enable streaming
   cyclic_measurement (dev_handle, 1, block_size);
-  int k, j;
-  //printf ("Reading %i samples with block_size %i...\n", num, block_size);
 
   while (num > 0)
     {
       //printf ("polling %i, %i left\n", block_size, num);
-      poll_measurement (dev_handle, tempx, block_size);
-      int j = (num < block_size)? num : block_size;
-      for (k=0; k < j; ++k)
-        printf ("%i\n", tempx[k]);
+      int r = poll_measurement (dev_handle, tempx, block_size);
+      if (r == LIBUSB_SUCCESS)
+        {
+          int j = (num < block_size)? num : block_size;
+          int k;
+          for (k=0; k < j; ++k)
+            printf ("%i\n", tempx[k]);
+        }
       num = num - block_size;
     }
 
-  // disable
-  //printf ("disable measurement\n");
+  // disable streaming
   cyclic_measurement (dev_handle, 0, block_size);
-  // emtpy read
-  poll_measurement (dev_handle, tempx, 19);
 
+  // empty read remaining data
+  clear_RX (dev_handle);
 }
 
 /* Parse a single option. */

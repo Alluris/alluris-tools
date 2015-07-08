@@ -257,6 +257,14 @@ int open_alluris_device (const char* serial_number, libusb_device_handle** h)
   return ret;
 }
 
+void clear_RX (libusb_device_handle* dev_handle)
+{
+  int actual;
+  libusb_bulk_transfer (dev_handle, 0x81 | LIBUSB_ENDPOINT_IN, NULL, 0, &actual, 10);
+
+  //printf ("clear_RX: libusb_bulk_transfer returned '%s', actual = %i\n", libusb_error_name(r), actual);
+}
+
 /*!
  * \brief Query the serial number
  *
