@@ -26,8 +26,13 @@ If not, see <http://www.gnu.org/licenses/>.
 #include <sys/poll.h>
 #include "liballuris.h"
 
-/* GNU Radio Companion
- * Use for example "nc -q0 host 9000 -e ./fstream"
+/*
+ * Save the output to a file or pipe it to some program to evaluate it.
+ * Use "nc -q0 localhost 9000 -e ./fstream" to send it via TCP
+ *
+ * For an example using GNU Octave see fstream_serv.m
+ *
+ * For an example using GNU Radio Companion see fstream_recv.grc
  */
 
 int main()
@@ -69,7 +74,6 @@ int main()
   // FIXME: check if measurement is running before
   // enabling data stream. Abort if device is idle
 
-  // debug_en_lvl3 (h);
   // enable streaming
   liballuris_cyclic_measurement (h, 1, block_size);
   int k;
