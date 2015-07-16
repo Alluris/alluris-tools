@@ -1,0 +1,8 @@
+#!/bin/bash
+## Run this to generate the configure script
+
+set -e
+libtoolize
+aclocal
+automake --add-missing
+autoreconf
