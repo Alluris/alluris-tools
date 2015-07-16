@@ -142,7 +142,7 @@ static int device_bulk_transfer (libusb_device_handle* dev_handle,
  * \return 0 if successful else error code
  * \sa free_alluris_device_list
  */
-int get_alluris_device_list (struct alluris_device_description* alluris_devs, size_t length, char read_serial)
+int get_alluris_device_list (libusb_context* ctx, struct alluris_device_description* alluris_devs, size_t length, char read_serial)
 {
   size_t k = 0;
   for (k=0; k<length; ++k)
@@ -150,7 +150,7 @@ int get_alluris_device_list (struct alluris_device_description* alluris_devs, si
 
   size_t num_alluris_devices = 0;
   libusb_device **devs;
-  ssize_t cnt = libusb_get_device_list (NULL, &devs);
+  ssize_t cnt = libusb_get_device_list (ctx, &devs);
   if (cnt > 0)
     {
       libusb_device *dev;
@@ -231,12 +231,12 @@ void free_alluris_device_list (struct alluris_device_description* alluris_devs, 
  * \param[out] h storage for handle to communicate with the device
  * \return 0 if successful else error code
  */
-int open_alluris_device (const char* serial_number, libusb_device_handle** h)
+int open_alluris_device (libusb_context* ctx, const char* serial_number, libusb_device_handle** h)
 {
   int k;
   libusb_device *dev = NULL;
   struct alluris_device_description alluris_devs[MAX_NUM_DEVICES];
-  int cnt = get_alluris_device_list (alluris_devs, MAX_NUM_DEVICES, (serial_number != NULL));
+  int cnt = get_alluris_device_list (ctx, alluris_devs, MAX_NUM_DEVICES, (serial_number != NULL));
 
   if (cnt >= 1)
     {
@@ -404,8 +404,9 @@ int cyclic_measurement (libusb_device_handle *dev_handle, char enable, size_t le
   unsigned char data[4];
   data[0] = 0x01;
   data[1] = 4;
-  data[2] = (enable)? 2: 1;
+  data[2] = (enable)? 2: 0;
   data[3] = length;
+
   return device_bulk_transfer (dev_handle, data, 4, data, 4);
 }
 
@@ -414,7 +415,6 @@ int poll_measurement (libusb_device_handle *dev_handle, int* buf, size_t length)
   size_t len = 5 + length * 3;
   unsigned char data[len];
   int ret = device_bulk_transfer (dev_handle, data, 0, data, len);
-
 
   //printf ("data[1] = %i\n", data[1]);
   // ToDo: Prüfen ob data[1] == len

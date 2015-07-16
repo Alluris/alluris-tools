@@ -37,7 +37,7 @@ If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include "libusb.h"
+#include <libusb-1.0/libusb.h>
 
 #ifndef liballuris_h
 #define liballuris_h
@@ -79,8 +79,8 @@ struct alluris_device_description
   char serial_number[30]; //!< serial number of device, for example "P.25412"
 };
 
-int get_alluris_device_list (struct alluris_device_description* alluris_devs, size_t length, char read_serial);
-int open_alluris_device (const char* serial_number, libusb_device_handle** h);
+int get_alluris_device_list (libusb_context* ctx, struct alluris_device_description* alluris_devs, size_t length, char read_serial);
+int open_alluris_device (libusb_context* ctx, const char* serial_number, libusb_device_handle** h);
 void free_alluris_device_list (struct alluris_device_description* alluris_devs, size_t length);
 
 void clear_RX (libusb_device_handle* dev_handle);
