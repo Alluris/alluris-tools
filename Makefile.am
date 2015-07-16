@@ -9,6 +9,4 @@ realclean:
 	$(MAKE) maintainer-clean
 	rm -rf m4 autom4te.cache
 	rm -f aclocal.m4 ar-lib compile config.guess config.sub configure depcomp install-sh ltmain.sh Makefile.in missing
-	rm -f ./cli/Makefile.in
-	rm -rf ./doc/html ./doc/Makefile.in
-	rm -rf ./liballuris/Makefile.in
+	find . -name "Makefile.in" -exec rm {} \;

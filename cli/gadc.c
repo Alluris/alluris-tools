@@ -25,7 +25,7 @@ If not, see <http://www.gnu.org/licenses/>.
 #include <liballuris.h>
 
 const char *argp_program_version =
-  "gadc 0.1";
+  "gadc 0.1 using " PACKAGE_NAME " " PACKAGE_VERSION;
 
 const char *argp_program_bug_address =
   "<software@alluris.de>";
@@ -240,18 +240,6 @@ int main(int argc, char** argv)
   argp_parse (&argp, argc, argv, ARGP_NO_ARGS | ARGP_IN_ORDER, 0, &arguments);
 
   /************************************************************************************/
-
-  /*
-  int v;
-  r = digits (arguments.h, &v);
-  printf ("digits = %i\n", v);
-
-  r = raw_pos_peak (arguments.h, &v);
-  printf ("raw pos peak = %i\n", v);
-
-  r = raw_neg_peak (arguments.h, &v);
-  printf ("raw neg peak = %i\n", v);
-  */
 
   //printf ("libusb_release_interface\n");
   libusb_release_interface (arguments.h, 0);
