@@ -140,9 +140,9 @@ static int device_bulk_transfer (libusb_device_handle* dev_handle,
  * \param[in] length number of elements in alluris_devs
  * \param[in] read_serial Try to read the serial from devices
  * \return 0 if successful else error code
- * \sa free_alluris_device_list
+ * \sa liballuris_free_device_list
  */
-int get_alluris_device_list (libusb_context* ctx, struct alluris_device_description* alluris_devs, size_t length, char read_serial)
+int liballuris_get_device_list (libusb_context* ctx, struct alluris_device_description* alluris_devs, size_t length, char read_serial)
 {
   size_t k = 0;
   for (k=0; k<length; ++k)
@@ -186,7 +186,7 @@ int get_alluris_device_list (libusb_context* ctx, struct alluris_device_descript
 
                       if (read_serial)
                         // get serial number from device
-                        serial_number (h, alluris_devs[num_alluris_devices].serial_number, sizeof (alluris_devs[0].serial_number));
+                        liballuris_serial_number (h, alluris_devs[num_alluris_devices].serial_number, sizeof (alluris_devs[0].serial_number));
 
                       num_alluris_devices++;
                       libusb_release_interface (h, 0);
@@ -214,7 +214,7 @@ int get_alluris_device_list (libusb_context* ctx, struct alluris_device_descript
 /*!
  * \brief free list filled from get_alluris_device_list
  */
-void free_alluris_device_list (struct alluris_device_description* alluris_devs, size_t length)
+void liballuris_free_device_list (struct alluris_device_description* alluris_devs, size_t length)
 {
   size_t k = 0;
   for (k=0; k < length; ++k)
@@ -231,12 +231,12 @@ void free_alluris_device_list (struct alluris_device_description* alluris_devs, 
  * \param[out] h storage for handle to communicate with the device
  * \return 0 if successful else error code
  */
-int open_alluris_device (libusb_context* ctx, const char* serial_number, libusb_device_handle** h)
+int liballuris_open_device (libusb_context* ctx, const char* serial_number, libusb_device_handle** h)
 {
   int k;
   libusb_device *dev = NULL;
   struct alluris_device_description alluris_devs[MAX_NUM_DEVICES];
-  int cnt = get_alluris_device_list (ctx, alluris_devs, MAX_NUM_DEVICES, (serial_number != NULL));
+  int cnt = liballuris_get_device_list (ctx, alluris_devs, MAX_NUM_DEVICES, (serial_number != NULL));
 
   if (cnt >= 1)
     {
@@ -253,11 +253,11 @@ int open_alluris_device (libusb_context* ctx, const char* serial_number, libusb_
     return LIBUSB_ERROR_NOT_FOUND;
 
   int ret = libusb_open (dev, h);
-  free_alluris_device_list (alluris_devs, MAX_NUM_DEVICES);
+  liballuris_free_device_list (alluris_devs, MAX_NUM_DEVICES);
   return ret;
 }
 
-void clear_RX (libusb_device_handle* dev_handle)
+void liballuris_clear_RX (libusb_device_handle* dev_handle)
 {
   int actual;
   libusb_bulk_transfer (dev_handle, 0x81 | LIBUSB_ENDPOINT_IN, NULL, 0, &actual, 10);
@@ -279,7 +279,7 @@ void clear_RX (libusb_device_handle* dev_handle)
  * \param[in] length length of buffer in bytes
  * \return 0 if successful else error code. LIBALLURIS_DEVICE_BUSY if measurement is running
  */
-int serial_number (libusb_device_handle *dev_handle, char* buf, size_t length)
+int liballuris_serial_number (libusb_device_handle *dev_handle, char* buf, size_t length)
 {
   unsigned char data[6];
   data[0] = 0x08;
@@ -312,7 +312,7 @@ int serial_number (libusb_device_handle *dev_handle, char* buf, size_t length)
  * \return 0 if successful else error code
  * \sa raw_value (libusb_device_handle *dev_handle, int* v)
  */
-int digits (libusb_device_handle *dev_handle, int* v)
+int liballuris_digits (libusb_device_handle *dev_handle, int* v)
 {
   unsigned char data[6];
   data[0] = 0x08;
@@ -338,7 +338,7 @@ int digits (libusb_device_handle *dev_handle, int* v)
  * \return 0 if successful else error code
  * \sa digits (libusb_device_handle *dev_handle, int* v)
  */
-int raw_value (libusb_device_handle *dev_handle, int* value)
+int liballuris_raw_value (libusb_device_handle *dev_handle, int* value)
 {
   unsigned char data[6];
   data[0] = 0x46;
@@ -358,7 +358,7 @@ int raw_value (libusb_device_handle *dev_handle, int* value)
  * \return 0 if successful else error code
  * \sa digits (libusb_device_handle *dev_handle, int* v)
  */
-int raw_pos_peak (libusb_device_handle *dev_handle, int* peak)
+int liballuris_raw_pos_peak (libusb_device_handle *dev_handle, int* peak)
 {
   unsigned char data[6];
   data[0] = 0x46;
@@ -378,7 +378,7 @@ int raw_pos_peak (libusb_device_handle *dev_handle, int* peak)
  * \return 0 if successful else error code
  * \sa digits (libusb_device_handle *dev_handle, int* v)
  */
-int raw_neg_peak (libusb_device_handle *dev_handle, int* peak)
+int liballuris_raw_neg_peak (libusb_device_handle *dev_handle, int* peak)
 {
   unsigned char data[6];
   data[0] = 0x46;
@@ -398,7 +398,7 @@ int raw_neg_peak (libusb_device_handle *dev_handle, int* peak)
  * \param[in] packetlen 1..19
  * \return 0 if successful else error code
  */
-int cyclic_measurement (libusb_device_handle *dev_handle, char enable, size_t length)
+int liballuris_cyclic_measurement (libusb_device_handle *dev_handle, char enable, size_t length)
 {
   //FIXME: Bereich für packetlen 1..19 prüfen -> error msg...
   unsigned char data[4];
@@ -410,7 +410,7 @@ int cyclic_measurement (libusb_device_handle *dev_handle, char enable, size_t le
   return device_bulk_transfer (dev_handle, data, 4, data, 4);
 }
 
-int poll_measurement (libusb_device_handle *dev_handle, int* buf, size_t length)
+int liballuris_poll_measurement (libusb_device_handle *dev_handle, int* buf, size_t length)
 {
   size_t len = 5 + length * 3;
   unsigned char data[len];
@@ -432,7 +432,7 @@ int poll_measurement (libusb_device_handle *dev_handle, int* buf, size_t length)
  * \brief tare measurement
  * FIXME: Genaue Funktion untersuchen
  */
-int tare (libusb_device_handle *dev_handle)
+int liballuris_tare (libusb_device_handle *dev_handle)
 {
   unsigned char data[3];
   data[0] = 0x15;
@@ -441,7 +441,7 @@ int tare (libusb_device_handle *dev_handle)
   return device_bulk_transfer (dev_handle, data, 3, data, 3);
 }
 
-int clear_pos_peak (libusb_device_handle *dev_handle)
+int liballuris_clear_pos_peak (libusb_device_handle *dev_handle)
 {
   unsigned char data[3];
   data[0] = 0x15;
@@ -450,7 +450,7 @@ int clear_pos_peak (libusb_device_handle *dev_handle)
   return device_bulk_transfer (dev_handle, data, 3, data, 3);
 }
 
-int clear_neg_peak (libusb_device_handle *dev_handle)
+int liballuris_clear_neg_peak (libusb_device_handle *dev_handle)
 {
   unsigned char data[3];
   data[0] = 0x15;

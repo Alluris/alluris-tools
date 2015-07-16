@@ -79,22 +79,22 @@ struct alluris_device_description
   char serial_number[30]; //!< serial number of device, for example "P.25412"
 };
 
-int get_alluris_device_list (libusb_context* ctx, struct alluris_device_description* alluris_devs, size_t length, char read_serial);
-int open_alluris_device (libusb_context* ctx, const char* serial_number, libusb_device_handle** h);
-void free_alluris_device_list (struct alluris_device_description* alluris_devs, size_t length);
+int  liballuris_get_device_list (libusb_context* ctx, struct alluris_device_description* alluris_devs, size_t length, char read_serial);
+int  liballuris_open_device (libusb_context* ctx, const char* serial_number, libusb_device_handle** h);
+void liballuris_free_device_list (struct alluris_device_description* alluris_devs, size_t length);
 
-void clear_RX (libusb_device_handle* dev_handle);
+void liballuris_clear_RX (libusb_device_handle* dev_handle);
 
-int serial_number (libusb_device_handle *dev_handle, char* buf, size_t length);
-int digits (libusb_device_handle *dev_handle, int* v);
-int raw_value (libusb_device_handle *dev_handle, int* value);
-int raw_pos_peak (libusb_device_handle *dev_handle, int* peak);
-int raw_neg_peak (libusb_device_handle *dev_handle, int* peak);
+int liballuris_serial_number (libusb_device_handle *dev_handle, char* buf, size_t length);
+int liballuris_digits (libusb_device_handle *dev_handle, int* v);
+int liballuris_raw_value (libusb_device_handle *dev_handle, int* value);
+int liballuris_raw_pos_peak (libusb_device_handle *dev_handle, int* peak);
+int liballuris_raw_neg_peak (libusb_device_handle *dev_handle, int* peak);
 
-int cyclic_measurement (libusb_device_handle *dev_handle, char enable, size_t length);
-int poll_measurement (libusb_device_handle *dev_handle, int* buf, size_t length);
+int liballuris_cyclic_measurement (libusb_device_handle *dev_handle, char enable, size_t length);
+int liballuris_poll_measurement (libusb_device_handle *dev_handle, int* buf, size_t length);
 
-int tare (libusb_device_handle *dev_handle);
-int clear_pos_peak (libusb_device_handle *dev_handle);
-int clear_neg_peak (libusb_device_handle *dev_handle);
+int liballuris_tare (libusb_device_handle *dev_handle);
+int liballuris_clear_pos_peak (libusb_device_handle *dev_handle);
+int liballuris_clear_neg_peak (libusb_device_handle *dev_handle);
 #endif

@@ -25,6 +25,7 @@ AC_CHECK_LIB(usb-1.0, libusb_open)
 AC_CONFIG_FILES([Makefile
                 doc/Makefile
                 liballuris/Makefile
-                cli/Makefile])
+                cli/Makefile
+                examples/Makefile])
 AC_OUTPUT
 

@@ -87,12 +87,12 @@ static void print_multiple (libusb_device_handle *dev_handle, int num)
   // enabling data stream. Abort if device is idle
 
   // enable streaming
-  cyclic_measurement (dev_handle, 1, block_size);
+  liballuris_cyclic_measurement (dev_handle, 1, block_size);
 
   while (num > 0)
     {
       //printf ("polling %i, %i left\n", block_size, num);
-      int r = poll_measurement (dev_handle, tempx, block_size);
+      int r = liballuris_poll_measurement (dev_handle, tempx, block_size);
       if (r == LIBUSB_SUCCESS)
         {
           int j = (num < block_size)? num : block_size;
@@ -104,10 +104,10 @@ static void print_multiple (libusb_device_handle *dev_handle, int num)
     }
 
   // disable streaming
-  cyclic_measurement (dev_handle, 0, block_size);
+  liballuris_cyclic_measurement (dev_handle, 0, block_size);
 
   // empty read remaining data
-  clear_RX (dev_handle);
+  liballuris_clear_RX (dev_handle);
 }
 
 /* Parse a single option. */
@@ -129,7 +129,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
 
 #define MAX_NUM_DEVICES 4
       struct alluris_device_description alluris_devs[MAX_NUM_DEVICES];
-      ssize_t cnt = get_alluris_device_list (arguments->ctx, alluris_devs, MAX_NUM_DEVICES, 1);
+      ssize_t cnt = liballuris_get_device_list (arguments->ctx, alluris_devs, MAX_NUM_DEVICES, 1);
 
       int k;
       printf ("Device list:\n");
@@ -140,7 +140,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
         printf ("No accessible device found");
 
       // free device list
-      free_alluris_device_list (alluris_devs, MAX_NUM_DEVICES);
+      liballuris_free_device_list (alluris_devs, MAX_NUM_DEVICES);
 
       exit (0);
     }
@@ -155,15 +155,15 @@ parse_opt (int key, char *arg, struct argp_state *state)
     switch (key)
       {
       case 'v':
-        r = raw_value (arguments->h, &value);
+        r = liballuris_raw_value (arguments->h, &value);
         print_value (r, value);
         break;
       case 'p':
-        r = raw_pos_peak (arguments->h, &value);
+        r = liballuris_raw_pos_peak (arguments->h, &value);
         print_value (r, value);
         break;
       case 'n':
-        r = raw_neg_peak (arguments->h, &value);
+        r = liballuris_raw_neg_peak (arguments->h, &value);
         print_value (r, value);
         break;
       case 's':
@@ -171,13 +171,13 @@ parse_opt (int key, char *arg, struct argp_state *state)
         print_multiple (arguments->h, num_samples);
         break;
       case 't':
-        r = tare (arguments->h);
+        r = liballuris_tare (arguments->h);
         break;
       case 1000:
-        clear_pos_peak (arguments->h);
+        liballuris_clear_pos_peak (arguments->h);
         break;
       case 1001:
-        clear_neg_peak (arguments->h);
+        liballuris_clear_neg_peak (arguments->h);
         break;
       case 1002:  //set-pos-limit
         value = strtol (arg, &endptr, 10);
@@ -222,7 +222,7 @@ int main(int argc, char** argv)
   //printf ("Device    = %s\n", arguments.device);
 
   // open device
-  r = open_alluris_device (arguments.ctx, arguments.device, &arguments.h);
+  r = liballuris_open_device (arguments.ctx, arguments.device, &arguments.h);
   if (r)
     {
       fprintf (stderr, "Couldn't open device '%s': %s\n", arguments.device, libusb_error_name (r));

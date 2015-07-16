@@ -43,7 +43,7 @@ int main()
       return EXIT_FAILURE;
     }
 
-  r = open_alluris_device (ctx, NULL, &h);
+  r = liballuris_open_device (ctx, NULL, &h);
   if (r)
     {
       fprintf (stderr, "Couldn't open device: %s\n", libusb_error_name (r));
@@ -71,12 +71,12 @@ int main()
 
   // debug_en_lvl3 (h);
   // enable streaming
-  cyclic_measurement (h, 1, block_size);
+  liballuris_cyclic_measurement (h, 1, block_size);
   int k;
 
   do
     {
-      int r = poll_measurement (h, tempx, block_size);
+      int r = liballuris_poll_measurement (h, tempx, block_size);
       if (r == LIBUSB_SUCCESS)
         fwrite (tempx, 4, block_size, stdout);
       //~ for (k=0; k < block_size; ++k)
@@ -92,10 +92,10 @@ int main()
   while (reply != 'c');
 
   // disable streaming
-  cyclic_measurement (h, 0, block_size);
+  liballuris_cyclic_measurement (h, 0, block_size);
 
   // empty read remaining data
-  clear_RX (h);
+  liballuris_clear_RX (h);
 
   libusb_release_interface (h, 0);
   libusb_close (h);

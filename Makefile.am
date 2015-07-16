@@ -1,5 +1,5 @@
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = liballuris cli doc
+SUBDIRS = liballuris cli doc examples
 
 style:
 	find . \( -name "*.c" -or -name "*.h" \) -exec sed -i 's/[[:space:]]*$$//' {} \;
