@@ -46,7 +46,7 @@ If not, see <http://www.gnu.org/licenses/>.
 //! Number of device which can be enumerated and simultaneously opened
 #define MAX_NUM_DEVICES 4
 //! Timeout in milliseconds while writing to the device
-#define SEND_TIMEOUT 10
+#define SEND_TIMEOUT 50
 
 /*!
  * \brief Timeout in milliseconds while reading from the device
@@ -78,6 +78,12 @@ struct alluris_device_description
   char product[30];       //!< product identification, for exmample "FMI-S Force-Gauge"
   char serial_number[30]; //!< serial number of device, for example "P.25412"
 };
+
+int liballuris_device_bulk_transfer (libusb_device_handle* dev_handle,
+                                     unsigned char* out_buf,
+                                     int out_buf_length,
+                                     unsigned char* in_buf,
+                                     int in_buf_length);
 
 int  liballuris_get_device_list (libusb_context* ctx, struct alluris_device_description* alluris_devs, size_t length, char read_serial);
 int  liballuris_open_device (libusb_context* ctx, const char* serial_number, libusb_device_handle** h);

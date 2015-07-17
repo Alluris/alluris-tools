@@ -53,11 +53,11 @@ static int char_to_int24 (unsigned char* in)
 }
 
 // send/receive wrapper
-static int device_bulk_transfer (libusb_device_handle* dev_handle,
-                                 unsigned char* out_buf,
-                                 int out_buf_length,
-                                 unsigned char* in_buf,
-                                 int in_buf_length)
+int liballuris_device_bulk_transfer (libusb_device_handle* dev_handle,
+                                     unsigned char* out_buf,
+                                     int out_buf_length,
+                                     unsigned char* in_buf,
+                                     int in_buf_length)
 {
   int actual;
   int r = 0;
@@ -285,7 +285,7 @@ int liballuris_serial_number (libusb_device_handle *dev_handle, char* buf, size_
   data[0] = 0x08;
   data[1] = 3;
   data[2] = 6;
-  int ret = device_bulk_transfer (dev_handle, data, 3, data, 6);
+  int ret = liballuris_device_bulk_transfer (dev_handle, data, 3, data, 6);
   if (ret == LIBUSB_SUCCESS)
     {
       short tmp = char_to_uint16 (data + 3);
@@ -318,7 +318,7 @@ int liballuris_digits (libusb_device_handle *dev_handle, int* v)
   data[0] = 0x08;
   data[1] = 3;
   data[2] = 3;
-  int ret = device_bulk_transfer (dev_handle, data, 3, data, 6);
+  int ret = liballuris_device_bulk_transfer (dev_handle, data, 3, data, 6);
   if (ret == LIBUSB_SUCCESS)
     {
       int tmp = char_to_int24 (data + 3);
@@ -344,7 +344,7 @@ int liballuris_raw_value (libusb_device_handle *dev_handle, int* value)
   data[0] = 0x46;
   data[1] = 3;
   data[2] = 3;
-  int ret = device_bulk_transfer (dev_handle, data, 3, data, 6);
+  int ret = liballuris_device_bulk_transfer (dev_handle, data, 3, data, 6);
   if (ret == LIBUSB_SUCCESS)
     *value = char_to_int24 (data + 3);
   return ret;
@@ -364,7 +364,7 @@ int liballuris_raw_pos_peak (libusb_device_handle *dev_handle, int* peak)
   data[0] = 0x46;
   data[1] = 3;
   data[2] = 4;
-  int ret = device_bulk_transfer (dev_handle, data, 3, data, 6);
+  int ret = liballuris_device_bulk_transfer (dev_handle, data, 3, data, 6);
   if (ret == LIBUSB_SUCCESS)
     *peak = char_to_int24 (data + 3);
   return ret;
@@ -384,7 +384,7 @@ int liballuris_raw_neg_peak (libusb_device_handle *dev_handle, int* peak)
   data[0] = 0x46;
   data[1] = 3;
   data[2] = 5;
-  int ret = device_bulk_transfer (dev_handle, data, 3, data, 6);
+  int ret = liballuris_device_bulk_transfer (dev_handle, data, 3, data, 6);
   if (ret == LIBUSB_SUCCESS)
     *peak = char_to_int24 (data + 3);
   return ret;
@@ -407,14 +407,14 @@ int liballuris_cyclic_measurement (libusb_device_handle *dev_handle, char enable
   data[2] = (enable)? 2: 0;
   data[3] = length;
 
-  return device_bulk_transfer (dev_handle, data, 4, data, 4);
+  return liballuris_device_bulk_transfer (dev_handle, data, 4, data, 4);
 }
 
 int liballuris_poll_measurement (libusb_device_handle *dev_handle, int* buf, size_t length)
 {
   size_t len = 5 + length * 3;
   unsigned char data[len];
-  int ret = device_bulk_transfer (dev_handle, data, 0, data, len);
+  int ret = liballuris_device_bulk_transfer (dev_handle, data, 0, data, len);
 
   //printf ("data[1] = %i\n", data[1]);
   // ToDo: Prüfen ob data[1] == len
@@ -438,7 +438,7 @@ int liballuris_tare (libusb_device_handle *dev_handle)
   data[0] = 0x15;
   data[1] = 3;
   data[2] = 0;
-  return device_bulk_transfer (dev_handle, data, 3, data, 3);
+  return liballuris_device_bulk_transfer (dev_handle, data, 3, data, 3);
 }
 
 int liballuris_clear_pos_peak (libusb_device_handle *dev_handle)
@@ -447,7 +447,7 @@ int liballuris_clear_pos_peak (libusb_device_handle *dev_handle)
   data[0] = 0x15;
   data[1] = 3;
   data[2] = 1;
-  return device_bulk_transfer (dev_handle, data, 3, data, 3);
+  return liballuris_device_bulk_transfer (dev_handle, data, 3, data, 3);
 }
 
 int liballuris_clear_neg_peak (libusb_device_handle *dev_handle)
@@ -456,7 +456,7 @@ int liballuris_clear_neg_peak (libusb_device_handle *dev_handle)
   data[0] = 0x15;
   data[1] = 3;
   data[2] = 2;
-  return device_bulk_transfer (dev_handle, data, 3, data, 3);
+  return liballuris_device_bulk_transfer (dev_handle, data, 3, data, 3);
 }
 
 /*
