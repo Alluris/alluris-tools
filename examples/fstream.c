@@ -28,7 +28,7 @@ If not, see <http://www.gnu.org/licenses/>.
 
 /*
  * Save the output to a file or pipe it to some program to evaluate it.
- * Use "nc -q0 localhost 9000 -e ./fstream -b" to send it via TCP
+ * Use nc -q0 localhost 9000 -c "./fstream -b" to send it via TCP
  *
  * For an example using GNU Octave see fstream_serv.m
  *
