@@ -4,7 +4,7 @@ Copyright (C) 2015 Alluris GmbH & Co. KG <weber@alluris.de>
 
 fstream -- f(ast)stream(ing)
 
-Capture values in peak mode with 900Hz and output it as binary int32
+Capture values in peak mode with 900Hz and output it as ASCII or binary int32
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,15 +28,17 @@ If not, see <http://www.gnu.org/licenses/>.
 
 /*
  * Save the output to a file or pipe it to some program to evaluate it.
- * Use "nc -q0 localhost 9000 -e ./fstream" to send it via TCP
+ * Use "nc -q0 localhost 9000 -e ./fstream -b" to send it via TCP
  *
  * For an example using GNU Octave see fstream_serv.m
  *
  * For an example using GNU Radio Companion see fstream_recv.grc
  */
 
-int main()
+int main(int argc, char** argv)
 {
+  char bin = (argc == 2 && !strcmp (argv [1], "-b"));
+
   libusb_context* ctx;
   libusb_device_handle* h;
 
@@ -76,22 +78,25 @@ int main()
 
   // enable streaming
   liballuris_cyclic_measurement (h, 1, block_size);
-  int k;
 
+  int k;
   do
     {
       int r = liballuris_poll_measurement (h, tempx, block_size);
       if (r == LIBUSB_SUCCESS)
-        fwrite (tempx, 4, block_size, stdout);
-      //~ for (k=0; k < block_size; ++k)
-      //~ printf ("%i\n", tempx[k]);
-      fflush (stdout);
+        {
+          if (bin)
+            fwrite (tempx, 4, block_size, stdout);
+          else
+            for (k=0; k < block_size; ++k)
+              printf ("%i\n", tempx[k]);
+          fflush (stdout);
+        }
 
       tret = poll (&fds, 1, 0);
       reply = 0;
       if (tret == 1)
         reply = getc(stdin);
-
     }
   while (reply != 'c');
 
