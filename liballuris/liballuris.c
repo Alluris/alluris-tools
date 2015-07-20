@@ -321,11 +321,9 @@ int liballuris_digits (libusb_device_handle *dev_handle, int* v)
   int ret = liballuris_device_bulk_transfer (dev_handle, data, 3, data, 6);
   if (ret == LIBUSB_SUCCESS)
     {
-      int tmp = char_to_int24 (data + 3);
-      if (tmp == -1)
+      *v = char_to_int24 (data + 3);
+      if (*v == -1)
         return LIBALLURIS_DEVICE_BUSY;
-      else
-        *v = tmp;
     }
   return ret;
 }
