@@ -459,28 +459,69 @@ int liballuris_clear_neg_peak (libusb_device_handle *dev_handle)
   return liballuris_device_bulk_transfer (dev_handle, data, 3, data, 3);
 }
 
-/*
-void ReqStartStopp (libusb_device_handle *dev_handle, char zStart)
+int liballuris_start_measurement (libusb_device_handle *dev_handle)
 {
   unsigned char data[3];
-  data[0]=0x1C;
-  data[1]=3;
-  data[2]=zStart;
+  data[0] = 0x1C;
+  data[1] = 3;
+  data[2] = 1; //start
+  return liballuris_device_bulk_transfer (dev_handle, data, 3, data, 3);
+}
 
-void ReqSetGrenzwert (libusb_device_handle *dev_handle, char id, int grenzpar)
+int liballuris_stop_measurement (libusb_device_handle *dev_handle)
+{
+  unsigned char data[3];
+  data[0] = 0x1C;
+  data[1] = 3;
+  data[2] = 0; //stop
+  return liballuris_device_bulk_transfer (dev_handle, data, 3, data, 3);
+}
+
+int liballuris_set_pos_limit (libusb_device_handle *dev_handle, int limit)
 {
   unsigned char data[6];
-  data[0]=0x18;
-  data[1]=4;
-  data[2]=id;
+  data[0] = 0x18;
+  data[1] = 6;
+  data[2] = 0; //maximum
+  memcpy (data+3, (unsigned char *) &limit, 3);
+  return liballuris_device_bulk_transfer (dev_handle, data, 6, data, 6);
+}
 
-int ReqGetGrenzwert (libusb_device_handle *dev_handle, char id)
+int liballuris_set_neg_limit (libusb_device_handle *dev_handle, int limit)
 {
-  unsigned char data[7];
-  data[0]=0x19;
-  data[1]=4;
-  data[2]=id;
+  unsigned char data[6];
+  data[0] = 0x18;
+  data[1] = 6;
+  data[2] = 1; //minimum
+  memcpy (data+3, (unsigned char *) &limit, 3);
+  return liballuris_device_bulk_transfer (dev_handle, data, 6, data, 6);
+}
 
+int liballuris_get_pos_limit (libusb_device_handle *dev_handle, int* limit)
+{
+  unsigned char data[6];
+  data[0] = 0x19;
+  data[1] = 6;
+  data[2] = 0; //maximum
+  int ret = liballuris_device_bulk_transfer (dev_handle, data, 6, data, 6);
+  if (ret == LIBUSB_SUCCESS)
+    *limit = char_to_int24 (data + 3);
+  return ret;
+}
+
+int liballuris_get_neg_limit (libusb_device_handle *dev_handle, int* limit)
+{
+  unsigned char data[6];
+  data[0] = 0x19;
+  data[1] = 6;
+  data[2] = 1; //minimum
+  int ret = liballuris_device_bulk_transfer (dev_handle, data, 6, data, 6);
+  if (ret == LIBUSB_SUCCESS)
+    *limit = char_to_int24 (data + 3);
+  return ret;
+}
+
+/*
 void ReqSetDigout (libusb_device_handle *dev_handle, char zDigital)
 {
   unsigned char data[7]; //um 1 größer als Antwort

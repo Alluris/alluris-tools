@@ -42,6 +42,8 @@ static struct argp_option options[] =
   {"device",       'd', "SERIAL",   0, "Connect to specific alluris device", 0},
   {"list",         'l', 0,          0, "List accessible devices", 0},
   {0, 0, 0, 0, "Measurement:", 1 },
+  {"start",        1006, 0,         0, "Start", 1 },
+  {"stop",         1007, 0,         0, "Stop", 1 },
   {"value",        'v', 0,          0, "Value", 1 },
   {"pos-peak",     'p', 0,          0, "Positive peak", 1 },
   {"neg-peak",     'n', 0,          0, "Negative peak", 1 },
@@ -181,13 +183,25 @@ parse_opt (int key, char *arg, struct argp_state *state)
         break;
       case 1002:  //set-pos-limit
         value = strtol (arg, &endptr, 10);
+        liballuris_set_pos_limit (arguments->h, value);
         break;
       case 1003:  //set-neg-limit
         value = strtol (arg, &endptr, 10);
+        liballuris_set_neg_limit (arguments->h, value);
         break;
-      case 1004:
+      case 1004: //get-pos-limit
+        liballuris_get_pos_limit (arguments->h, &value);
+        print_value (r, value);
         break;
-      case 1005:
+      case 1005: //get-neg-limit
+        liballuris_get_neg_limit (arguments->h, &value);
+        print_value (r, value);
+        break;
+      case 1006: //start
+        liballuris_start_measurement (arguments->h);
+        break;
+      case 1007: //stop
+        liballuris_stop_measurement (arguments->h);
         break;
       default:
         return ARGP_ERR_UNKNOWN;

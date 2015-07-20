@@ -42,7 +42,7 @@ If not, see <http://www.gnu.org/licenses/>.
 #ifndef liballuris_h
 #define liballuris_h
 
-//#define PRINT_DEBUG_MSG
+#define PRINT_DEBUG_MSG
 //! Number of device which can be enumerated and simultaneously opened
 #define MAX_NUM_DEVICES 4
 //! Timeout in milliseconds while writing to the device
@@ -103,4 +103,14 @@ int liballuris_poll_measurement (libusb_device_handle *dev_handle, int* buf, siz
 int liballuris_tare (libusb_device_handle *dev_handle);
 int liballuris_clear_pos_peak (libusb_device_handle *dev_handle);
 int liballuris_clear_neg_peak (libusb_device_handle *dev_handle);
+
+int liballuris_start_measurement (libusb_device_handle *dev_handle);
+int liballuris_stop_measurement (libusb_device_handle *dev_handle);
+
+int liballuris_set_pos_limit (libusb_device_handle *dev_handle, int limit);
+int liballuris_set_neg_limit (libusb_device_handle *dev_handle, int limit);
+
+int liballuris_get_pos_limit (libusb_device_handle *dev_handle, int* limit);
+int liballuris_get_neg_limit (libusb_device_handle *dev_handle, int* limit);
+
 #endif
