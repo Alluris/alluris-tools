@@ -42,20 +42,21 @@ If not, see <http://www.gnu.org/licenses/>.
 #ifndef liballuris_h
 #define liballuris_h
 
-#define PRINT_DEBUG_MSG
+//#define PRINT_DEBUG_MSG
 //! Number of device which can be enumerated and simultaneously opened
 #define MAX_NUM_DEVICES 4
 //! Timeout in milliseconds while writing to the device
-#define SEND_TIMEOUT 50
+#define SEND_TIMEOUT 100
 
 /*!
  * \brief Timeout in milliseconds while reading from the device
  *
  * The sampling frequency can be selected between 10Hz and 990Hz
  * Therefore the maximum delay until the measurement completes is 1/10Hz = 100ms.
- * Additional 10% -> 110ms
+ * Additional 50% -> 150ms
+ * FIXME: temporary increased to 500ms
  */
-#define RECEIVE_TIMEOUT 110
+#define RECEIVE_TIMEOUT 500
 
 //! liballuris specific errors
 enum liballuris_error
