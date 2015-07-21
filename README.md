@@ -52,13 +52,50 @@ Using other compilers and/or build systems should also be feasible.
 
 ## Building
 
+### Debian GNU/Linux and derivatives
 The typical steps after cloning the git repo are
+
 ```
 $ ./bootstrap
 $ ./configure
 $ make
 $ make install
 ```
+
+###Mac OS X
+
+You firstly need to install some build-tools
+
+```
+$ brew install libtool automake
+```
+
+
+Then continue as follows:
+
+
+```
+$ ./bootstrap_mac
+$ ./configure
+$ make
+$ make install
+```
+
+####Optional: For auto-building the documentation you'll also need [Doxygen](http://www.stack.nl/~dimitri/doxygen/)
+This will require some additional steps.
+
+If you install the Doxygen GUI binary, you have to link it for using it as CLI:
+
+```
+$ sudo ln -s /Applications/Doxygen.app/Contents/Resources/doxygen /usr/local/bin
+```
+The `dot`-dependency is also missing. Unfortunately, you need to change some permissions for the man-files before you can `brew` the containing `graphviz`-package.
+
+```
+$ sudo chmod 775 /usr/local/share/man/man3 /usr/local/share/man/man5 /usr/local/share/man/man7
+$ brew install graphviz
+```
+
 
 ## ToDo
 
