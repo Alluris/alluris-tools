@@ -257,6 +257,38 @@ int liballuris_open_device (libusb_context* ctx, const char* serial_number, libu
   return ret;
 }
 
+
+/*!
+ * \brief Open device with specified bus and device id.
+ * \param[in] bus id of device
+ * \param[in] device id of device
+ * \param[out] h storage for handle to communicate with the device
+ * \return 0 if successful else error code
+ */
+int liballuris_open_device_with_id (libusb_context* ctx, int bus, int device, libusb_device_handle** h)
+{
+  int k;
+  libusb_device *dev = NULL;
+  struct alluris_device_description alluris_devs[MAX_NUM_DEVICES];
+  int cnt = liballuris_get_device_list (ctx, alluris_devs, MAX_NUM_DEVICES, 0);
+
+  if (cnt >= 1)
+    {
+      for (k=0; k < cnt; k++)
+        if (   libusb_get_bus_number (alluris_devs[k].dev) == bus
+               && libusb_get_device_address (alluris_devs[k].dev) == device)
+          dev = alluris_devs[k].dev;
+    }
+
+  if (! dev)
+    //no device found
+    return LIBUSB_ERROR_NOT_FOUND;
+
+  int ret = libusb_open (dev, h);
+  liballuris_free_device_list (alluris_devs, MAX_NUM_DEVICES);
+  return ret;
+}
+
 void liballuris_clear_RX (libusb_device_handle* dev_handle)
 {
   int actual;

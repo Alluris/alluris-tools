@@ -34,37 +34,38 @@ static char doc[] =
   "Generic Alluris device control";
 
 /* A description of the arguments we accept. */
-static char args_doc[] = "--list | [--device=SERIAL] CMD1 CMD2";
+static char args_doc[] = "";
 
 /* The options we understand. */
 static struct argp_option options[] =
 {
-  {"device",       'd', "SERIAL",   0, "Connect to specific alluris device", 0},
-  {"list",         'l', 0,          0, "List accessible devices", 0},
+  {"list",         'l', 0,             0, "List accessible devices", 0},
+  {"serial",       1009, "SERIAL",     0, "Connect to specific alluris device using serial number. This only works if the device is stopped.", 0},
+  {NULL,           'b',  "Bus,Device", 0, "Connect to specific alluris device using bus and device id", 0},
   {0, 0, 0, 0, "Measurement:", 1 },
-  {"start",        1006, 0,         0, "Start", 1 },
-  {"stop",         1007, 0,         0, "Stop", 1 },
-  {"value",        'v', 0,          0, "Value", 1 },
-  {"digits",       1008, 0,         0, "Digits", 1 },
-  {"pos-peak",     'p', 0,          0, "Positive peak", 1 },
-  {"neg-peak",     'n', 0,          0, "Negative peak", 1 },
-  {"sample",       's', "NUM",      0, "Capture NUM values", 1 },
+  {"start",        1006, 0,            0, "Start", 1 },
+  {"stop",         1007, 0,            0, "Stop", 1 },
+  {"value",        'v', 0,             0, "Value", 1 },
+  {"digits",       1008, 0,            0, "Digits", 1 },
+  {"pos-peak",     'p', 0,             0, "Positive peak", 1 },
+  {"neg-peak",     'n', 0,             0, "Negative peak", 1 },
+  {"sample",       's', "NUM",         0, "Capture NUM values", 1 },
   {0, 0, 0, 0, "Tare:", 2 },
-  {"tare",         't', 0,          0, "Tare measurement", 2 },
-  {"clear-pos",    1000, 0,         0, "Clear positive peak", 2},
-  {"clear-neg",    1001, 0,         0, "Clear negative peak", 2},
+  {"tare",         't', 0,             0, "Tare measurement", 2 },
+  {"clear-pos",    1000, 0,            0, "Clear positive peak", 2},
+  {"clear-neg",    1001, 0,            0, "Clear negative peak", 2},
   {0, 0, 0, 0, "Settings:", 3 },
-  {"set-pos-limit", 1002, "P3",     0, "Param P3, positive limit", 3},
-  {"set-neg-limit", 1003, "P4",     0, "Param P4, negative limit", 3},
-  {"get-pos-limit", 1004, 0,        0, "Param P3, positive limit", 3},
-  {"get-neg-limit", 1005, 0,        0, "Param P4, negative limit", 3},
+  {"set-pos-limit", 1002, "P3",        0, "Param P3, positive limit", 3},
+  {"set-neg-limit", 1003, "P4",        0, "Param P4, negative limit", 3},
+  {"get-pos-limit", 1004, 0,           0, "Param P3, positive limit", 3},
+  {"get-neg-limit", 1005, 0,           0, "Param P4, negative limit", 3},
   { 0,0,0,0,0,0 }
 };
 
 /* Used by main to communicate with parse_opt. */
 struct arguments
 {
-  char *device;
+  //char *device;
   libusb_context* ctx;
   libusb_device_handle* h;
 };
@@ -117,6 +118,8 @@ static void print_multiple (libusb_device_handle *dev_handle, int num)
 static error_t
 parse_opt (int key, char *arg, struct argp_state *state)
 {
+  //printf ("DEBUG: key=%i, key=0x%x, key=%c\n", key, key, key);
+
   /* Get the input argument from argp_parse, which we
      know is a pointer to our arguments structure. */
   struct arguments *arguments = state->input;
@@ -136,8 +139,13 @@ parse_opt (int key, char *arg, struct argp_state *state)
 
       int k;
       printf ("Device list:\n");
+      printf ("Num Bus Device Product                   Serial\n");
       for (k=0; k < cnt; k++)
-        printf ("  # %2i: %s %s\n", k+1, alluris_devs[k].product, alluris_devs[k].serial_number);
+        printf ("%3i %03d    %03d %-25s %s\n", k+1,
+                libusb_get_bus_number(alluris_devs[k].dev),
+                libusb_get_device_address(alluris_devs[k].dev),
+                alluris_devs[k].product,
+                alluris_devs[k].serial_number);
 
       if (!cnt)
         printf ("No accessible device found");
@@ -148,9 +156,42 @@ parse_opt (int key, char *arg, struct argp_state *state)
       exit (0);
     }
 
-  if (key == 'd')
+  if (key == 1009)  // use specific serial number
     {
-      arguments->device = arg;
+      if (!arguments->h)
+        {
+          r = liballuris_open_device (arguments->ctx, arg, &arguments->h);
+          if (r)
+            {
+              fprintf (stderr, "Couldn't open device with serial='%s': %s\n", arg, libusb_error_name (r));
+              exit (EXIT_FAILURE);
+            }
+          state->next = state->argc;
+        }
+      return 0;
+    }
+
+  if (key == 'b')  // use specific bus and device id
+    {
+      // split "Bus,Device"
+      int bus = strtol (arg, &endptr, 10);
+      if (*endptr != ',')
+        {
+          fprintf (stderr, "Error: Wrong delimiter '%c'\n", *endptr);
+          exit (EXIT_FAILURE);
+        }
+      int device = strtol (++endptr, &endptr, 10);
+
+      if (!arguments->h)
+        {
+          r = liballuris_open_device_with_id (arguments->ctx, bus, device, &arguments->h);
+          if (r)
+            {
+              fprintf (stderr, "Couldn't open device with bus=%i and device=%i: %s\n", bus, device, libusb_error_name (r));
+              exit (EXIT_FAILURE);
+            }
+          state->next = state->argc;
+        }
       return 0;
     }
 
@@ -220,9 +261,15 @@ static struct argp argp = { options, parse_opt, args_doc, doc, 0, 0, 0};
 
 int main(int argc, char** argv)
 {
+  if (argc == 1)
+    {
+      fprintf (stderr, "ERROR: No commands.\n");
+      fprintf (stderr, "Try `gadc --help' or `gadc --usage' for more information.\n");
+      return EXIT_FAILURE;
+    }
+
   struct arguments arguments;
 
-  arguments.device       = NULL;
   arguments.ctx          = NULL;
   arguments.h            = NULL;
 
@@ -238,14 +285,15 @@ int main(int argc, char** argv)
   /* First parse to get optional device serial number or list devices*/
   argp_parse (&argp, argc, argv, ARGP_NO_ARGS | ARGP_IN_ORDER, 0, &arguments);
 
-  //printf ("Device    = %s\n", arguments.device);
-
-  // open device
-  r = liballuris_open_device (arguments.ctx, arguments.device, &arguments.h);
-  if (r)
+  // No devices opened so far so open the first available
+  if (! arguments.h)
     {
-      fprintf (stderr, "Couldn't open device '%s': %s\n", arguments.device, libusb_error_name (r));
-      return EXIT_FAILURE;
+      r = liballuris_open_device (arguments.ctx, NULL, &arguments.h);
+      if (r)
+        {
+          fprintf (stderr, "Couldn't open device: %s\n", libusb_error_name (r));
+          exit (EXIT_FAILURE);
+        }
     }
 
   r = libusb_claim_interface (arguments.h, 0);
@@ -257,8 +305,6 @@ int main(int argc, char** argv)
 
   // Second parse, now execute the commands
   argp_parse (&argp, argc, argv, ARGP_NO_ARGS | ARGP_IN_ORDER, 0, &arguments);
-
-  /************************************************************************************/
 
   //printf ("libusb_release_interface\n");
   libusb_release_interface (arguments.h, 0);
