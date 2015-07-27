@@ -43,20 +43,19 @@ If not, see <http://www.gnu.org/licenses/>.
 #define liballuris_h
 
 //#define PRINT_DEBUG_MSG
+
 //! Number of device which can be enumerated and simultaneously opened
 #define MAX_NUM_DEVICES 4
-//! Timeout in milliseconds while writing to the device
-#define SEND_TIMEOUT 100
 
-/*!
- * \brief Timeout in milliseconds while reading from the device
- *
- * The sampling frequency can be selected between 10Hz and 990Hz
- * Therefore the maximum delay until the measurement completes is 1/10Hz = 100ms.
- * Additional 50% -> 150ms
- * FIXME: temporary increased to 500ms
- */
-#define RECEIVE_TIMEOUT 500
+//! Default timeout in milliseconds while writing to the device
+#define DEFAULT_SEND_TIMEOUT 50
+
+//! Default timeout in milliseconds while reading from the device
+#define DEFAULT_RECEIVE_TIMEOUT 100
+
+//! Default buffer size. Should be multiple of wMaxPacketSize
+#define DEFAULT_SEND_REC_BUF_LEN 64
+static unsigned char com_buffer[DEFAULT_SEND_REC_BUF_LEN];
 
 //! liballuris specific errors
 enum liballuris_error
@@ -80,24 +79,31 @@ struct alluris_device_description
   char serial_number[30]; //!< serial number of device, for example "P.25412"
 };
 
+const char * liballuris_error_name (int error_code);
+
 int liballuris_device_bulk_transfer (libusb_device_handle* dev_handle,
-                                     unsigned char* out_buf,
-                                     int out_buf_length,
-                                     unsigned char* in_buf,
-                                     int in_buf_length);
+                                     const char* funcname,
+                                     int send_len,
+                                     unsigned int send_timeout,
+                                     int reply_len,
+                                     unsigned int receive_timeout);
 
 int liballuris_get_device_list (libusb_context* ctx, struct alluris_device_description* alluris_devs, size_t length, char read_serial);
 int liballuris_open_device (libusb_context* ctx, const char* serial_number, libusb_device_handle** h);
 int liballuris_open_device_with_id (libusb_context* ctx, int bus, int device, libusb_device_handle** h);
 void liballuris_free_device_list (struct alluris_device_description* alluris_devs, size_t length);
 
-void liballuris_clear_RX (libusb_device_handle* dev_handle);
+void liballuris_clear_RX (libusb_device_handle* dev_handle, unsigned int timeout);
 
 int liballuris_serial_number (libusb_device_handle *dev_handle, char* buf, size_t length);
 int liballuris_digits (libusb_device_handle *dev_handle, int* v);
 int liballuris_raw_value (libusb_device_handle *dev_handle, int* value);
 int liballuris_raw_pos_peak (libusb_device_handle *dev_handle, int* peak);
 int liballuris_raw_neg_peak (libusb_device_handle *dev_handle, int* peak);
+
+/* read and print state */
+int liballuris_read_state (libusb_device_handle *dev_handle, int* state, unsigned int timeout);
+void liballuris_print_state (libusb_device_handle *dev_handle, int state);
 
 int liballuris_cyclic_measurement (libusb_device_handle *dev_handle, char enable, size_t length);
 int liballuris_poll_measurement (libusb_device_handle *dev_handle, int* buf, size_t length);

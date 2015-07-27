@@ -52,76 +52,128 @@ static int char_to_int24 (unsigned char* in)
   return ret;
 }
 
+/*!
+ * Returns a constant NULL-terminated string with the ASCII name of a libusb
+ * or liballuris error code. The caller must not free() the returned string.
+ *
+ * \param error_code The \ref error code to return the name of.
+ * \returns The error name, or the string **UNKNOWN** if the value of
+ * error_code is not a known error code.
+ */
+const char * liballuris_error_name (int error_code)
+{
+  enum libusb_error error = error_code;
+
+  if (error < 0)
+    return libusb_error_name (error);
+  else
+    {
+      switch (error)
+        {
+        case LIBALLURIS_SUCCESS:
+          return "LIBALLURIS_SUCCESS";
+        case LIBALLURIS_MALFORMED_REPLY:
+          return "LIBALLURIS_MALFORMED_REPLY";
+        case LIBALLURIS_DEVICE_BUSY:
+          return "LIBALLURIS_DEVICE_BUSY";
+        }
+    }
+  return "**UNKNOWN**";
+}
+
+static void print_buffer (unsigned char* buf, int len)
+{
+  int k;
+  for (k=0; k < len; ++k)
+    {
+      printf ("0x%02x", buf[k]);
+      if (k < (len - 1))
+        printf (", ");
+    }
+  printf ("\n");
+}
+
 // send/receive wrapper
 int liballuris_device_bulk_transfer (libusb_device_handle* dev_handle,
-                                     unsigned char* out_buf,
-                                     int out_buf_length,
-                                     unsigned char* in_buf,
-                                     int in_buf_length)
+                                     const char* funcname,
+                                     int send_len,
+                                     unsigned int send_timeout,
+                                     int reply_len,
+                                     unsigned int receive_timeout)
 {
   int actual;
   int r = 0;
 
-  if (out_buf_length > 0)
+  if (send_len > DEFAULT_SEND_REC_BUF_LEN)
+    {
+      fprintf (stderr, "Error: Send len %i > receive buffer len %i. This looks like a programming error.\n", send_len, DEFAULT_SEND_REC_BUF_LEN);
+      exit (-1);
+    }
+
+  if (reply_len > DEFAULT_SEND_REC_BUF_LEN)
+    {
+      fprintf (stderr, "Error: Reply len %i > receive buffer len %i. This looks like a programming error.\n", reply_len, DEFAULT_SEND_REC_BUF_LEN);
+      exit (-1);
+    }
+
+  if (send_len > 0)
     {
       // check length in out_buf
-      assert (out_buf [1] == out_buf_length);
-      r = libusb_bulk_transfer (dev_handle, (0x1 | LIBUSB_ENDPOINT_OUT), out_buf, out_buf_length, &actual, SEND_TIMEOUT);
+      assert (com_buffer [1] == send_len);
+      r = libusb_bulk_transfer (dev_handle, (0x1 | LIBUSB_ENDPOINT_OUT), com_buffer, send_len, &actual, send_timeout);
 
 #ifdef PRINT_DEBUG_MSG
       if ( r == LIBUSB_SUCCESS)
         {
-          int k_dbgs;
-          printf ("Sent     %2i from %2i bytes: ", actual, out_buf_length);
-          for (k_dbgs=0; k_dbgs < actual; ++k_dbgs)
-            {
-              printf ("%i", out_buf[k_dbgs]);
-              if (k_dbgs < (actual - 1))
-                printf (", ");
-            }
-          printf ("\n");
+          printf ("%s sent %2i/%2i bytes: ", funcname, actual, send_len);
+          print_buffer (com_buffer, actual);
         }
 #endif
 
-      if (r != LIBUSB_SUCCESS || actual != out_buf_length)
+      if (r != LIBUSB_SUCCESS || actual != send_len)
         {
-          fprintf(stderr, "Write Error: '%s', wrote %i of %i bytes.\n", libusb_error_name(r), actual, out_buf_length);
+          fprintf(stderr, "Write error in '%s': '%s', wrote %i of %i bytes.\n", funcname, libusb_error_name(r), actual, send_len);
           return r;
         }
     }
 
-  r = libusb_bulk_transfer (dev_handle, 0x81 | LIBUSB_ENDPOINT_IN, in_buf, in_buf_length, &actual, RECEIVE_TIMEOUT);
+  if (reply_len > 0)
+    {
+      r = libusb_bulk_transfer (dev_handle, 0x81 | LIBUSB_ENDPOINT_IN, com_buffer, reply_len, &actual, receive_timeout);
 
 #ifdef PRINT_DEBUG_MSG
-  if ( r == LIBUSB_SUCCESS)
-    {
-      int k_dbgr;
-      printf ("Received %2i from %2i bytes: ", actual, in_buf_length);
-      for (k_dbgr=0; k_dbgr < actual; ++k_dbgr)
+      if ( r == LIBUSB_SUCCESS)
         {
-          printf ("%i", in_buf[k_dbgr]);
-          if (k_dbgr < (actual - 1))
-            printf (", ");
+          printf ("%s recv %2i/%2i bytes: ", funcname, actual, reply_len);
+          print_buffer (com_buffer, actual);
         }
-      printf ("\n");
-    }
 #endif
 
-  if (r != LIBUSB_SUCCESS || actual != in_buf_length)
-    {
-      fprintf(stderr, "Read Error: '%s', tried to read %i, got %i bytes.\n", libusb_error_name(r), in_buf_length, actual);
-      return r;
-    }
+      if (r != LIBUSB_SUCCESS || actual != reply_len)
+        {
+          if (r == LIBUSB_ERROR_OVERFLOW)
+            {
+              fprintf(stderr, "LIBUSB_ERROR_OVERFLOW in '%s': expected %i bytes but got more.\n", funcname, reply_len);
+              // Attention! You can't rely that data was written in in_buf
+              // See: http://libusb.sourceforge.net/api-1.0/packetoverflow.html
+              return r;
+            }
+          else
+            fprintf(stderr, "Read error in '%s': '%s', tried to read %i, got %i bytes.\n", funcname, libusb_error_name(r), reply_len, actual);
+        }
 
-  // check reply
-  if (in_buf[0] != out_buf[0]
-      || in_buf[1] != actual
-      || in_buf[2] != out_buf[2])
-    {
-      fprintf(stderr, "Error: Malformed reply header. Check physical connection and EMI.\n");
-      return LIBALLURIS_MALFORMED_REPLY;
+      // check reply
+      // FIXME
+      /*
+      if (in_buf[0] != out_buf[0]
+          || in_buf[1] != actual
+          || in_buf[2] != out_buf[2])
+        {
+          fprintf(stderr, "Error: Malformed reply header. Check physical connection and EMI.\n");
+          return LIBALLURIS_MALFORMED_REPLY;
+        }
+      */
     }
-
   return r;
 }
 
@@ -289,12 +341,12 @@ int liballuris_open_device_with_id (libusb_context* ctx, int bus, int device, li
   return ret;
 }
 
-void liballuris_clear_RX (libusb_device_handle* dev_handle)
+void liballuris_clear_RX (libusb_device_handle* dev_handle, unsigned int timeout)
 {
+  unsigned char data[64];
   int actual;
-  libusb_bulk_transfer (dev_handle, 0x81 | LIBUSB_ENDPOINT_IN, NULL, 0, &actual, 10);
-
-  //printf ("clear_RX: libusb_bulk_transfer returned '%s', actual = %i\n", libusb_error_name(r), actual);
+  int r = libusb_bulk_transfer (dev_handle, 0x81 | LIBUSB_ENDPOINT_IN, data, 64, &actual, timeout);
+  printf ("clear_RX: libusb_bulk_transfer returned '%s', actual = %i\n", libusb_error_name(r), actual);
 }
 
 /*!
@@ -313,18 +365,17 @@ void liballuris_clear_RX (libusb_device_handle* dev_handle)
  */
 int liballuris_serial_number (libusb_device_handle *dev_handle, char* buf, size_t length)
 {
-  unsigned char data[6];
-  data[0] = 0x08;
-  data[1] = 3;
-  data[2] = 6;
-  int ret = liballuris_device_bulk_transfer (dev_handle, data, 3, data, 6);
-  if (ret == LIBUSB_SUCCESS)
+  com_buffer[0] = 0x08;
+  com_buffer[1] = 3;
+  com_buffer[2] = 6;
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret == LIBALLURIS_SUCCESS)
     {
-      short tmp = char_to_uint16 (data + 3);
+      short tmp = char_to_uint16 (com_buffer + 3);
       if (tmp == -1)
         return LIBALLURIS_DEVICE_BUSY;
       else
-        snprintf (buf, length, "%c.%i", data[5] + 'A', tmp);
+        snprintf (buf, length, "%c.%i", com_buffer[5] + 'A', tmp);
     }
   return ret;
 }
@@ -346,14 +397,13 @@ int liballuris_serial_number (libusb_device_handle *dev_handle, char* buf, size_
  */
 int liballuris_digits (libusb_device_handle *dev_handle, int* v)
 {
-  unsigned char data[6];
-  data[0] = 0x08;
-  data[1] = 3;
-  data[2] = 3;
-  int ret = liballuris_device_bulk_transfer (dev_handle, data, 3, data, 6);
-  if (ret == LIBUSB_SUCCESS)
+  com_buffer[0] = 0x08;
+  com_buffer[1] = 3;
+  com_buffer[2] = 3;
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret == LIBALLURIS_SUCCESS)
     {
-      *v = char_to_int24 (data + 3);
+      *v = char_to_int24 (com_buffer + 3);
       if (*v == -1)
         return LIBALLURIS_DEVICE_BUSY;
     }
@@ -370,13 +420,12 @@ int liballuris_digits (libusb_device_handle *dev_handle, int* v)
  */
 int liballuris_raw_value (libusb_device_handle *dev_handle, int* value)
 {
-  unsigned char data[6];
-  data[0] = 0x46;
-  data[1] = 3;
-  data[2] = 3;
-  int ret = liballuris_device_bulk_transfer (dev_handle, data, 3, data, 6);
-  if (ret == LIBUSB_SUCCESS)
-    *value = char_to_int24 (data + 3);
+  com_buffer[0] = 0x46;
+  com_buffer[1] = 3;
+  com_buffer[2] = 3;
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret == LIBALLURIS_SUCCESS)
+    *value = char_to_int24 (com_buffer + 3);
   return ret;
 }
 
@@ -390,13 +439,12 @@ int liballuris_raw_value (libusb_device_handle *dev_handle, int* value)
  */
 int liballuris_raw_pos_peak (libusb_device_handle *dev_handle, int* peak)
 {
-  unsigned char data[6];
-  data[0] = 0x46;
-  data[1] = 3;
-  data[2] = 4;
-  int ret = liballuris_device_bulk_transfer (dev_handle, data, 3, data, 6);
-  if (ret == LIBUSB_SUCCESS)
-    *peak = char_to_int24 (data + 3);
+  com_buffer[0] = 0x46;
+  com_buffer[1] = 3;
+  com_buffer[2] = 4;
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret == LIBALLURIS_SUCCESS)
+    *peak = char_to_int24 (com_buffer + 3);
   return ret;
 }
 
@@ -410,14 +458,40 @@ int liballuris_raw_pos_peak (libusb_device_handle *dev_handle, int* peak)
  */
 int liballuris_raw_neg_peak (libusb_device_handle *dev_handle, int* peak)
 {
-  unsigned char data[6];
-  data[0] = 0x46;
-  data[1] = 3;
-  data[2] = 5;
-  int ret = liballuris_device_bulk_transfer (dev_handle, data, 3, data, 6);
-  if (ret == LIBUSB_SUCCESS)
-    *peak = char_to_int24 (data + 3);
+  com_buffer[0] = 0x46;
+  com_buffer[1] = 3;
+  com_buffer[2] = 5;
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret == LIBALLURIS_SUCCESS)
+    *peak = char_to_int24 (com_buffer + 3);
   return ret;
+}
+
+int liballuris_read_state (libusb_device_handle *dev_handle, int* state, unsigned int timeout)
+{
+  com_buffer[0] = 0x46;
+  com_buffer[1] = 3;
+  com_buffer[2] = 2;
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, timeout);
+  if (ret == LIBALLURIS_SUCCESS)
+    *state = char_to_int24 (com_buffer + 3);
+  return ret;
+}
+
+void liballuris_print_state (libusb_device_handle *dev_handle, int state)
+{
+  printf ("[%c] pos limit exceeded\n",     (state & 1 << 1)? 'X': ' ');
+  printf ("[%c] neg limit underrun\n",     (state & 1 << 2)? 'X': ' ');
+  printf ("[%c] peak mode active\n",       (state & 1 << 3)? 'X': ' ');
+  printf ("[%c] peak plus mode active\n",  (state & 1 << 4)? 'X': ' ');
+  printf ("[%c] peak minus mode active\n", (state & 1 << 5)? 'X': ' ');
+  printf ("[%c] memory active\n",          (state & 1 << 6)? 'X': ' ');
+  printf ("[%c] overload\n",               (state & 1 <<10)? 'X': ' ');
+  printf ("[%c] fracture\n",               (state & 1 <<11)? 'X': ' ');
+  printf ("[%c] mem\n",                    (state & 1 <<13)? 'X': ' ');
+  printf ("[%c] mem-conti\n",              (state & 1 <<14)? 'X': ' ');
+  printf ("[%c] grenz_option\n",           (state & 1 <<16)? 'X': ' ');
+  printf ("[%c] measurement running\n",    (state & 1 <<23)? 'X': ' ');
 }
 
 /*!
@@ -431,32 +505,48 @@ int liballuris_raw_neg_peak (libusb_device_handle *dev_handle, int* peak)
 int liballuris_cyclic_measurement (libusb_device_handle *dev_handle, char enable, size_t length)
 {
   //FIXME: Bereich für packetlen 1..19 prüfen -> error msg...
-  unsigned char data[4];
-  data[0] = 0x01;
-  data[1] = 4;
-  data[2] = (enable)? 2: 0;
-  data[3] = length;
+  com_buffer[0] = 0x01;
+  com_buffer[1] = 4;
+  com_buffer[3] = length;
 
-  return liballuris_device_bulk_transfer (dev_handle, data, 4, data, 4);
+  printf ("liballuris_cyclic_measurement enable=%i\n", enable);
+  int ret = 0;
+
+  if (enable)
+    {
+      com_buffer[2] = 2;
+      ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 4, DEFAULT_SEND_TIMEOUT, 4, DEFAULT_RECEIVE_TIMEOUT);
+    }
+  else
+    {
+      com_buffer[2] = 2;
+
+      // stop measurement
+      ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 4, DEFAULT_SEND_TIMEOUT, 4, 10);
+      if (ret == LIBALLURIS_SUCCESS)
+        // dummy read remaining values
+        liballuris_clear_RX (dev_handle, 500);
+    }
+  return ret;
 }
+
+/*
+ * Increased receive timeout:
+ * The sampling frequency can be selected between 10Hz and 990Hz
+ * Therefore the maximum delay until the measurement completes is 1/10Hz = 100ms.
+ * *2 = 200ms
+ */
 
 int liballuris_poll_measurement (libusb_device_handle *dev_handle, int* buf, size_t length)
 {
   size_t len = 5 + length * 3;
-  unsigned char data[len];
-  int ret = liballuris_device_bulk_transfer (dev_handle, data, 0, data, len);
-
-  //printf ("data[1] = %i\n", data[1]);
-  // ToDo: Prüfen ob data[1] == len
-  //       RAM_STATE_MACHINE auswerten
-
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 0, 0, len, 200);
   size_t k;
   for (k=0; k<length; k++)
-    buf[k] = char_to_int24 (data + 5 + k*3);
+    buf[k] = char_to_int24 (com_buffer + 5 + k*3);
 
   return ret;
 }
-
 
 /*!
  * \brief tare measurement
@@ -464,90 +554,133 @@ int liballuris_poll_measurement (libusb_device_handle *dev_handle, int* buf, siz
  */
 int liballuris_tare (libusb_device_handle *dev_handle)
 {
-  unsigned char data[3];
-  data[0] = 0x15;
-  data[1] = 3;
-  data[2] = 0;
-  return liballuris_device_bulk_transfer (dev_handle, data, 3, data, 3);
+  com_buffer[0] = 0x15;
+  com_buffer[1] = 3;
+  com_buffer[2] = 0;
+  return liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
 }
 
 int liballuris_clear_pos_peak (libusb_device_handle *dev_handle)
 {
-  unsigned char data[3];
-  data[0] = 0x15;
-  data[1] = 3;
-  data[2] = 1;
-  return liballuris_device_bulk_transfer (dev_handle, data, 3, data, 3);
+  com_buffer[0] = 0x15;
+  com_buffer[1] = 3;
+  com_buffer[2] = 1;
+  return liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
 }
 
 int liballuris_clear_neg_peak (libusb_device_handle *dev_handle)
 {
-  unsigned char data[3];
-  data[0] = 0x15;
-  data[1] = 3;
-  data[2] = 2;
-  return liballuris_device_bulk_transfer (dev_handle, data, 3, data, 3);
+  com_buffer[0] = 0x15;
+  com_buffer[1] = 3;
+  com_buffer[2] = 2;
+  return liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
 }
 
+/*!
+ * \brief Start measurement
+ *
+ * You may have to wait up to 500ms until you can read stable values with
+ * liballuris_raw_value().
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \return 0 if successful else error code
+ * \sa liballuris_stop_measurement
+ */
 int liballuris_start_measurement (libusb_device_handle *dev_handle)
 {
-  unsigned char data[3];
-  data[0] = 0x1C;
-  data[1] = 3;
-  data[2] = 1; //start
-  return liballuris_device_bulk_transfer (dev_handle, data, 3, data, 3);
+  com_buffer[0] = 0x1C;
+  com_buffer[1] = 3;
+  com_buffer[2] = 1; //start
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
+
+  if (ret == LIBALLURIS_SUCCESS)
+    {
+      int state;
+      int cnt=3;
+
+      // WORKAROUND: wait up to 3*200ms until measurement is running
+      do
+        {
+          //wait 200ms
+          usleep (200000);
+
+          ret = liballuris_read_state (dev_handle, &state, 1000);
+          if (ret == LIBUSB_SUCCESS)
+            {
+              // measurement running?
+              if (state & 0x800000)
+                return ret;
+              ret = LIBALLURIS_DEVICE_BUSY;
+            }
+        }
+      while (ret == LIBALLURIS_DEVICE_BUSY && cnt--);
+    }
+  return ret;
 }
 
 int liballuris_stop_measurement (libusb_device_handle *dev_handle)
 {
-  unsigned char data[3];
-  data[0] = 0x1C;
-  data[1] = 3;
-  data[2] = 0; //stop
-  return liballuris_device_bulk_transfer (dev_handle, data, 3, data, 3);
+  com_buffer[0] = 0x1C;
+  com_buffer[1] = 3;
+  com_buffer[2] = 0; //stop
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
+
+  if (ret == LIBUSB_SUCCESS)
+    {
+      //wait up to 1000ms until measurement is stopped
+      int state;
+      ret = liballuris_read_state (dev_handle, &state, 1000);
+      if (ret == LIBALLURIS_SUCCESS)
+        if (state & 0x800000)
+          {
+            fprintf (stderr, "Error: Stop measurement failed.\n");
+            return LIBALLURIS_DEVICE_BUSY;
+          }
+    }
+  return ret;
 }
 
 int liballuris_set_pos_limit (libusb_device_handle *dev_handle, int limit)
 {
-  unsigned char data[6];
-  data[0] = 0x18;
-  data[1] = 6;
-  data[2] = 0; //maximum
-  memcpy (data+3, (unsigned char *) &limit, 3);
-  return liballuris_device_bulk_transfer (dev_handle, data, 6, data, 6);
+  com_buffer[0] = 0x18;
+  com_buffer[1] = 6;
+  com_buffer[2] = 0; //maximum
+  memcpy (com_buffer+3, (unsigned char *) &limit, 3);
+
+  // Increased receive timeout due to EEPROM write operation
+  return liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 6, DEFAULT_SEND_TIMEOUT, 6, 500);
 }
 
 int liballuris_set_neg_limit (libusb_device_handle *dev_handle, int limit)
 {
-  unsigned char data[6];
-  data[0] = 0x18;
-  data[1] = 6;
-  data[2] = 1; //minimum
-  memcpy (data+3, (unsigned char *) &limit, 3);
-  return liballuris_device_bulk_transfer (dev_handle, data, 6, data, 6);
+  com_buffer[0] = 0x18;
+  com_buffer[1] = 6;
+  com_buffer[2] = 1; //minimum
+  memcpy (com_buffer+3, (unsigned char *) &limit, 3);
+
+  // Increased receive timeout due to EEPROM write operation
+  return liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 6, DEFAULT_SEND_TIMEOUT, 6, 500);
 }
 
 int liballuris_get_pos_limit (libusb_device_handle *dev_handle, int* limit)
 {
-  unsigned char data[6];
-  data[0] = 0x19;
-  data[1] = 6;
-  data[2] = 0; //maximum
-  int ret = liballuris_device_bulk_transfer (dev_handle, data, 6, data, 6);
-  if (ret == LIBUSB_SUCCESS)
-    *limit = char_to_int24 (data + 3);
+  com_buffer[0] = 0x19;
+  com_buffer[1] = 6;
+  com_buffer[2] = 0; //maximum
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 6, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret == LIBALLURIS_SUCCESS)
+    *limit = char_to_int24 (com_buffer + 3);
   return ret;
 }
 
 int liballuris_get_neg_limit (libusb_device_handle *dev_handle, int* limit)
 {
-  unsigned char data[6];
-  data[0] = 0x19;
-  data[1] = 6;
-  data[2] = 1; //minimum
-  int ret = liballuris_device_bulk_transfer (dev_handle, data, 6, data, 6);
-  if (ret == LIBUSB_SUCCESS)
-    *limit = char_to_int24 (data + 3);
+  com_buffer[0] = 0x19;
+  com_buffer[1] = 6;
+  com_buffer[2] = 1; //minimum
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 6, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret == LIBALLURIS_SUCCESS)
+    *limit = char_to_int24 (com_buffer + 3);
   return ret;
 }
 
@@ -555,7 +688,7 @@ int liballuris_get_neg_limit (libusb_device_handle *dev_handle, int* limit)
 void ReqSetDigout (libusb_device_handle *dev_handle, char zDigital)
 {
   unsigned char data[7]; //um 1 größer als Antwort
-  data[0] = 0x21;
-  data[1] = 3;
-  data[2] = zDigital;
+  com_buffer[0] = 0x21;
+  com_buffer[1] = 3;
+  com_buffer[2] = zDigital;
 */

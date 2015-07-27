@@ -104,7 +104,7 @@ int main(int argc, char** argv)
   liballuris_cyclic_measurement (h, 0, block_size);
 
   // empty read remaining data
-  liballuris_clear_RX (h);
+  liballuris_clear_RX (h, 500);
 
   libusb_release_interface (h, 0);
   libusb_close (h);
