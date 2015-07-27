@@ -83,36 +83,47 @@ static void print_value (int ret, int value)
     printf ("%i\n", value);
 }
 
-static void print_multiple (libusb_device_handle *dev_handle, int num)
+static int print_multiple (libusb_device_handle *dev_handle, int num)
 {
-  int block_size = num;
-  if (block_size > 19)
-    block_size = 19;
-
-  int tempx[block_size];
-
-  // FIXME: check if measurement is running before
-  // enabling data stream. Abort if device is idle
-
-  // enable streaming
-  liballuris_cyclic_measurement (dev_handle, 1, block_size);
-
-  while (num > 0)
+  // check if measurement is running
+  int state = 0;
+  int ret = liballuris_read_state (dev_handle, &state, 1000);
+  if (ret == LIBUSB_SUCCESS)
     {
-      //printf ("polling %i, %i left\n", block_size, num);
-      int r = liballuris_poll_measurement (dev_handle, tempx, block_size);
-      if (r == LIBUSB_SUCCESS)
+      if (state & 0x800000)
         {
-          int j = (num < block_size)? num : block_size;
-          int k;
-          for (k=0; k < j; ++k)
-            printf ("%i\n", tempx[k]);
-        }
-      num = num - block_size;
-    }
+          int block_size = num;
+          if (block_size > 19)
+            block_size = 19;
 
-  // disable streaming
-  liballuris_cyclic_measurement (dev_handle, 0, block_size);
+          int tempx[block_size];
+
+          // enable streaming
+          ret = liballuris_cyclic_measurement (dev_handle, 1, block_size);
+          while (!ret && num > 0)
+            {
+              //printf ("polling %i, %i left\n", block_size, num);
+              ret = liballuris_poll_measurement (dev_handle, tempx, block_size);
+              if (ret == LIBUSB_SUCCESS)
+                {
+                  int j = (num < block_size)? num : block_size;
+                  int k;
+                  for (k=0; k < j; ++k)
+                    printf ("%i\n", tempx[k]);
+                }
+              num = num - block_size;
+            }
+
+          // disable streaming
+          ret = liballuris_cyclic_measurement (dev_handle, 0, block_size);
+        }
+      else
+        {
+          fprintf (stderr, "Error: Measurement is not running. Please start it first..\n");
+          ret = LIBALLURIS_DEVICE_BUSY;
+        }
+    }
+  return ret;
 }
 
 /* Parse a single option. */
@@ -213,7 +224,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
         break;
       case 's':
         num_samples = strtol (arg, &endptr, 10);
-        print_multiple (arguments->h, num_samples);
+        r = print_multiple (arguments->h, num_samples);
         break;
       case 't':
         r = liballuris_tare (arguments->h);
@@ -330,18 +341,13 @@ int main(int argc, char** argv)
       fprintf(stderr, "Error executing commands: '%s'\n", liballuris_error_name (arguments.error));
       //empty read RX buffer
       fprintf(stderr, "Clearing RX buffer, ");
-      usleep (500000);
-      liballuris_clear_RX (arguments.h, 500);
+      usleep (200000);
+      liballuris_clear_RX (arguments.h, 200);
       fprintf(stderr, "closing application...\n");
     }
 
-//only for testing:
-  /*
   usleep (200000);
   liballuris_clear_RX (arguments.h, 200);
-  usleep (200000);
-  liballuris_clear_RX (arguments.h, 200);
-  */
 
   //printf ("libusb_release_interface\n");
   libusb_release_interface (arguments.h, 0);
