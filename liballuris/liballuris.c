@@ -94,7 +94,7 @@ static void print_buffer (unsigned char* buf, int len)
 }
 
 // send/receive wrapper
-int liballuris_device_bulk_transfer (libusb_device_handle* dev_handle,
+static int liballuris_device_bulk_transfer (libusb_device_handle* dev_handle,
                                      const char* funcname,
                                      int send_len,
                                      unsigned int send_timeout,

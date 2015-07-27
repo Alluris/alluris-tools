@@ -81,13 +81,6 @@ struct alluris_device_description
 
 const char * liballuris_error_name (int error_code);
 
-int liballuris_device_bulk_transfer (libusb_device_handle* dev_handle,
-                                     const char* funcname,
-                                     int send_len,
-                                     unsigned int send_timeout,
-                                     int reply_len,
-                                     unsigned int receive_timeout);
-
 int liballuris_get_device_list (libusb_context* ctx, struct alluris_device_description* alluris_devs, size_t length, char read_serial);
 int liballuris_open_device (libusb_context* ctx, const char* serial_number, libusb_device_handle** h);
 int liballuris_open_device_with_id (libusb_context* ctx, int bus, int device, libusb_device_handle** h);
