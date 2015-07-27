@@ -59,15 +59,19 @@ static struct argp_option options[] =
   {"set-neg-limit", 1003, "P4",        0, "Param P4, negative limit", 3},
   {"get-pos-limit", 1004, 0,           0, "Param P3, positive limit", 3},
   {"get-neg-limit", 1005, 0,           0, "Param P4, negative limit", 3},
+  {0, 0, 0, 0, "Misc:", 4 },
+  {"state",        1010, 0,            0, "Read RAM state", 4 },
+  {"sleep",        1011, "T",          0, "Sleep T milliseconds", 4 },
   { 0,0,0,0,0,0 }
+
 };
 
 /* Used by main to communicate with parse_opt. */
 struct arguments
 {
-  //char *device;
   libusb_context* ctx;
   libusb_device_handle* h;
+  int error;
 };
 
 // FIXME: Im Falle eines Fehlers, sollte libusb geschlossen und das Programm beendet werden
@@ -109,9 +113,6 @@ static void print_multiple (libusb_device_handle *dev_handle, int num)
 
   // disable streaming
   liballuris_cyclic_measurement (dev_handle, 0, block_size);
-
-  // empty read remaining data
-  liballuris_clear_RX (dev_handle);
 }
 
 /* Parse a single option. */
@@ -125,7 +126,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
   struct arguments *arguments = state->input;
 
   char *endptr = NULL;
-  int r;
+  int r = 0;
   int value, num_samples;
 
   if (key == 'l')
@@ -218,40 +219,57 @@ parse_opt (int key, char *arg, struct argp_state *state)
         r = liballuris_tare (arguments->h);
         break;
       case 1000:
-        liballuris_clear_pos_peak (arguments->h);
+        r = liballuris_clear_pos_peak (arguments->h);
         break;
       case 1001:
-        liballuris_clear_neg_peak (arguments->h);
+        r = liballuris_clear_neg_peak (arguments->h);
         break;
-      case 1002:  //set-pos-limit
+      case 1002:
         value = strtol (arg, &endptr, 10);
-        liballuris_set_pos_limit (arguments->h, value);
+        r = liballuris_set_pos_limit (arguments->h, value);
         break;
-      case 1003:  //set-neg-limit
+      case 1003:
         value = strtol (arg, &endptr, 10);
-        liballuris_set_neg_limit (arguments->h, value);
+        r = liballuris_set_neg_limit (arguments->h, value);
         break;
-      case 1004: //get-pos-limit
-        liballuris_get_pos_limit (arguments->h, &value);
+      case 1004:
+        r = liballuris_get_pos_limit (arguments->h, &value);
         print_value (r, value);
         break;
-      case 1005: //get-neg-limit
-        liballuris_get_neg_limit (arguments->h, &value);
+      case 1005:
+        r = liballuris_get_neg_limit (arguments->h, &value);
         print_value (r, value);
         break;
-      case 1006: //start
-        liballuris_start_measurement (arguments->h);
+      case 1006:
+        r = liballuris_start_measurement (arguments->h);
         break;
-      case 1007: //stop
-        liballuris_stop_measurement (arguments->h);
+      case 1007:
+        r = liballuris_stop_measurement (arguments->h);
         break;
-      case 1008: //digits
-        liballuris_digits (arguments->h, &value);
+      case 1008:
+        r = liballuris_digits (arguments->h, &value);
         print_value (r, value);
+        break;
+      case 1010:
+        r = liballuris_read_state (arguments->h, &value, DEFAULT_RECEIVE_TIMEOUT);
+        if (r == LIBUSB_SUCCESS)
+          liballuris_print_state (arguments->h, value);
+        break;
+      case 1011:
+        value = strtol (arg, &endptr, 10);
+        //printf ("sleep %s %i\n", arg, value);
+        usleep (value * 1000);
         break;
       default:
         return ARGP_ERR_UNKNOWN;
       }
+
+  if (r)
+    {
+      arguments->error = r;
+      // stop parsing
+      state->next = state->argc;
+    }
 
   return 0;
 }
@@ -272,6 +290,7 @@ int main(int argc, char** argv)
 
   arguments.ctx          = NULL;
   arguments.h            = NULL;
+  arguments.error        = 0;
 
   int r;
 
@@ -305,6 +324,24 @@ int main(int argc, char** argv)
 
   // Second parse, now execute the commands
   argp_parse (&argp, argc, argv, ARGP_NO_ARGS | ARGP_IN_ORDER, 0, &arguments);
+
+  if (arguments.error)
+    {
+      fprintf(stderr, "Error executing commands: '%s'\n", liballuris_error_name (arguments.error));
+      //empty read RX buffer
+      fprintf(stderr, "Clearing RX buffer, ");
+      usleep (500000);
+      liballuris_clear_RX (arguments.h, 500);
+      fprintf(stderr, "closing application...\n");
+    }
+
+//only for testing:
+  /*
+  usleep (200000);
+  liballuris_clear_RX (arguments.h, 200);
+  usleep (200000);
+  liballuris_clear_RX (arguments.h, 200);
+  */
 
   //printf ("libusb_release_interface\n");
   libusb_release_interface (arguments.h, 0);
