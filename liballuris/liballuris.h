@@ -62,9 +62,19 @@ static unsigned char in_buf[DEFAULT_RECV_BUF_LEN];
 //! liballuris specific errors
 enum liballuris_error
 {
-  LIBALLURIS_SUCCESS = 0,
+  LIBALLURIS_SUCCESS         = 0, //!< No error
   LIBALLURIS_MALFORMED_REPLY = 1, //!< The received reply contains a malformed header. This should never happen, check EMI and physical connection
-  LIBALLURIS_DEVICE_BUSY = 2      //!< Device is in a state where it cannot process the request
+  LIBALLURIS_DEVICE_BUSY     = 2, //!< Device is in a state where it cannot process the request
+  LIBALLURIS_OUT_OF_RANGE    = 3  //!< Parameter out of valid range
+};
+
+//! measurement mode
+enum liballuris_measurement_mode
+{
+  LIBALLURIS_MODE_STANDARD = 0, //!< 10Hz sampling rate
+  LIBALLURIS_MODE_PEAK     = 1, //!< 900Hz sampling rate
+  LIBALLURIS_MODE_PEAK_MAX = 2, //!< 900Hz sampling rate, maximum detection
+  LIBALLURIS_MODE_PEAK_MIN = 3  //!< 900Hz sampling rate, minimum detection
 };
 
 /*!
@@ -115,5 +125,9 @@ int liballuris_set_neg_limit (libusb_device_handle *dev_handle, int limit);
 
 int liballuris_get_pos_limit (libusb_device_handle *dev_handle, int* limit);
 int liballuris_get_neg_limit (libusb_device_handle *dev_handle, int* limit);
+
+int liballuris_set_mode (libusb_device_handle *dev_handle, enum liballuris_measurement_mode mode);
+int liballuris_get_mode (libusb_device_handle *dev_handle, enum liballuris_measurement_mode *mode);
+
 
 #endif

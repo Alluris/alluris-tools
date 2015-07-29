@@ -59,6 +59,8 @@ static struct argp_option options[] =
   {"set-neg-limit", 1003, "P4",        0, "Param P4, negative limit", 3},
   {"get-pos-limit", 1004, 0,           0, "Param P3, positive limit", 3},
   {"get-neg-limit", 1005, 0,           0, "Param P4, negative limit", 3},
+  {"set-mode",      1012, "MODE",      0, "Measurement mode 0=std, 1=peak, 2=peak+, 3=peak-", 3},
+  {"get-mode",      1013, 0,           0, "Measurement mode 0=std, 1=peak, 2=peak+, 3=peak-", 3},
   {0, 0, 0, 0, "Misc:", 4 },
   {"state",        1010, 0,            0, "Read RAM state", 4 },
   {"sleep",        1011, "T",          0, "Sleep T milliseconds", 4 },
@@ -111,6 +113,8 @@ static int print_multiple (libusb_device_handle *dev_handle, int num)
                   for (k=0; k < j; ++k)
                     printf ("%i\n", tempx[k]);
                 }
+              else
+                return ret;
               num = num - block_size;
             }
 
@@ -271,6 +275,14 @@ parse_opt (int key, char *arg, struct argp_state *state)
         //printf ("sleep %s %i\n", arg, value);
         usleep (value * 1000);
         break;
+      case 1012:
+        value = strtol (arg, &endptr, 10);
+        r = liballuris_set_mode (arguments->h, value);
+        break;
+      case 1013:
+        r = liballuris_get_mode (arguments->h, &value);
+        print_value (r, value);
+        break;
       default:
         return ARGP_ERR_UNKNOWN;
       }
@@ -339,15 +351,19 @@ int main(int argc, char** argv)
   if (arguments.error)
     {
       fprintf(stderr, "Error executing commands: '%s'\n", liballuris_error_name (arguments.error));
+
+      // disable streaming
+      liballuris_cyclic_measurement (arguments.h, 0, 0);
+
       //empty read RX buffer
       fprintf(stderr, "Clearing RX buffer, ");
-      usleep (200000);
-      liballuris_clear_RX (arguments.h, 200);
+      usleep (500000);
+      liballuris_clear_RX (arguments.h, 1000);
       fprintf(stderr, "closing application...\n");
     }
 
-  usleep (200000);
-  liballuris_clear_RX (arguments.h, 200);
+  //usleep (500000);
+  //liballuris_clear_RX (arguments.h, 500);
 
   //printf ("libusb_release_interface\n");
   libusb_release_interface (arguments.h, 0);
