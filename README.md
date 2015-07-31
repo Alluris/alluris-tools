@@ -30,6 +30,7 @@ ACTION=="add", ATTRS{idVendor}=="04d8", ATTRS{idProduct}=="fc30", MODE="0660", O
 
 * libusb 1.0 (http://www.libusb.org/)
 * doxygen (for the manual)
+* bats (https://github.com/sstephenson/bats if you want to run the tests)
 
 ### Debian GNU/Linux and derivatives
 
