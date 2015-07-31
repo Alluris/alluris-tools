@@ -80,7 +80,7 @@ struct arguments
 static void print_value (int ret, int value)
 {
   if (ret != LIBUSB_SUCCESS)
-    fprintf(stderr, "Error: '%s'\n", libusb_error_name (ret));
+    fprintf(stderr, "Error: '%s'\n", liballuris_error_name (ret));
   else
     printf ("%i\n", value);
 }
@@ -180,7 +180,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
           r = liballuris_open_device (arguments->ctx, arg, &arguments->h);
           if (r)
             {
-              fprintf (stderr, "Couldn't open device with serial='%s': %s\n", arg, libusb_error_name (r));
+              fprintf (stderr, "Couldn't open device with serial='%s': %s\n", arg, liballuris_error_name (r));
               exit (EXIT_FAILURE);
             }
           state->next = state->argc;
@@ -204,7 +204,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
           r = liballuris_open_device_with_id (arguments->ctx, bus, device, &arguments->h);
           if (r)
             {
-              fprintf (stderr, "Couldn't open device with bus=%i and device=%i: %s\n", bus, device, libusb_error_name (r));
+              fprintf (stderr, "Couldn't open device with bus=%i and device=%i: %s\n", bus, device, liballuris_error_name (r));
               exit (EXIT_FAILURE);
             }
           state->next = state->argc;
@@ -319,7 +319,7 @@ int main(int argc, char** argv)
   int r = libusb_init (&arguments.ctx);
   if (r < 0)
     {
-      fprintf (stderr, "Couldn't init libusb %s\n", libusb_error_name (r));
+      fprintf (stderr, "Couldn't init libusb %s\n", liballuris_error_name (r));
       return EXIT_FAILURE;
     }
 
@@ -331,14 +331,14 @@ int main(int argc, char** argv)
     {
       r = liballuris_open_device (arguments.ctx, NULL, &arguments.h);
       if (r)
-        fprintf (stderr, "xCouldn't open device: %s\n", libusb_error_name (r));
+        fprintf (stderr, "xCouldn't open device: %s\n", liballuris_error_name (r));
     }
 
   if (arguments.h)
     {
       r = libusb_claim_interface (arguments.h, 0);
       if (r)
-        fprintf (stderr, "xCouldn't claim interface: %s\n", libusb_error_name (r));
+        fprintf (stderr, "xCouldn't claim interface: %s\n", liballuris_error_name (r));
       else
         {
           // Second parse, now execute the commands
@@ -361,12 +361,11 @@ int main(int argc, char** argv)
               liballuris_clear_RX (arguments.h, 1000);
               fprintf(stderr, "closing application...\n");
             }
+          printf ("libusb_release_interface\n");
+          libusb_release_interface (arguments.h, 0);
         }
+      printf ("libusb_close\n");
+      libusb_close (arguments.h);
     }
-
-  //printf ("libusb_release_interface\n");
-  libusb_release_interface (arguments.h, 0);
-  //printf ("libusb_close\n");
-  libusb_close (arguments.h);
   return r;
 }
