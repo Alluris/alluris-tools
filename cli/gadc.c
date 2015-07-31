@@ -331,7 +331,7 @@ int main(int argc, char** argv)
     {
       r = liballuris_open_device (arguments.ctx, NULL, &arguments.h);
       if (r)
-        fprintf (stderr, "xCouldn't open device: %s\n", liballuris_error_name (r));
+        fprintf (stderr, "Couldn't open device: %s\n", liballuris_error_name (r));
     }
 
   if (arguments.h)
@@ -361,10 +361,10 @@ int main(int argc, char** argv)
               liballuris_clear_RX (arguments.h, 1000);
               fprintf(stderr, "closing application...\n");
             }
-          printf ("libusb_release_interface\n");
+          //printf ("libusb_release_interface\n");
           libusb_release_interface (arguments.h, 0);
         }
-      printf ("libusb_close\n");
+      //printf ("libusb_close\n");
       libusb_close (arguments.h);
     }
   return r;
