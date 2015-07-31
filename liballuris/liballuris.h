@@ -77,6 +77,41 @@ enum liballuris_measurement_mode
   LIBALLURIS_MODE_PEAK_MIN = 3  //!< 900Hz sampling rate, minimum detection
 };
 
+//FIXME: add documentation, update liballuris_print_state
+struct liballuris_state
+{
+  unsigned char dummy0 : 1;
+  unsigned char pos_limit_exceeded    : 1; //!< Force > positive limit
+  unsigned char neg_limit_underrun    : 1; //!< Force < negative limit
+  unsigned char some_peak_mode_active : 1;
+  unsigned char peak_plus_active : 1;
+  unsigned char peak_minus_active : 1;
+  unsigned char mem_active : 1;
+  unsigned char dummy7 : 1;
+  unsigned char dummy8 : 1;
+  unsigned char dummy9 : 1;
+  unsigned char overload : 1;
+  unsigned char fracture : 1;
+  unsigned char dummy12 : 1;
+  unsigned char mem : 1;
+  unsigned char mem_conti: 1;
+  unsigned char dummy15 : 1;
+  unsigned char grenz_option : 1;
+  unsigned char dummy17 : 1;
+  unsigned char dummy18 : 1;
+  unsigned char dummy19 : 1;
+  unsigned char dummy20 : 1;
+  unsigned char dummy21 : 1;
+  unsigned char dummy22 : 1;
+  unsigned char measuring : 1;
+};
+
+union __liballuris_state__
+{
+  struct liballuris_state bits;
+  unsigned int _int;
+};
+
 /*!
  * \brief composition of libusdb device and alluris device informations
  *
@@ -107,8 +142,8 @@ int liballuris_raw_pos_peak (libusb_device_handle *dev_handle, int* peak);
 int liballuris_raw_neg_peak (libusb_device_handle *dev_handle, int* peak);
 
 /* read and print state */
-int liballuris_read_state (libusb_device_handle *dev_handle, int* state, unsigned int timeout);
-void liballuris_print_state (libusb_device_handle *dev_handle, int state);
+int liballuris_read_state (libusb_device_handle *dev_handle, struct liballuris_state* state, unsigned int timeout);
+void liballuris_print_state (libusb_device_handle *dev_handle, struct liballuris_state state);
 
 int liballuris_cyclic_measurement (libusb_device_handle *dev_handle, char enable, size_t length);
 int liballuris_poll_measurement (libusb_device_handle *dev_handle, int* buf, size_t length);

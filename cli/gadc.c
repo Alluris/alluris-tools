@@ -88,11 +88,11 @@ static void print_value (int ret, int value)
 static int print_multiple (libusb_device_handle *dev_handle, int num)
 {
   // check if measurement is running
-  int state = 0;
+  struct liballuris_state state;
   int ret = liballuris_read_state (dev_handle, &state, 1000);
   if (ret == LIBUSB_SUCCESS)
     {
-      if (state & 0x800000)
+      if (state.measuring)
         {
           int block_size = num;
           if (block_size > 19)
@@ -143,6 +143,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
   char *endptr = NULL;
   int r = 0;
   int value, num_samples;
+  struct liballuris_state device_state;
 
   if (key == 'l')
     {
@@ -164,7 +165,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
                 alluris_devs[k].serial_number);
 
       if (!cnt)
-        printf ("No accessible device found");
+        fprintf (stderr, "No accessible device found\n");
 
       // free device list
       liballuris_free_device_list (alluris_devs, MAX_NUM_DEVICES);
@@ -266,9 +267,9 @@ parse_opt (int key, char *arg, struct argp_state *state)
         print_value (r, value);
         break;
       case 1010:
-        r = liballuris_read_state (arguments->h, &value, DEFAULT_RECEIVE_TIMEOUT);
+        r = liballuris_read_state (arguments->h, &device_state, DEFAULT_RECEIVE_TIMEOUT);
         if (r == LIBUSB_SUCCESS)
-          liballuris_print_state (arguments->h, value);
+          liballuris_print_state (arguments->h, device_state);
         break;
       case 1011:
         value = strtol (arg, &endptr, 10);
@@ -315,9 +316,7 @@ int main(int argc, char** argv)
   arguments.h            = NULL;
   arguments.error        = 0;
 
-  int r;
-
-  r = libusb_init (&arguments.ctx);
+  int r = libusb_init (&arguments.ctx);
   if (r < 0)
     {
       fprintf (stderr, "Couldn't init libusb %s\n", libusb_error_name (r));
@@ -332,42 +331,42 @@ int main(int argc, char** argv)
     {
       r = liballuris_open_device (arguments.ctx, NULL, &arguments.h);
       if (r)
+        fprintf (stderr, "xCouldn't open device: %s\n", libusb_error_name (r));
+    }
+
+  if (arguments.h)
+    {
+      r = libusb_claim_interface (arguments.h, 0);
+      if (r)
+        fprintf (stderr, "xCouldn't claim interface: %s\n", libusb_error_name (r));
+      else
         {
-          fprintf (stderr, "Couldn't open device: %s\n", libusb_error_name (r));
-          exit (EXIT_FAILURE);
+          // Second parse, now execute the commands
+          argp_parse (&argp, argc, argv, ARGP_NO_ARGS | ARGP_IN_ORDER, 0, &arguments);
+
+          if (arguments.error)
+            {
+              fprintf(stderr, "Error executing commands: '%s'\n", liballuris_error_name (arguments.error));
+              r = arguments.error;
+
+              // cleanup after error
+              usleep (500000);
+              liballuris_clear_RX (arguments.h, 1000);
+
+              // disable streaming
+              liballuris_cyclic_measurement (arguments.h, 0, 0);
+
+              //empty read RX buffer
+              fprintf(stderr, "Clearing RX buffer, ");
+              liballuris_clear_RX (arguments.h, 1000);
+              fprintf(stderr, "closing application...\n");
+            }
         }
     }
-
-  r = libusb_claim_interface (arguments.h, 0);
-  if (r)
-    {
-      fprintf (stderr, "Couldn't claim interface: %s\n", libusb_error_name (r));
-      return EXIT_FAILURE;
-    }
-
-  // Second parse, now execute the commands
-  argp_parse (&argp, argc, argv, ARGP_NO_ARGS | ARGP_IN_ORDER, 0, &arguments);
-
-  if (arguments.error)
-    {
-      fprintf(stderr, "Error executing commands: '%s'\n", liballuris_error_name (arguments.error));
-
-      // disable streaming
-      liballuris_cyclic_measurement (arguments.h, 0, 0);
-
-      //empty read RX buffer
-      fprintf(stderr, "Clearing RX buffer, ");
-      usleep (500000);
-      liballuris_clear_RX (arguments.h, 1000);
-      fprintf(stderr, "closing application...\n");
-    }
-
-  //usleep (500000);
-  //liballuris_clear_RX (arguments.h, 500);
 
   //printf ("libusb_release_interface\n");
   libusb_release_interface (arguments.h, 0);
   //printf ("libusb_close\n");
   libusb_close (arguments.h);
-  return EXIT_SUCCESS;
+  return r;
 }

@@ -165,7 +165,8 @@ static int liballuris_device_bulk_transfer (libusb_device_handle* dev_handle,
         }
 
       // check reply
-      if (send_len > 0
+      if (!r
+          && send_len > 0
           && (in_buf[0] != out_buf[0]
               ||  in_buf[1] != actual))
         {
@@ -244,11 +245,11 @@ int liballuris_get_device_list (libusb_context* ctx, struct alluris_device_descr
                       libusb_close (h);
                     }
                   else
-                    fprintf (stderr, "Couldn't claim interface: %s\n", libusb_error_name(r));
+                    fprintf (stderr, "liballuris_get_device_list: Couldn't claim interface: %s\n", libusb_error_name(r));
 
                 }
               else
-                fprintf (stderr, "Couldn't open device: %s\n", libusb_error_name(r));
+                fprintf (stderr, "liballuris_get_device_list: Couldn't open device: %s\n", libusb_error_name(r));
             }
           else
             // unref non Alluris device
@@ -345,7 +346,9 @@ void liballuris_clear_RX (libusb_device_handle* dev_handle, unsigned int timeout
   unsigned char data[64];
   int actual;
   int r = libusb_bulk_transfer (dev_handle, 0x81 | LIBUSB_ENDPOINT_IN, data, 64, &actual, timeout);
+#ifdef PRINT_DEBUG_MSG
   printf ("clear_RX: libusb_bulk_transfer returned '%s', actual = %i\n", libusb_error_name(r), actual);
+#endif
 }
 
 /*!
@@ -466,7 +469,7 @@ int liballuris_raw_neg_peak (libusb_device_handle *dev_handle, int* peak)
   return ret;
 }
 
-int liballuris_read_state (libusb_device_handle *dev_handle, int* state, unsigned int timeout)
+int liballuris_read_state (libusb_device_handle *dev_handle, struct liballuris_state* state, unsigned int timeout)
 {
   out_buf[0] = 0x46;
   out_buf[1] = 3;
@@ -478,24 +481,28 @@ int liballuris_read_state (libusb_device_handle *dev_handle, int* state, unsigne
 
   int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, timeout);
   if (ret == LIBALLURIS_SUCCESS)
-    *state = char_to_int24 (in_buf + 3);
+    {
+      union __liballuris_state__ tmp;
+      tmp._int = char_to_int24 (in_buf + 3);
+      *state = tmp.bits;
+    }
   return ret;
 }
 
-void liballuris_print_state (libusb_device_handle *dev_handle, int state)
+void liballuris_print_state (libusb_device_handle *dev_handle, struct liballuris_state state)
 {
-  printf ("[%c] pos limit exceeded\n",     (state & 1 << 1)? 'X': ' ');
-  printf ("[%c] neg limit underrun\n",     (state & 1 << 2)? 'X': ' ');
-  printf ("[%c] peak mode active\n",       (state & 1 << 3)? 'X': ' ');
-  printf ("[%c] peak plus mode active\n",  (state & 1 << 4)? 'X': ' ');
-  printf ("[%c] peak minus mode active\n", (state & 1 << 5)? 'X': ' ');
-  printf ("[%c] memory active\n",          (state & 1 << 6)? 'X': ' ');
-  printf ("[%c] overload\n",               (state & 1 <<10)? 'X': ' ');
-  printf ("[%c] fracture\n",               (state & 1 <<11)? 'X': ' ');
-  printf ("[%c] mem\n",                    (state & 1 <<13)? 'X': ' ');
-  printf ("[%c] mem-conti\n",              (state & 1 <<14)? 'X': ' ');
-  printf ("[%c] grenz_option\n",           (state & 1 <<16)? 'X': ' ');
-  printf ("[%c] measurement running\n",    (state & 1 <<23)? 'X': ' ');
+  printf ("[%c] pos limit exceeded\n",     (state.pos_limit_exceeded)? 'X': ' ');
+  printf ("[%c] neg limit underrun\n",     (state.neg_limit_underrun)? 'X': ' ');
+  printf ("[%c] peak mode active\n",       (state.some_peak_mode_active)? 'X': ' ');
+  printf ("[%c] peak plus mode active\n",  (state.peak_plus_active)? 'X': ' ');
+  printf ("[%c] peak minus mode active\n", (state.peak_minus_active)? 'X': ' ');
+  printf ("[%c] memory active\n",          (state.mem_active)? 'X': ' ');
+  printf ("[%c] overload\n",               (state.overload)? 'X': ' ');
+  printf ("[%c] fracture\n",               (state.fracture)? 'X': ' ');
+  printf ("[%c] mem\n",                    (state.mem)? 'X': ' ');
+  printf ("[%c] mem-conti\n",              (state.mem_conti)? 'X': ' ');
+  printf ("[%c] grenz_option\n",           (state.grenz_option)? 'X': ' ');
+  printf ("[%c] measurement running\n",    (state.measuring)? 'X': ' ');
 }
 
 /*!
@@ -590,25 +597,23 @@ int liballuris_start_measurement (libusb_device_handle *dev_handle)
 
   if (ret == LIBALLURIS_SUCCESS)
     {
-      int state;
-      int cnt=3;
+      // The device may take up to 600ms until the measurment is running.
+      // (for example if a automatic tare is parametrized at start of measurement)
+      // -> wait for it
+      int timeout=20; // 20 * 20ms
+      struct liballuris_state state;
 
-      // WORKAROUND: wait up to 3*200ms until measurement is running
       do
         {
-          //wait 200ms
-          usleep (200000);
-
-          ret = liballuris_read_state (dev_handle, &state, 1000);
-          if (ret == LIBUSB_SUCCESS)
-            {
-              // measurement running?
-              if (state & 0x800000)
-                return ret;
-              ret = LIBALLURIS_DEVICE_BUSY;
-            }
+          timeout--;
+          ret = liballuris_read_state (dev_handle, &state, 600);
+          if (! state.measuring)
+            usleep (20000);
         }
-      while (ret == LIBALLURIS_DEVICE_BUSY && cnt--);
+      while (!ret && timeout && !state.measuring);
+
+      if (! timeout)
+        ret = LIBALLURIS_DEVICE_BUSY;
     }
   return ret;
 }
@@ -622,15 +627,20 @@ int liballuris_stop_measurement (libusb_device_handle *dev_handle)
 
   if (ret == LIBUSB_SUCCESS)
     {
-      //wait up to 1000ms until measurement is stopped
-      int state;
-      ret = liballuris_read_state (dev_handle, &state, 1000);
-      if (ret == LIBALLURIS_SUCCESS)
-        if (state & 0x800000)
-          {
-            fprintf (stderr, "Error: Stop measurement failed.\n");
-            return LIBALLURIS_DEVICE_BUSY;
-          }
+      // the device may take approximately 100ms (1/10Hz) until the measurment is stopped.
+      int timeout = 10; // 10 * 20ms
+      struct liballuris_state state;
+      do
+        {
+          timeout--;
+          ret = liballuris_read_state (dev_handle, &state, 200);
+          if (state.measuring)
+            usleep (20000);
+        }
+      while (!ret && timeout && state.measuring);
+
+      if (! timeout)
+        ret = LIBALLURIS_DEVICE_BUSY;
     }
   return ret;
 }
