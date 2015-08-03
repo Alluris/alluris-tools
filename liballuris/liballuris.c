@@ -637,7 +637,7 @@ int liballuris_stop_measurement (libusb_device_handle *dev_handle)
       do
         {
           timeout--;
-          ret = liballuris_read_state (dev_handle, &state, 200);
+          ret = liballuris_read_state (dev_handle, &state, 400);
           if (state.measuring)
             usleep (20000);
         }

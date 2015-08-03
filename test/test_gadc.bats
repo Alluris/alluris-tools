@@ -39,7 +39,7 @@ GADC=../cli/gadc
   [ "$status" -eq 0 ]
 }
 
-## Check limits
+## Check limits with standard mode (10 Hz sampling freq.)
 
 @test "Set positive limit (P3) = 135" {
   run $GADC --set-pos-limit 135
@@ -63,16 +63,40 @@ GADC=../cli/gadc
   [ "$output" -eq -42 ]
 }
 
-## Start and stop
+## Start and stop with standard mode (10 Hz sampling rate)
 
 @test "Start measurement" {
   run $GADC --start
   [ "$status" -eq 0 ]
 }
 
+@test "Capture and check value" {
+  run $GADC -v
+  [ "$status" -eq 0 ]
+  [ "$output" -ge -10 ] && [ "$output" -le 10 ]
+}
+
 @test "Stop measurement" {
   run $GADC --stop
   [ "$status" -eq 0 ]
+}
+
+@test "Start measurement, read one value, check if it's in the range -10..10, stop measurement" {
+  run $GADC --start -v --stop
+  [ "$status" -eq 0 ]
+  [ "$output" -ge -10 ] && [ "$output" -le 10 ]
+}
+
+## Switch to peak mode (900 Hz sampling rate)
+@test "Set mode = 1" {
+  run $GADC --set-mode 1
+  [ "$status" -eq 0 ]
+}
+
+@test "Check mode == 1" {
+  run $GADC --get-mode
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 1 ]
 }
 
 @test "Start measurement, read one value, check if it's in the range -10..10, stop measurement" {
