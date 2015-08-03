@@ -604,7 +604,7 @@ int liballuris_start_measurement (libusb_device_handle *dev_handle)
       // The device may take up to 600ms until the measurment is running.
       // (for example if a automatic tare is parametrized at start of measurement)
       // -> wait for it
-      int timeout=20; // 20 * 20ms
+      int timeout = 40; // 40 * 20ms
       struct liballuris_state state;
 
       do

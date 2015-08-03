@@ -104,3 +104,8 @@ GADC=../cli/gadc
   [ "$status" -eq 0 ]
   [ "$output" -ge -10 ] && [ "$output" -le 10 ]
 }
+
+@test "Start, stop, start, stop" {
+  run $GADC --start --stop --start --stop
+  [ "$status" -eq 0 ]
+}
