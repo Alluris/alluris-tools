@@ -546,7 +546,7 @@ int liballuris_poll_measurement (libusb_device_handle *dev_handle, int* buf, siz
 {
   size_t len = 5 + length * 3;
   // FIXME: set timeout dynamically from len and sampling rate 10Hz/900Hz
-  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 0, 0, len, 2100);
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 0, 0, len, 2400);
   size_t k;
   for (k=0; k<length; k++)
     buf[k] = char_to_int24 (in_buf + 5 + k*3);
@@ -601,10 +601,10 @@ int liballuris_start_measurement (libusb_device_handle *dev_handle)
 
   if (ret == LIBALLURIS_SUCCESS)
     {
-      // The device may take up to 600ms until the measurment is running.
+      // The device may take up to 800ms until the measurment is running.
       // (for example if a automatic tare is parametrized at start of measurement)
       // -> wait for it
-      int timeout = 40; // 40 * 20ms
+      int timeout = 30; // 30 * 50ms
       struct liballuris_state state;
 
       do
@@ -612,9 +612,13 @@ int liballuris_start_measurement (libusb_device_handle *dev_handle)
           timeout--;
           ret = liballuris_read_state (dev_handle, &state, 600);
           if (! state.measuring)
-            usleep (20000);
+            usleep (50000);
         }
       while (!ret && timeout && !state.measuring);
+
+#ifdef PRINT_DEBUG_MSG
+      printf ("liballuris_start_measurement timeout left = %i\n", timeout);
+#endif
 
       if (! timeout)
         ret = LIBALLURIS_DEVICE_BUSY;
@@ -632,7 +636,7 @@ int liballuris_stop_measurement (libusb_device_handle *dev_handle)
   if (ret == LIBUSB_SUCCESS)
     {
       // the device may take approximately 100ms (1/10Hz) until the measurment is stopped.
-      int timeout = 10; // 10 * 20ms
+      int timeout = 20; // 20 * 20ms
       struct liballuris_state state;
       do
         {
@@ -642,6 +646,10 @@ int liballuris_stop_measurement (libusb_device_handle *dev_handle)
             usleep (20000);
         }
       while (!ret && timeout && state.measuring);
+
+#ifdef PRINT_DEBUG_MSG
+      printf ("liballuris_stop_measurement timeout left = %i\n", timeout);
+#endif
 
       if (! timeout)
         ret = LIBALLURIS_DEVICE_BUSY;
