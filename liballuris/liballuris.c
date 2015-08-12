@@ -76,6 +76,8 @@ const char * liballuris_error_name (int error_code)
           return "LIBALLURIS_MALFORMED_REPLY";
         case LIBALLURIS_DEVICE_BUSY:
           return "LIBALLURIS_DEVICE_BUSY";
+        case LIBALLURIS_TIMEOUT:
+          return "LIBALLURIS_TIMEOUT";
         case LIBALLURIS_OUT_OF_RANGE:
           return "LIBALLURIS_OUT_OF_RANGE";
         }
@@ -488,7 +490,10 @@ int liballuris_read_state (libusb_device_handle *dev_handle, struct liballuris_s
     {
       union __liballuris_state__ tmp;
       tmp._int = char_to_int24 (in_buf + 3);
-      *state = tmp.bits;
+      if (tmp._int == -1)
+        return LIBALLURIS_DEVICE_BUSY;
+      else
+        *state = tmp.bits;
     }
   return ret;
 }
@@ -599,6 +604,7 @@ int liballuris_start_measurement (libusb_device_handle *dev_handle)
   out_buf[2] = 1; //start
   int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
 
+
   if (ret == LIBALLURIS_SUCCESS)
     {
       // The device may take up to 800ms until the measurment is running.
@@ -621,8 +627,9 @@ int liballuris_start_measurement (libusb_device_handle *dev_handle)
 #endif
 
       if (! timeout)
-        ret = LIBALLURIS_DEVICE_BUSY;
+        ret = LIBALLURIS_TIMEOUT;
     }
+
   return ret;
 }
 
@@ -641,7 +648,7 @@ int liballuris_stop_measurement (libusb_device_handle *dev_handle)
       do
         {
           timeout--;
-          ret = liballuris_read_state (dev_handle, &state, 400);
+          ret = liballuris_read_state (dev_handle, &state, 500);
           if (state.measuring)
             usleep (20000);
         }
@@ -652,8 +659,9 @@ int liballuris_stop_measurement (libusb_device_handle *dev_handle)
 #endif
 
       if (! timeout)
-        ret = LIBALLURIS_DEVICE_BUSY;
+        ret = LIBALLURIS_TIMEOUT;
     }
+
   return ret;
 }
 

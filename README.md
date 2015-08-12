@@ -7,6 +7,8 @@ These are:
 * CTT-200 and CTT-300
 * FMT-W30 and FMT-W40
 
+Error LIBALLURIS_DEVICE_BUSY is returned from liballuris if the device isn't supported.
+
 ## License
 
 The library itself (liballuris.c and liballuris.h) is covered under the LGPL, gadc under the GPL.

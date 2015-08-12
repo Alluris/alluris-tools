@@ -65,7 +65,8 @@ enum liballuris_error
   LIBALLURIS_SUCCESS         = 0, //!< No error
   LIBALLURIS_MALFORMED_REPLY = 1, //!< The received reply contains a malformed header. This should never happen, check EMI and physical connection
   LIBALLURIS_DEVICE_BUSY     = 2, //!< Device is in a state where it cannot process the request
-  LIBALLURIS_OUT_OF_RANGE    = 3  //!< Parameter out of valid range
+  LIBALLURIS_TIMEOUT         = 3, //!< No response or status change in given time
+  LIBALLURIS_OUT_OF_RANGE    = 4  //!< Parameter out of valid range
 };
 
 //! measurement mode

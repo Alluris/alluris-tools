@@ -7,7 +7,7 @@ graphics_toolkit fltk
 server = socket (AF_INET, SOCK_STREAM, 0);
 setsockopt (server, SOL_SOCKET, SO_REUSEADDR, 1);
 assert (getsockopt (server, SOL_SOCKET, SO_REUSEADDR), 1);
- 
+
 bind (server, 9000);
 listen (server, 1);
 
@@ -61,7 +61,7 @@ unwind_protect
     tic ()
 
     [msg_s, msg_l] = recv (server_data, 4 * blk_size, MSG_WAITALL);
-    
+
     v = typecast (msg_s, "int32");
     fprintf (fid, "%i\n", v);
 
@@ -71,12 +71,12 @@ unwind_protect
 
     data_mean = mean (data);
     data_std = std (data);
-    
+
     ## Update borders
-    
+
     set (upper_b, "ydata", repmat (data_mean + 3 * data_std, 1, 2));
     set (lower_b, "ydata", repmat (data_mean - 3 * data_std, 1, 2));
-    
+
     if (data_std > std_limit)
       set (upper_b, "color", "red");
       set (lower_b, "color", "red");
@@ -84,8 +84,8 @@ unwind_protect
       set (upper_b, "color", "green");
       set (lower_b, "color", "green");
     endif
-   
-   
+
+
     ## FFT
     f_data = fft (win .* data);
     f_data(1) = 0;

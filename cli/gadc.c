@@ -267,7 +267,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
         print_value (r, value);
         break;
       case 1010:
-        r = liballuris_read_state (arguments->h, &device_state, DEFAULT_RECEIVE_TIMEOUT);
+        r = liballuris_read_state (arguments->h, &device_state, 300);
         if (r == LIBUSB_SUCCESS)
           liballuris_print_state (arguments->h, device_state);
         break;
