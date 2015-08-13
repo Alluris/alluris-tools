@@ -2,20 +2,20 @@
 
 GADC=../cli/gadc
 
-## Set defaults
+## Set defaults (10Hz default mode, no limits)
 
 @test "INIT: stopping measurement" {
   run $GADC --stop
   [ "$status" -eq 0 ]
 }
 
-@test "INIT: set positive limit = 0" {
-  run $GADC --set-pos-limit 0
+@test "INIT: set upper limit = 0" {
+  run $GADC --set-upper-limit 0
   [ "$status" -eq 0 ]
 }
 
-@test "INIT: set negative limit = 0" {
-  run $GADC --set-neg-limit 0
+@test "INIT: set lower limit = 0" {
+  run $GADC --set-lower-limit 0
   [ "$status" -eq 0 ]
 }
 
@@ -34,6 +34,11 @@ GADC=../cli/gadc
   [ "$status" -eq 0 ]
 }
 
+@test "INIT: set mem mode = 0" {
+  run $GADC --set-mem-mode 0
+  [ "$status" -eq 0 ]
+}
+
 @test "INIT: tare" {
   run $GADC --tare
   [ "$status" -eq 0 ]
@@ -41,24 +46,24 @@ GADC=../cli/gadc
 
 ## Check limits with standard mode (10 Hz sampling freq.)
 
-@test "Set positive limit (P3) = 135" {
-  run $GADC --set-pos-limit 135
+@test "Set upper limit (P3) = 135" {
+  run $GADC --set-upper-limit 135
   [ "$status" -eq 0 ]
 }
 
-@test "Check positive limit (P3)" {
-  run $GADC --get-pos-limit
+@test "Check upper limit (P3)" {
+  run $GADC --get-upper-limit
   [ "$status" -eq 0 ]
   [ "$output" -eq 135 ]
 }
 
-@test "Set negative limit (P4) = -42" {
-  run $GADC --set-neg-limit -42
+@test "Set lower limit (P4) = -42" {
+  run $GADC --set-lower-limit -42
   [ "$status" -eq 0 ]
 }
 
-@test "Check negative limit (P4)" {
-  run $GADC --get-neg-limit
+@test "Check lower limit (P4)" {
+  run $GADC --get-lower-limit
   [ "$status" -eq 0 ]
   [ "$output" -eq -42 ]
 }
@@ -108,4 +113,39 @@ GADC=../cli/gadc
 @test "Start, stop, start, stop" {
   run $GADC --start --stop --start --stop
   [ "$status" -eq 0 ]
+}
+
+## check memory modes
+## FIMXE: This fails at the moment
+
+@test "INIT: set mem mode = 1" {
+  run $GADC --set-mem-mode 1
+  [ "$status" -eq 0 ]
+}
+
+@test "Check mem mode == 1" {
+  run $GADC --get-mode
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 1 ]
+}
+
+@test "INIT: set mem mode = 2" {
+  run $GADC --set-mem-mode 2
+  [ "$status" -eq 0 ]
+}
+
+@test "Check mem mode == 2" {
+  run $GADC --get-mode
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 2 ]
+}
+@test "INIT: set mem mode = 0" {
+  run $GADC --set-mem-mode 0
+  [ "$status" -eq 0 ]
+}
+
+@test "Check mem mode == 0" {
+  run $GADC --get-mode
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 0 ]
 }

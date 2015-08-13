@@ -55,12 +55,14 @@ static struct argp_option options[] =
   {"clear-pos",    1000, 0,            0, "Clear positive peak", 2},
   {"clear-neg",    1001, 0,            0, "Clear negative peak", 2},
   {0, 0, 0, 0, "Settings:", 3 },
-  {"set-pos-limit", 1002, "P3",        0, "Param P3, positive limit", 3},
-  {"set-neg-limit", 1003, "P4",        0, "Param P4, negative limit", 3},
-  {"get-pos-limit", 1004, 0,           0, "Param P3, positive limit", 3},
-  {"get-neg-limit", 1005, 0,           0, "Param P4, negative limit", 3},
+  {"set-upper-limit", 1002, "P3",      0, "Param P3, upper limit", 3},
+  {"set-lower-limit", 1003, "P4",      0, "Param P4, lower limit", 3},
+  {"get-upper-limit", 1004, 0,         0, "Param P3, upper limit", 3},
+  {"get-lower-limit", 1005, 0,         0, "Param P4, lower limit", 3},
   {"set-mode",      1012, "MODE",      0, "Measurement mode 0=std, 1=peak, 2=peak+, 3=peak-", 3},
   {"get-mode",      1013, 0,           0, "Measurement mode 0=std, 1=peak, 2=peak+, 3=peak-", 3},
+  {"set-mem-mode",  1014, "MODE",      0, "Memory mode 0=disabled, 1=single, 2=continuous", 3},
+  {"get-mem-mode",  1015, 0,           0, "Memory mode 0=disabled, 1=single, 2=continuous", 3},
   {0, 0, 0, 0, "Misc:", 4 },
   {"state",        1010, 0,            0, "Read RAM state", 4 },
   {"sleep",        1011, "T",          0, "Sleep T milliseconds", 4 },
@@ -242,18 +244,18 @@ parse_opt (int key, char *arg, struct argp_state *state)
         break;
       case 1002:
         value = strtol (arg, &endptr, 10);
-        r = liballuris_set_pos_limit (arguments->h, value);
+        r = liballuris_set_upper_limit (arguments->h, value);
         break;
       case 1003:
         value = strtol (arg, &endptr, 10);
-        r = liballuris_set_neg_limit (arguments->h, value);
+        r = liballuris_set_lower_limit (arguments->h, value);
         break;
       case 1004:
-        r = liballuris_get_pos_limit (arguments->h, &value);
+        r = liballuris_get_upper_limit (arguments->h, &value);
         print_value (r, value);
         break;
       case 1005:
-        r = liballuris_get_neg_limit (arguments->h, &value);
+        r = liballuris_get_lower_limit (arguments->h, &value);
         print_value (r, value);
         break;
       case 1006:
@@ -282,6 +284,14 @@ parse_opt (int key, char *arg, struct argp_state *state)
         break;
       case 1013:
         r = liballuris_get_mode (arguments->h, &value);
+        print_value (r, value);
+        break;
+      case 1014:
+        value = strtol (arg, &endptr, 10);
+        r = liballuris_set_mem_mode (arguments->h, value);
+        break;
+      case 1015:
+        r = liballuris_get_mem_mode (arguments->h, &value);
         print_value (r, value);
         break;
       default:

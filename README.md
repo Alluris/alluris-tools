@@ -103,4 +103,5 @@ $ brew install graphviz
 ## ToDo
 
 * ~~Use GNU Build System~~ (Done)
+* overhaul liballuris_print_state, document liballuris_state
 * Implement full command set

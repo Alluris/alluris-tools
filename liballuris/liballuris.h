@@ -78,33 +78,53 @@ enum liballuris_measurement_mode
   LIBALLURIS_MODE_PEAK_MIN = 3  //!< 900Hz sampling rate, minimum detection
 };
 
-//FIXME: add documentation, update liballuris_print_state
+//! memory mode
+enum liballuris_memory_mode
+{
+  LIBALLURIS_MEM_MODE_DISABLED   = 0, //!< no memory active
+  LIBALLURIS_MEM_MODE_SINGLE     = 1, //!< Store single value with key (S)
+  LIBALLURIS_MEM_MODE_CONTINUOUS = 2  //!< Start/Stop continuous capturing to memory with key (S)
+};
+
 struct liballuris_state
 {
   unsigned char dummy0 : 1;
-  unsigned char pos_limit_exceeded    : 1; //!< Force > positive limit
-  unsigned char neg_limit_underrun    : 1; //!< Force < negative limit
-  unsigned char some_peak_mode_active : 1;
-  unsigned char peak_plus_active : 1;
-  unsigned char peak_minus_active : 1;
-  unsigned char mem_active : 1;
-  unsigned char dummy7 : 1;
-  unsigned char dummy8 : 1;
-  unsigned char dummy9 : 1;
-  unsigned char overload : 1;
-  unsigned char fracture : 1;
-  unsigned char dummy12 : 1;
-  unsigned char mem : 1;
-  unsigned char mem_conti: 1;
-  unsigned char dummy15 : 1;
-  unsigned char grenz_option : 1;
-  unsigned char dummy17 : 1;
-  unsigned char dummy18 : 1;
-  unsigned char dummy19 : 1;
-  unsigned char dummy20 : 1;
-  unsigned char dummy21 : 1;
-  unsigned char dummy22 : 1;
-  unsigned char measuring : 1;
+  unsigned char upper_limit_exceeded  : 1; //!< Force >= upper limit
+  unsigned char lower_limit_underrun  : 1; //!< Force <= lower limit
+  unsigned char some_peak_mode_active : 1; //!< Peak, Peak+ or Peak- active
+  unsigned char peak_plus_active      : 1; //!< Peak+ is active
+  unsigned char peak_minus_active     : 1; //!< Peak- is active
+
+  //! \brief capturing to memory in progress
+  //! This flag indicates memory write access. In continues mode this flag goes zero
+  //! if the memory is full and storing to memory has stopped for this reason.
+  //! \sa liballuris_memory_mode
+  unsigned char mem_running           : 1;
+  unsigned char dummy7                : 1;
+  unsigned char dummy8                : 1;
+  unsigned char dummy9                : 1;
+  unsigned char overload              : 1; //!< Absolute limit (abs(F) > 150% of nominal range) is exceeded
+  unsigned char fracture              : 1; //!< Only W20/W40
+  unsigned char dummy12               : 1;
+
+  //! \brief 1 = Memory function active (P21=1 or P21=2)
+  //! \sa liballuris_memory_mode
+  unsigned char mem_active            : 1;
+
+  //! \brief Store with fixed rate or single values
+  //! - 1 = Store values with displayrate (3, 5 or 10Hz) in memory (P21=2)
+  //! - 0 = Store single value on keypress (P21=1)
+  //! \sa liballuris_memory_mode
+  unsigned char mem_conti             : 1;
+  unsigned char dummy15               : 1;
+  unsigned char grenz_option          : 1; //!<
+  unsigned char dummy17               : 1;
+  unsigned char dummy18               : 1;
+  unsigned char dummy19               : 1;
+  unsigned char dummy20               : 1;
+  unsigned char dummy21               : 1;
+  unsigned char dummy22               : 1;
+  unsigned char measuring             : 1; //!<
 };
 
 union __liballuris_state__
@@ -156,14 +176,16 @@ int liballuris_clear_neg_peak (libusb_device_handle *dev_handle);
 int liballuris_start_measurement (libusb_device_handle *dev_handle);
 int liballuris_stop_measurement (libusb_device_handle *dev_handle);
 
-int liballuris_set_pos_limit (libusb_device_handle *dev_handle, int limit);
-int liballuris_set_neg_limit (libusb_device_handle *dev_handle, int limit);
+int liballuris_set_upper_limit (libusb_device_handle *dev_handle, int limit);
+int liballuris_set_lower_limit (libusb_device_handle *dev_handle, int limit);
 
-int liballuris_get_pos_limit (libusb_device_handle *dev_handle, int* limit);
-int liballuris_get_neg_limit (libusb_device_handle *dev_handle, int* limit);
+int liballuris_get_upper_limit (libusb_device_handle *dev_handle, int* limit);
+int liballuris_get_lower_limit (libusb_device_handle *dev_handle, int* limit);
 
 int liballuris_set_mode (libusb_device_handle *dev_handle, enum liballuris_measurement_mode mode);
 int liballuris_get_mode (libusb_device_handle *dev_handle, enum liballuris_measurement_mode *mode);
 
+int liballuris_set_mem_mode (libusb_device_handle *dev_handle, enum liballuris_memory_mode mode);
+int liballuris_get_mem_mode (libusb_device_handle *dev_handle, enum liballuris_memory_mode *mode);
 
 #endif

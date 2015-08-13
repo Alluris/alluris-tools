@@ -500,18 +500,18 @@ int liballuris_read_state (libusb_device_handle *dev_handle, struct liballuris_s
 
 void liballuris_print_state (libusb_device_handle *dev_handle, struct liballuris_state state)
 {
-  printf ("[%c] pos limit exceeded\n",     (state.pos_limit_exceeded)? 'X': ' ');
-  printf ("[%c] neg limit underrun\n",     (state.neg_limit_underrun)? 'X': ' ');
-  printf ("[%c] peak mode active\n",       (state.some_peak_mode_active)? 'X': ' ');
-  printf ("[%c] peak plus mode active\n",  (state.peak_plus_active)? 'X': ' ');
-  printf ("[%c] peak minus mode active\n", (state.peak_minus_active)? 'X': ' ');
-  printf ("[%c] memory active\n",          (state.mem_active)? 'X': ' ');
-  printf ("[%c] overload\n",               (state.overload)? 'X': ' ');
-  printf ("[%c] fracture\n",               (state.fracture)? 'X': ' ');
-  printf ("[%c] mem\n",                    (state.mem)? 'X': ' ');
-  printf ("[%c] mem-conti\n",              (state.mem_conti)? 'X': ' ');
-  printf ("[%c] grenz_option\n",           (state.grenz_option)? 'X': ' ');
-  printf ("[%c] measurement running\n",    (state.measuring)? 'X': ' ');
+  printf ("[%c] upper limit exceeded\n",               (state.upper_limit_exceeded)? 'X': ' ');
+  printf ("[%c] lower limit underrun\n",               (state.lower_limit_underrun)? 'X': ' ');
+  printf ("[%c] peak  mode active\n",                  (state.some_peak_mode_active)? 'X': ' ');
+  printf ("[%c] peak+ mode active\n",                  (state.peak_plus_active)? 'X': ' ');
+  printf ("[%c] peak- mode active\n",                  (state.peak_minus_active)? 'X': ' ');
+  printf ("[%c] Store to memory in progress\n",        (state.mem_running)? 'X': ' ');
+  printf ("[%c] overload (abs(F) > 150%%)\n",          (state.overload)? 'X': ' ');
+  printf ("[%c] fracture detected (only W20/W40)\n",   (state.fracture)? 'X': ' ');
+  printf ("[%c] mem active (P21=1 or P21=2)\n",        (state.mem_active)? 'X': ' ');
+  printf ("[%c] mem-conti (store with displayrate)\n", (state.mem_conti)? 'X': ' ');
+  printf ("[%c] grenz_option\n",                       (state.grenz_option)? 'X': ' ');
+  printf ("[%c] measurement running\n",                (state.measuring)? 'X': ' ');
 }
 
 /*!
@@ -665,7 +665,7 @@ int liballuris_stop_measurement (libusb_device_handle *dev_handle)
   return ret;
 }
 
-int liballuris_set_pos_limit (libusb_device_handle *dev_handle, int limit)
+int liballuris_set_upper_limit (libusb_device_handle *dev_handle, int limit)
 {
   out_buf[0] = 0x18;
   out_buf[1] = 6;
@@ -676,7 +676,7 @@ int liballuris_set_pos_limit (libusb_device_handle *dev_handle, int limit)
   return liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 6, DEFAULT_SEND_TIMEOUT, 6, 500);
 }
 
-int liballuris_set_neg_limit (libusb_device_handle *dev_handle, int limit)
+int liballuris_set_lower_limit (libusb_device_handle *dev_handle, int limit)
 {
   out_buf[0] = 0x18;
   out_buf[1] = 6;
@@ -687,7 +687,7 @@ int liballuris_set_neg_limit (libusb_device_handle *dev_handle, int limit)
   return liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 6, DEFAULT_SEND_TIMEOUT, 6, 500);
 }
 
-int liballuris_get_pos_limit (libusb_device_handle *dev_handle, int* limit)
+int liballuris_get_upper_limit (libusb_device_handle *dev_handle, int* limit)
 {
   out_buf[0] = 0x19;
   out_buf[1] = 6;
@@ -698,7 +698,7 @@ int liballuris_get_pos_limit (libusb_device_handle *dev_handle, int* limit)
   return ret;
 }
 
-int liballuris_get_neg_limit (libusb_device_handle *dev_handle, int* limit)
+int liballuris_get_lower_limit (libusb_device_handle *dev_handle, int* limit)
 {
   out_buf[0] = 0x19;
   out_buf[1] = 6;
@@ -730,6 +730,34 @@ int liballuris_set_mode (libusb_device_handle *dev_handle, enum liballuris_measu
 int liballuris_get_mode (libusb_device_handle *dev_handle, enum liballuris_measurement_mode *mode)
 {
   out_buf[0] = 0x05;
+  out_buf[1] = 2;
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 2, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret == LIBALLURIS_SUCCESS)
+    *mode = in_buf[2];
+  return ret;
+}
+
+int liballuris_set_mem_mode (libusb_device_handle *dev_handle, enum liballuris_memory_mode mode)
+{
+  if (mode < 0 || mode > 2)
+    {
+      fprintf (stderr, "Error: memory mode %i out of range 0..2\n", mode);
+      return LIBALLURIS_OUT_OF_RANGE;
+    }
+  out_buf[0] = 0x1D;
+  out_buf[1] = 3;
+  out_buf[2] = mode;
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, 600);
+
+  if (in_buf[2] != mode)
+    return LIBALLURIS_DEVICE_BUSY;
+
+  return ret;
+}
+
+int liballuris_get_mem_mode (libusb_device_handle *dev_handle, enum liballuris_memory_mode *mode)
+{
+  out_buf[0] = 0x1E;
   out_buf[1] = 2;
   int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 2, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
   if (ret == LIBALLURIS_SUCCESS)
