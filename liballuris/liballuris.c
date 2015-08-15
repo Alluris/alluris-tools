@@ -762,6 +762,19 @@ int liballuris_get_mem_mode (libusb_device_handle *dev_handle, enum liballuris_m
   int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 2, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
   if (ret == LIBALLURIS_SUCCESS)
     *mode = in_buf[2];
+
+  // workaround for a firmware bug in versions < FIXME: add version number!
+  // check if we get a second reply
+  int temp_ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 0, DEFAULT_SEND_TIMEOUT, 3, 20);
+  if (temp_ret == LIBALLURIS_SUCCESS)
+    {
+      // discard first reply
+      *mode = in_buf[2];
+    }
+  else
+    // bug is fixed and we got a timeout (no superfluous reply)
+    ;
+
   return ret;
 }
 
