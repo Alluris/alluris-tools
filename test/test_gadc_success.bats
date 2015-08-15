@@ -1,5 +1,7 @@
 #!/usr/bin/env bats
 
+## Tests gadc for success
+
 GADC=../cli/gadc
 
 ## Set defaults (10Hz default mode, no limits)
@@ -115,37 +117,56 @@ GADC=../cli/gadc
   [ "$status" -eq 0 ]
 }
 
-## check memory modes
-## FIMXE: This fails at the moment
+## check memory modes in standard mode
 
-@test "INIT: set mem mode = 1" {
+@test "Set mem mode = 1" {
   run $GADC --set-mem-mode 1
   [ "$status" -eq 0 ]
 }
 
 @test "Check mem mode == 1" {
-  run $GADC --get-mode
+  run $GADC --get-mem-mode
   [ "$status" -eq 0 ]
   [ "$output" -eq 1 ]
 }
 
-@test "INIT: set mem mode = 2" {
+@test "Set mem mode = 2" {
   run $GADC --set-mem-mode 2
   [ "$status" -eq 0 ]
 }
 
 @test "Check mem mode == 2" {
-  run $GADC --get-mode
+  run $GADC --get-mem-mode
   [ "$status" -eq 0 ]
   [ "$output" -eq 2 ]
 }
-@test "INIT: set mem mode = 0" {
+@test "Set mem mode = 0" {
   run $GADC --set-mem-mode 0
   [ "$status" -eq 0 ]
 }
 
 @test "Check mem mode == 0" {
-  run $GADC --get-mode
+  run $GADC --get-mem-mode
   [ "$status" -eq 0 ]
   [ "$output" -eq 0 ]
 }
+
+## check memory modes in peak mode
+@test "Set mem mode = 2 and check" {
+  run $GADC --set-mode 1 --set-mem-mode 2 --get-mem-mode
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 2 ]
+}
+
+@test "Set mem mode = 1 and check" {
+  run $GADC --set-mem-mode 1 --get-mem-mode
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 1 ]
+}
+
+@test "Set mem mode = 0 and check" {
+  run $GADC --set-mem-mode 0 --get-mem-mode
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 0 ]
+}
+
