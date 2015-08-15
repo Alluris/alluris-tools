@@ -214,6 +214,8 @@ parse_opt (int key, char *arg, struct argp_state *state)
       return 0;
     }
 
+  enum liballuris_measurement_mode r_mode;
+  enum liballuris_memory_mode r_mem_mode;
   if (arguments->h)
     switch (key)
       {
@@ -279,20 +281,20 @@ parse_opt (int key, char *arg, struct argp_state *state)
         usleep (value * 1000);
         break;
       case 1012:
-        value = strtol (arg, &endptr, 10);
-        r = liballuris_set_mode (arguments->h, value);
+        r_mode = strtol (arg, &endptr, 10);
+        r = liballuris_set_mode (arguments->h, r_mode);
         break;
       case 1013:
-        r = liballuris_get_mode (arguments->h, &value);
-        print_value (r, value);
+        r = liballuris_get_mode (arguments->h, &r_mode);
+        print_value (r, r_mode);
         break;
       case 1014:
-        value = strtol (arg, &endptr, 10);
-        r = liballuris_set_mem_mode (arguments->h, value);
+        r_mem_mode = strtol (arg, &endptr, 10);
+        r = liballuris_set_mem_mode (arguments->h, r_mem_mode);
         break;
       case 1015:
-        r = liballuris_get_mem_mode (arguments->h, &value);
-        print_value (r, value);
+        r = liballuris_get_mem_mode (arguments->h, &r_mem_mode);
+        print_value (r, r_mem_mode);
         break;
       default:
         return ARGP_ERR_UNKNOWN;
