@@ -76,6 +76,9 @@ static struct argp_option options[] =
   {0, 0, 0, 0, "Misc:", 6 },
   {"state",        1010, 0,            0, "Read RAM state"},
   {"sleep",        1011, "T",          0, "Sleep T milliseconds"},
+  {"set-digout",   1019, "MASK",       0, "Set state of the 3 digital outputs = MASK (firmware >= V4.03.008/V5.03.008)"},
+  {"get-digout",   1020, 0,            0, "Get state of the 3 digital outputs (firmware >= V4.03.008/V5.03.008)"},
+  {"get-firmware", 1021, 0,            0, "Get firmware of communication and measurement processor"},
   { 0,0,0,0,0,0 }
 
 };
@@ -156,6 +159,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
   int r = 0;
   int value, num_samples;
   struct liballuris_state device_state;
+  char firmware_buf[21];
 
   if (key == 'l')
     {
@@ -321,6 +325,27 @@ parse_opt (int key, char *arg, struct argp_state *state)
       case 1018:  //get fmax
         r = liballuris_get_F_max (arguments->h, &value);
         print_value (r, value);
+        break;
+      case 1019:  //set digout
+        value = strtol (arg, &endptr, 10);
+        r = liballuris_set_digout (arguments->h, value);
+        break;
+      case 1020:  //get digout
+        r = liballuris_get_digout (arguments->h, &value);
+        print_value (r, value);
+        break;
+      case 1021:  //get firmware
+        r = liballuris_get_firmware (arguments->h, 0, firmware_buf, 21);
+        if (r != LIBUSB_SUCCESS)
+          fprintf(stderr, "Error: '%s'\n", liballuris_error_name (r));
+        else
+          printf ("%s;", firmware_buf);
+
+        r = liballuris_get_firmware (arguments->h, 1, firmware_buf, 21);
+        if (r != LIBUSB_SUCCESS)
+          fprintf(stderr, "Error: '%s'\n", liballuris_error_name (r));
+        else
+          printf ("%s\n", firmware_buf);
         break;
       default:
         return ARGP_ERR_UNKNOWN;

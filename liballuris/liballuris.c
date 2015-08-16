@@ -426,6 +426,20 @@ int liballuris_serial_number (libusb_device_handle *dev_handle, char* buf, size_
   return ret;
 }
 
+int liballuris_get_firmware (libusb_device_handle *dev_handle, int dev, char* buf, size_t length)
+{
+  if (dev < 0 || dev > 1)
+    return LIBALLURIS_OUT_OF_RANGE;
+
+  out_buf[0] = 0x08;
+  out_buf[1] = 3;
+  out_buf[2] = dev;
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret == LIBALLURIS_SUCCESS)
+    snprintf (buf, length, "V%i.%02i.%03i", in_buf[3], in_buf[4], in_buf[5]);
+  return ret;
+}
+
 /*!
  * \brief Query the number of digits for the interpretation of the raw fixed-point numbers
  *
@@ -888,11 +902,28 @@ int liballuris_get_unit (libusb_device_handle *dev_handle, enum liballuris_unit 
   return ret;
 }
 
-/*
-void ReqSetDigout (libusb_device_handle *dev_handle, char zDigital)
+int liballuris_set_digout (libusb_device_handle *dev_handle, int v)
 {
-  unsigned char data[7]; //um 1 größer als Antwort
+  if (v < 0 || v > 7) //only 3 bits
+    return LIBALLURIS_OUT_OF_RANGE;
+
   out_buf[0] = 0x21;
   out_buf[1] = 3;
-  out_buf[2] = zDigital;
-*/
+  out_buf[2] = v;
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
+
+  if (in_buf[2] != v)
+    return LIBALLURIS_DEVICE_BUSY;
+
+  return ret;
+}
+
+int liballuris_get_digout (libusb_device_handle *dev_handle, int *v)
+{
+  out_buf[0] = 0x22;
+  out_buf[1] = 2;
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 2, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret == LIBALLURIS_SUCCESS)
+    *v = in_buf[2];
+  return ret;
+}
