@@ -64,9 +64,17 @@ enum liballuris_error
 {
   LIBALLURIS_SUCCESS         = 0, //!< No error
   LIBALLURIS_MALFORMED_REPLY = 1, //!< The received reply contains a malformed header. This should never happen, check EMI and physical connection
-  LIBALLURIS_DEVICE_BUSY     = 2, //!< Device is in a state where it cannot process the request
+  //! \brief Device is in a state where it cannot process the request
+  //! The device cannot perform the requested operation.
+  //! Some examples:
+  //! - get digits or units while measurement is running
+  //! - get or change upper or lower while measurement is running
+  //! - USB API not available, for example on a FMI-S10 device
+  LIBALLURIS_DEVICE_BUSY     = 2,
   LIBALLURIS_TIMEOUT         = 3, //!< No response or status change in given time
-  LIBALLURIS_OUT_OF_RANGE    = 4  //!< Parameter out of valid range
+  //! \brief Parameter out of valid range or invalid mode/state
+  //! For example set unit which isn't supported (for example 'oz' for 500N device)
+  LIBALLURIS_OUT_OF_RANGE    = 4
 };
 
 //! measurement mode
@@ -84,6 +92,17 @@ enum liballuris_memory_mode
   LIBALLURIS_MEM_MODE_DISABLED   = 0, //!< no memory active
   LIBALLURIS_MEM_MODE_SINGLE     = 1, //!< Store single value with key (S)
   LIBALLURIS_MEM_MODE_CONTINUOUS = 2  //!< Start/Stop continuous capturing to memory with key (S)
+};
+
+//! unit
+enum liballuris_unit
+{
+  LIBALLURIS_UNIT_N   = 0, //!< newton
+  LIBALLURIS_UNIT_cN  = 1, //!< centinewton (only devices with range 5N or 10N)
+  LIBALLURIS_UNIT_kg  = 2, //!< kg (only devices with range > 10N)
+  LIBALLURIS_UNIT_g   = 3, //!< g (only devices with range 5N or 10N)
+  LIBALLURIS_UNIT_lb  = 4, //!< lb (only devices with range > 10N)
+  LIBALLURIS_UNIT_oz  = 5, //!< oz (only devices with range 5N or 10N)
 };
 
 struct liballuris_state
@@ -148,6 +167,8 @@ struct alluris_device_description
 };
 
 const char * liballuris_error_name (int error_code);
+const char * liballuris_unit_enum2str (enum liballuris_unit unit);
+enum liballuris_unit liballuris_unit_str2enum (const char *str);
 
 int liballuris_get_device_list (libusb_context* ctx, struct alluris_device_description* alluris_devs, size_t length, char read_serial);
 int liballuris_open_device (libusb_context* ctx, const char* serial_number, libusb_device_handle** h);
@@ -158,6 +179,8 @@ void liballuris_clear_RX (libusb_device_handle* dev_handle, unsigned int timeout
 
 int liballuris_serial_number (libusb_device_handle *dev_handle, char* buf, size_t length);
 int liballuris_digits (libusb_device_handle *dev_handle, int* v);
+int liballuris_get_F_max (libusb_device_handle *dev_handle, int* fmax);
+
 int liballuris_raw_value (libusb_device_handle *dev_handle, int* value);
 int liballuris_raw_pos_peak (libusb_device_handle *dev_handle, int* peak);
 int liballuris_raw_neg_peak (libusb_device_handle *dev_handle, int* peak);
@@ -187,5 +210,8 @@ int liballuris_get_mode (libusb_device_handle *dev_handle, enum liballuris_measu
 
 int liballuris_set_mem_mode (libusb_device_handle *dev_handle, enum liballuris_memory_mode mode);
 int liballuris_get_mem_mode (libusb_device_handle *dev_handle, enum liballuris_memory_mode *mode);
+
+int liballuris_set_unit (libusb_device_handle *dev_handle, enum liballuris_unit unit);
+int liballuris_get_unit (libusb_device_handle *dev_handle, enum liballuris_unit *unit);
 
 #endif

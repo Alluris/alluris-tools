@@ -39,33 +39,43 @@ static char args_doc[] = "";
 /* The options we understand. */
 static struct argp_option options[] =
 {
-  {"list",         'l', 0,             0, "List accessible devices", 0},
-  {"serial",       1009, "SERIAL",     0, "Connect to specific alluris device using serial number. This only works if the device is stopped.", 0},
-  {NULL,           'b',  "Bus,Device", 0, "Connect to specific alluris device using bus and device id", 0},
-  {0, 0, 0, 0, "Measurement:", 1 },
-  {"start",        1006, 0,            0, "Start", 1 },
-  {"stop",         1007, 0,            0, "Stop", 1 },
-  {"value",        'v', 0,             0, "Value", 1 },
-  {"digits",       1008, 0,            0, "Digits", 1 },
-  {"pos-peak",     'p', 0,             0, "Positive peak", 1 },
-  {"neg-peak",     'n', 0,             0, "Negative peak", 1 },
-  {"sample",       's', "NUM",         0, "Capture NUM values", 1 },
-  {0, 0, 0, 0, "Tare:", 2 },
-  {"tare",         't', 0,             0, "Tare measurement", 2 },
-  {"clear-pos",    1000, 0,            0, "Clear positive peak", 2},
-  {"clear-neg",    1001, 0,            0, "Clear negative peak", 2},
-  {0, 0, 0, 0, "Settings:", 3 },
-  {"set-upper-limit", 1002, "P3",      0, "Param P3, upper limit", 3},
-  {"set-lower-limit", 1003, "P4",      0, "Param P4, lower limit", 3},
-  {"get-upper-limit", 1004, 0,         0, "Param P3, upper limit", 3},
-  {"get-lower-limit", 1005, 0,         0, "Param P4, lower limit", 3},
-  {"set-mode",      1012, "MODE",      0, "Measurement mode 0=std, 1=peak, 2=peak+, 3=peak-", 3},
-  {"get-mode",      1013, 0,           0, "Measurement mode 0=std, 1=peak, 2=peak+, 3=peak-", 3},
-  {"set-mem-mode",  1014, "MODE",      0, "Memory mode 0=disabled, 1=single, 2=continuous", 3},
-  {"get-mem-mode",  1015, 0,           0, "Memory mode 0=disabled, 1=single, 2=continuous", 3},
-  {0, 0, 0, 0, "Misc:", 4 },
-  {"state",        1010, 0,            0, "Read RAM state", 4 },
-  {"sleep",        1011, "T",          0, "Sleep T milliseconds", 4 },
+  {0, 0, 0, 0, "Device discovery and connection:", 1},
+  {"list",         'l', 0,             0, "List accessible (stopped and not claimed) devices"},
+  {"serial",       1009, "SERIAL",     0, "Connect to specific alluris device using serial number. This only works if the device is stopped."},
+  {NULL,           'b',  "Bus,Device", 0, "Connect to specific alluris device using bus and device id"},
+
+  {0, 0, 0, 0, "Measurement:", 2 },
+  {"start",        1006, 0,            0, "Start"},
+  {"stop",         1007, 0,            0, "Stop"},
+  {"value",        'v', 0,             0, "Value"},
+  {"pos-peak",     'p', 0,             0, "Positive peak"},
+  {"neg-peak",     'n', 0,             0, "Negative peak"},
+  {"sample",       's', "NUM",         0, "Capture NUM values"},
+
+  {0, 0, 0, 0, "Tare:", 3 },
+  {"tare",         't', 0,             0, "Tare measurement"},
+  {"clear-pos",    1000, 0,            0, "Clear positive peak"},
+  {"clear-neg",    1001, 0,            0, "Clear negative peak"},
+
+  {0, 0, 0, 0, "Settings:", 4 },
+  {"set-upper-limit", 1002, "P3",      0, "Param P3, upper limit"},
+  {"set-lower-limit", 1003, "P4",      0, "Param P4, lower limit"},
+  {"get-upper-limit", 1004, 0,         0, "Param P3, upper limit"},
+  {"get-lower-limit", 1005, 0,         0, "Param P4, lower limit"},
+  {"set-mode",      1012, "MODE",      0, "Measurement mode 0=std, 1=peak, 2=peak+, 3=peak-"},
+  {"get-mode",      1013, 0,           0, "Measurement mode 0=std, 1=peak, 2=peak+, 3=peak-"},
+  {"set-mem-mode",  1014, "MODE",      0, "Memory mode 0=disabled, 1=single, 2=continuous"},
+  {"get-mem-mode",  1015, 0,           0, "Memory mode 0=disabled, 1=single, 2=continuous"},
+  {"get-unit",      1016, 0,           0, "Unit"},
+  {"set-unit",      1017, "U",         0, "Unit 'N', 'cN', 'kg', 'g', 'lb', 'oz'"},
+
+  {0, 0, 0, 0, "Get fixed attributes:", 5 },
+  {"digits",       1008, 0,            0, "Digits"},
+  {"fmax",         1018, 0,            0, "F max"},
+
+  {0, 0, 0, 0, "Misc:", 6 },
+  {"state",        1010, 0,            0, "Read RAM state"},
+  {"sleep",        1011, "T",          0, "Sleep T milliseconds"},
   { 0,0,0,0,0,0 }
 
 };
@@ -216,6 +226,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
 
   enum liballuris_measurement_mode r_mode;
   enum liballuris_memory_mode r_mem_mode;
+  enum liballuris_unit r_unit;
   if (arguments->h)
     switch (key)
       {
@@ -295,6 +306,21 @@ parse_opt (int key, char *arg, struct argp_state *state)
       case 1015:
         r = liballuris_get_mem_mode (arguments->h, &r_mem_mode);
         print_value (r, r_mem_mode);
+        break;
+      case 1016:  //get-unit
+        r = liballuris_get_unit (arguments->h, &r_unit);
+        if (r != LIBUSB_SUCCESS)
+          fprintf(stderr, "Error: '%s'\n", liballuris_error_name (r));
+        else
+          printf ("%s\n", liballuris_unit_enum2str (r_unit));
+        break;
+      case 1017:  //set-unit
+        r_unit = liballuris_unit_str2enum (arg);
+        r = liballuris_set_unit (arguments->h, r_unit);
+        break;
+      case 1018:  //get fmax
+        r = liballuris_get_F_max (arguments->h, &value);
+        print_value (r, value);
         break;
       default:
         return ARGP_ERR_UNKNOWN;

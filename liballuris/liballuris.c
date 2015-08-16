@@ -85,6 +85,44 @@ const char * liballuris_error_name (int error_code)
   return "**UNKNOWN**";
 }
 
+const char * liballuris_unit_enum2str (enum liballuris_unit unit)
+{
+  switch (unit)
+    {
+    case LIBALLURIS_UNIT_N:
+      return "N";
+    case LIBALLURIS_UNIT_cN:
+      return "cN";
+    case LIBALLURIS_UNIT_kg:
+      return "kg";
+    case LIBALLURIS_UNIT_g:
+      return "g";
+    case LIBALLURIS_UNIT_lb:
+      return "lb";
+    case LIBALLURIS_UNIT_oz:
+      return "oz";
+    }
+  return "**UNKNOWN UNIT**";
+}
+
+enum liballuris_unit liballuris_unit_str2enum (const char *str)
+{
+  if (! strcmp (str, "N"))
+    return LIBALLURIS_UNIT_N;
+  else if (! strcmp (str, "cN"))
+    return LIBALLURIS_UNIT_cN;
+  else if (! strcmp (str, "kg"))
+    return LIBALLURIS_UNIT_kg;
+  else if (! strcmp (str, "g"))
+    return LIBALLURIS_UNIT_g;
+  else if (! strcmp (str, "lb"))
+    return LIBALLURIS_UNIT_lb;
+  else if (! strcmp (str, "oz"))
+    return LIBALLURIS_UNIT_oz;
+  else
+    return -1;
+}
+
 static void print_buffer (unsigned char* buf, int len)
 {
   int k;
@@ -413,6 +451,21 @@ int liballuris_digits (libusb_device_handle *dev_handle, int* v)
     {
       *v = char_to_int24 (in_buf + 3);
       if (*v == -1)
+        return LIBALLURIS_DEVICE_BUSY;
+    }
+  return ret;
+}
+
+int liballuris_get_F_max (libusb_device_handle *dev_handle, int* fmax)
+{
+  out_buf[0] = 0x08;
+  out_buf[1] = 3;
+  out_buf[2] = 2;
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret == LIBALLURIS_SUCCESS)
+    {
+      *fmax = char_to_int24 (in_buf + 3);
+      if (*fmax == -1)
         return LIBALLURIS_DEVICE_BUSY;
     }
   return ret;
@@ -774,6 +827,63 @@ int liballuris_get_mem_mode (libusb_device_handle *dev_handle, enum liballuris_m
   else
     // bug is fixed and we got a timeout (no superfluous reply)
     ;
+
+  return ret;
+}
+
+int liballuris_set_unit (libusb_device_handle *dev_handle, enum liballuris_unit unit)
+{
+  if (unit < 0 || unit > 5)
+    {
+      fprintf (stderr, "Error: unit %i out of range 0..5\n", unit);
+      return LIBALLURIS_OUT_OF_RANGE;
+    }
+
+  // F_max dependent mapping
+  int fmax;
+  int ret = liballuris_get_F_max (dev_handle, &fmax);
+  if (ret)
+    return ret;
+
+  out_buf[0] = 0x1A;
+  out_buf[1] = 3;
+
+  if (fmax <= 10) //mapping from chapter 3.14.3
+    {
+      if (unit == 2 || unit == 4) //kg and lb not available on 5N and 10N devices
+        return LIBALLURIS_OUT_OF_RANGE;
+      if (unit == 3 || unit == 5)
+        unit--;
+    }
+  else if (unit == 1 || unit == 3 || unit == 5) //g and oz not available on devices with fmax > 10N
+    return LIBALLURIS_OUT_OF_RANGE;
+
+  out_buf[2] = unit;
+  ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, 500);
+
+  if (in_buf[2] != unit)
+    return LIBALLURIS_DEVICE_BUSY;
+
+  return ret;
+}
+
+int liballuris_get_unit (libusb_device_handle *dev_handle, enum liballuris_unit *unit)
+{
+  // F_max dependent mapping
+  int fmax;
+  int ret = liballuris_get_F_max (dev_handle, &fmax);
+  if (ret)
+    return ret;
+
+  out_buf[0] = 0x1B;
+  out_buf[1] = 2;
+  ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 2, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret == LIBALLURIS_SUCCESS)
+    *unit = in_buf[2];
+
+  // mapping from chapter 3.15.3
+  if (fmax <= 10 && (*unit == 2 || *unit == 4))
+    *unit = *unit + 1;
 
   return ret;
 }
