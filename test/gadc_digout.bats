@@ -33,8 +33,6 @@ GADC=../cli/gadc
   [ "$output" -eq 3 ]
 }
 
-## all checks >3 fails at the moment: FIXME
-
 @test "Set digout = 4, get digout and compare" {
   run $GADC --set-digout 4 --get-digout
   [ "$status" -eq 0 ]
