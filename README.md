@@ -105,5 +105,5 @@ $ brew install graphviz
 * ~~Use GNU Build System~~ (Done)
 * ~~Fix liballuris_set_mem_mode, liballuris_get_mem_mode~~ (Done)
 * Overhaul liballuris_print_state, document liballuris_state
-* Test unit cN and oz on 5N or 10N device (./test_gadc_unit_le_10N.bats)
+* ~~ Test unit cN and oz on 5N or 10N device~~ (Done)
 * Implement full command set
