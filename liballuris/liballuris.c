@@ -734,6 +734,14 @@ int liballuris_stop_measurement (libusb_device_handle *dev_handle)
 
 int liballuris_set_upper_limit (libusb_device_handle *dev_handle, int limit)
 {
+  struct liballuris_state state;
+  int ret = liballuris_read_state (dev_handle, &state, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret)
+    return ret;
+
+  if (state.measuring)
+    return LIBALLURIS_DEVICE_BUSY;
+
   out_buf[0] = 0x18;
   out_buf[1] = 6;
   out_buf[2] = 0; //maximum
@@ -745,6 +753,14 @@ int liballuris_set_upper_limit (libusb_device_handle *dev_handle, int limit)
 
 int liballuris_set_lower_limit (libusb_device_handle *dev_handle, int limit)
 {
+  struct liballuris_state state;
+  int ret = liballuris_read_state (dev_handle, &state, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret)
+    return ret;
+
+  if (state.measuring)
+    return LIBALLURIS_DEVICE_BUSY;
+
   out_buf[0] = 0x18;
   out_buf[1] = 6;
   out_buf[2] = 1; //minimum
@@ -756,10 +772,18 @@ int liballuris_set_lower_limit (libusb_device_handle *dev_handle, int limit)
 
 int liballuris_get_upper_limit (libusb_device_handle *dev_handle, int* limit)
 {
+  struct liballuris_state state;
+  int ret = liballuris_read_state (dev_handle, &state, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret)
+    return ret;
+
+  if (state.measuring)
+    return LIBALLURIS_DEVICE_BUSY;
+
   out_buf[0] = 0x19;
   out_buf[1] = 6;
   out_buf[2] = 0; //maximum
-  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 6, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
+  ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 6, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
   if (ret == LIBALLURIS_SUCCESS)
     *limit = char_to_int24 (in_buf + 3);
   return ret;
@@ -767,10 +791,18 @@ int liballuris_get_upper_limit (libusb_device_handle *dev_handle, int* limit)
 
 int liballuris_get_lower_limit (libusb_device_handle *dev_handle, int* limit)
 {
+  struct liballuris_state state;
+  int ret = liballuris_read_state (dev_handle, &state, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret)
+    return ret;
+
+  if (state.measuring)
+    return LIBALLURIS_DEVICE_BUSY;
+
   out_buf[0] = 0x19;
   out_buf[1] = 6;
   out_buf[2] = 1; //minimum
-  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 6, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
+  ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 6, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
   if (ret == LIBALLURIS_SUCCESS)
     *limit = char_to_int24 (in_buf + 3);
   return ret;
