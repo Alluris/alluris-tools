@@ -22,7 +22,10 @@ If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include <argp.h>
+#include <signal.h>
 #include <liballuris.h>
+
+char do_exit = 0;
 
 const char *argp_program_version =
   "gadc 0.1 using " PACKAGE_NAME " " PACKAGE_VERSION;
@@ -50,7 +53,7 @@ static struct argp_option options[] =
   {"value",        'v', 0,             0, "Value"},
   {"pos-peak",     'p', 0,             0, "Positive peak"},
   {"neg-peak",     'n', 0,             0, "Negative peak"},
-  {"sample",       's', "NUM",         0, "Capture NUM values"},
+  {"sample",       's', "NUM",         0, "Capture NUM values (Inf if NUM==0)"},
 
   {0, 0, 0, 0, "Tare:", 3 },
   {"tare",         't', 0,             0, "Tare measurement"},
@@ -91,6 +94,11 @@ struct arguments
   int error;
 };
 
+void termination_handler ()
+{
+  do_exit = 1;
+}
+
 // FIXME: Im Falle eines Fehlers, sollte libusb geschlossen und das Programm beendet werden
 static void print_value (int ret, int value)
 {
@@ -110,27 +118,32 @@ static int print_multiple (libusb_device_handle *dev_handle, int num)
       if (state.measuring)
         {
           int block_size = num;
-          if (block_size > 19)
+          if (block_size > 19 || !num)
             block_size = 19;
 
           int tempx[block_size];
 
           // enable streaming
           ret = liballuris_cyclic_measurement (dev_handle, 1, block_size);
-          while (!ret && num > 0)
+
+          int cnt = 0;
+          // if num==0, read until sigint or sigterm
+          while (!do_exit && !ret && (!num || num > cnt))
             {
               //printf ("polling %i, %i left\n", block_size, num);
               ret = liballuris_poll_measurement (dev_handle, tempx, block_size);
               if (ret == LIBUSB_SUCCESS)
                 {
                   int j = (num < block_size)? num : block_size;
-                  int k;
-                  for (k=0; k < j; ++k)
-                    printf ("%i\n", tempx[k]);
+                  int k=0;
+                  while (k < block_size && (cnt < num || !num))
+                    {
+                      printf ("%i\n", tempx[k++]);
+                      cnt++;
+                    }
                 }
               else
                 return ret;
-              num = num - block_size;
             }
 
           // disable streaming
@@ -248,7 +261,13 @@ parse_opt (int key, char *arg, struct argp_state *state)
         break;
       case 's':
         num_samples = strtol (arg, &endptr, 10);
-        r = print_multiple (arguments->h, num_samples);
+        if (!num_samples || num_samples > 1)
+          r = print_multiple (arguments->h, num_samples);
+        else
+          {
+            fprintf (stderr, "NUM has to be > 1 or 0 (read until sigint or sigterm)\n");
+            r = LIBALLURIS_OUT_OF_RANGE;
+          }
         break;
       case 't':
         r = liballuris_tare (arguments->h);
@@ -351,9 +370,12 @@ parse_opt (int key, char *arg, struct argp_state *state)
         return ARGP_ERR_UNKNOWN;
       }
 
-  if (r)
+  if (r || do_exit)
     {
-      arguments->error = r;
+      if (do_exit)
+        arguments->error = 0;
+      else
+        arguments->error = r;
       // stop parsing
       state->next = state->argc;
     }
@@ -372,6 +394,12 @@ int main(int argc, char** argv)
       fprintf (stderr, "Try `gadc --help' or `gadc --usage' for more information.\n");
       return EXIT_FAILURE;
     }
+
+  if (signal (SIGINT, termination_handler) == SIG_IGN)
+    signal (SIGINT, SIG_IGN);
+
+  if (signal (SIGTERM, termination_handler) == SIG_IGN)
+    signal (SIGTERM, SIG_IGN);
 
   struct arguments arguments;
 
@@ -401,7 +429,7 @@ int main(int argc, char** argv)
     {
       r = libusb_claim_interface (arguments.h, 0);
       if (r)
-        fprintf (stderr, "xCouldn't claim interface: %s\n", liballuris_error_name (r));
+        fprintf (stderr, "Couldn't claim interface: %s\n", liballuris_error_name (r));
       else
         {
           // Second parse, now execute the commands
