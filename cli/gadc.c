@@ -248,15 +248,15 @@ parse_opt (int key, char *arg, struct argp_state *state)
     switch (key)
       {
       case 'v':
-        r = liballuris_raw_value (arguments->h, &value);
+        r = liballuris_get_value (arguments->h, &value);
         print_value (r, value);
         break;
       case 'p':
-        r = liballuris_raw_pos_peak (arguments->h, &value);
+        r = liballuris_get_pos_peak (arguments->h, &value);
         print_value (r, value);
         break;
       case 'n':
-        r = liballuris_raw_neg_peak (arguments->h, &value);
+        r = liballuris_get_neg_peak (arguments->h, &value);
         print_value (r, value);
         break;
       case 's':
@@ -301,7 +301,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
         r = liballuris_stop_measurement (arguments->h);
         break;
       case 1008:
-        r = liballuris_digits (arguments->h, &value);
+        r = liballuris_get_digits (arguments->h, &value);
         print_value (r, value);
         break;
       case 1010:

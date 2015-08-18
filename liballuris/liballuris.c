@@ -278,7 +278,7 @@ int liballuris_get_device_list (libusb_context* ctx, struct alluris_device_descr
 
                       if (read_serial)
                         // get serial number from device
-                        liballuris_serial_number (h, alluris_devs[num_alluris_devices].serial_number, sizeof (alluris_devs[0].serial_number));
+                        liballuris_get_serial_number (h, alluris_devs[num_alluris_devices].serial_number, sizeof (alluris_devs[0].serial_number));
 
                       num_alluris_devices++;
                       libusb_release_interface (h, 0);
@@ -409,7 +409,7 @@ void liballuris_clear_RX (libusb_device_handle* dev_handle, unsigned int timeout
  * \param[in] length length of buffer in bytes
  * \return 0 if successful else error code. LIBALLURIS_DEVICE_BUSY if measurement is running
  */
-int liballuris_serial_number (libusb_device_handle *dev_handle, char* buf, size_t length)
+int liballuris_get_serial_number (libusb_device_handle *dev_handle, char* buf, size_t length)
 {
   out_buf[0] = 0x08;
   out_buf[1] = 3;
@@ -443,8 +443,8 @@ int liballuris_get_firmware (libusb_device_handle *dev_handle, int dev, char* bu
 /*!
  * \brief Query the number of digits for the interpretation of the raw fixed-point numbers
  *
- * All raw_* functions returns fixed-point numbers. This function queries the number
- * of digits after the radix point. For example if raw_value returns 123 and digits returns 1
+ * All liballuris_get_functions returns fixed-point numbers or strings. This function queries the number
+ * of digits after the radix point. For example if liballuris_get_value(..) returns 123 and digits returns 1
  * the real value is 12.3
  *
  * Query this value is only possible if the measurement is not running,
@@ -453,9 +453,9 @@ int liballuris_get_firmware (libusb_device_handle *dev_handle, int dev, char* bu
  * \param[in] dev_handle a handle for the device to communicate with
  * \param[out] v output location for the returned number of digits. Only populated when the return code is 0.
  * \return 0 if successful else error code
- * \sa raw_value (libusb_device_handle *dev_handle, int* v)
+ * \sa liballuris_get_value (libusb_device_handle *dev_handle, int* v)
  */
-int liballuris_digits (libusb_device_handle *dev_handle, int* v)
+int liballuris_get_digits (libusb_device_handle *dev_handle, int* v)
 {
   out_buf[0] = 0x08;
   out_buf[1] = 3;
@@ -493,7 +493,7 @@ int liballuris_get_F_max (libusb_device_handle *dev_handle, int* fmax)
  * \return 0 if successful else error code
  * \sa digits (libusb_device_handle *dev_handle, int* v)
  */
-int liballuris_raw_value (libusb_device_handle *dev_handle, int* value)
+int liballuris_get_value (libusb_device_handle *dev_handle, int* value)
 {
   out_buf[0] = 0x46;
   out_buf[1] = 3;
@@ -512,7 +512,7 @@ int liballuris_raw_value (libusb_device_handle *dev_handle, int* value)
  * \return 0 if successful else error code
  * \sa digits (libusb_device_handle *dev_handle, int* v)
  */
-int liballuris_raw_pos_peak (libusb_device_handle *dev_handle, int* peak)
+int liballuris_get_pos_peak (libusb_device_handle *dev_handle, int* peak)
 {
   out_buf[0] = 0x46;
   out_buf[1] = 3;
@@ -531,7 +531,7 @@ int liballuris_raw_pos_peak (libusb_device_handle *dev_handle, int* peak)
  * \return 0 if successful else error code
  * \sa digits (libusb_device_handle *dev_handle, int* v)
  */
-int liballuris_raw_neg_peak (libusb_device_handle *dev_handle, int* peak)
+int liballuris_get_neg_peak (libusb_device_handle *dev_handle, int* peak)
 {
   out_buf[0] = 0x46;
   out_buf[1] = 3;
@@ -658,7 +658,7 @@ int liballuris_clear_neg_peak (libusb_device_handle *dev_handle)
  * \brief Start measurement
  *
  * You may have to wait up to 500ms until you can read stable values with
- * liballuris_raw_value().
+ * liballuris_get_value().
  *
  * \param[in] dev_handle a handle for the device to communicate with
  * \return 0 if successful else error code

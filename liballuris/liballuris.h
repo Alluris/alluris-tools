@@ -177,14 +177,14 @@ void liballuris_free_device_list (struct alluris_device_description* alluris_dev
 
 void liballuris_clear_RX (libusb_device_handle* dev_handle, unsigned int timeout);
 
-int liballuris_serial_number (libusb_device_handle *dev_handle, char* buf, size_t length);
+int liballuris_get_serial_number (libusb_device_handle *dev_handle, char* buf, size_t length);
 int liballuris_get_firmware (libusb_device_handle *dev_handle, int dev, char* buf, size_t length);
-int liballuris_digits (libusb_device_handle *dev_handle, int* v);
+int liballuris_get_digits (libusb_device_handle *dev_handle, int* v);
 int liballuris_get_F_max (libusb_device_handle *dev_handle, int* fmax);
 
-int liballuris_raw_value (libusb_device_handle *dev_handle, int* value);
-int liballuris_raw_pos_peak (libusb_device_handle *dev_handle, int* peak);
-int liballuris_raw_neg_peak (libusb_device_handle *dev_handle, int* peak);
+int liballuris_get_value (libusb_device_handle *dev_handle, int* value);
+int liballuris_get_pos_peak (libusb_device_handle *dev_handle, int* peak);
+int liballuris_get_neg_peak (libusb_device_handle *dev_handle, int* peak);
 
 /* read and print state */
 int liballuris_read_state (libusb_device_handle *dev_handle, struct liballuris_state* state, unsigned int timeout);
