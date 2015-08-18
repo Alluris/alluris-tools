@@ -31,7 +31,7 @@ GADC=../cli/gadc
 ## start measurement
 
 @test "INIT: Set mode 0 and start to measure" {
-  run $GADC --set-mode 0 --stat
+  run $GADC --set-mode 0 --start
   [ "$status" -eq 0 ]
 }
 
