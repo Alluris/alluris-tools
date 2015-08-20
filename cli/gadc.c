@@ -94,8 +94,9 @@ struct arguments
   int error;
 };
 
-void termination_handler ()
+void termination_handler (int signum)
 {
+  //fprintf(stderr, "Received signal %i, terminating program\n", signum);
   do_exit = 1;
 }
 
@@ -141,6 +142,7 @@ static int print_multiple (libusb_device_handle *dev_handle, int num)
                       printf ("%i\n", tempx[k++]);
                       cnt++;
                     }
+                  fflush (stdout);
                 }
               else
                 return ret;
@@ -400,6 +402,9 @@ int main(int argc, char** argv)
 
   if (signal (SIGTERM, termination_handler) == SIG_IGN)
     signal (SIGTERM, SIG_IGN);
+
+  if (signal (SIGPIPE, termination_handler) == SIG_IGN)
+    signal (SIGPIPE, SIG_IGN);
 
   struct arguments arguments;
 
