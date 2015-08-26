@@ -165,3 +165,10 @@ GADC=../cli/gadc
   run $GADC --set-unit=lb
   [ "$status" -eq 4 ]
 }
+
+##### default N
+
+@test "FINALIZE: --set-unit=N" {
+  run $GADC --set-unit=N
+  [ "$status" -eq 0 ]
+}
