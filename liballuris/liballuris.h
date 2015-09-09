@@ -56,8 +56,6 @@ If not, see <http://www.gnu.org/licenses/>.
 //! Default buffer size. Should be multiple of wMaxPacketSize
 #define DEFAULT_SEND_BUF_LEN 64
 #define DEFAULT_RECV_BUF_LEN 64
-static unsigned char out_buf[DEFAULT_SEND_BUF_LEN];
-static unsigned char in_buf[DEFAULT_RECV_BUF_LEN];
 
 //! liballuris specific errors
 enum liballuris_error

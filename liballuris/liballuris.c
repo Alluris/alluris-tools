@@ -27,6 +27,9 @@ If not, see <http://www.gnu.org/licenses/>.
 
 #include "liballuris.h"
 
+static unsigned char out_buf[DEFAULT_SEND_BUF_LEN];
+static unsigned char in_buf[DEFAULT_RECV_BUF_LEN];
+
 // minimum length of "in" is 2 bytes
 static short char_to_uint16 (unsigned char* in)
 {
