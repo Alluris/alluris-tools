@@ -436,7 +436,7 @@ int liballuris_get_firmware (libusb_device_handle *dev_handle, int dev, char* bu
   out_buf[2] = dev;
   int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
   if (ret == LIBALLURIS_SUCCESS)
-    snprintf (buf, length, "V%i.%02i.%03i", in_buf[3], in_buf[4], in_buf[5]);
+    snprintf (buf, length, "V%i.%02i.%03i", in_buf[5], in_buf[4], in_buf[3]);
   return ret;
 }
 
