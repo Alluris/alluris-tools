@@ -62,7 +62,7 @@ GADC=../cli/gadc
   [ "$status" -eq 0 ]
 }
 
-@test "Set digout = 0, get digout and compare" {
+@test "Set digout = 0, get digout and compare again" {
   run $GADC --set-digout 0 --get-digout
   [ "$status" -eq 0 ]
   [ "$output" -eq 0 ]
