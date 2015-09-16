@@ -319,10 +319,10 @@ int liballuris_get_device_list (libusb_context* ctx, struct alluris_device_descr
             libusb_unref_device (dev);
 
           if (num_alluris_devices == length)
-            // maximum number of devices reached
-            return length;
+            break; // maximum number of devices reached
         }
     }
+  libusb_free_device_list (devs, 0);
   return num_alluris_devices;
 }
 
