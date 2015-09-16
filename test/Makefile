@@ -15,6 +15,7 @@ single: fcn_check
 	bats gadc_peaks.bats
 	bats gadc_unit.bats
 	bats gadc_various.bats
+	bats gadc_state.bats
 
 fcn_check:
 	grep -H "@test" *.bats | sort | uniq -d

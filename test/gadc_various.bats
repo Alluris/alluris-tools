@@ -19,5 +19,17 @@ GADC=../cli/gadc
   [ "$status" -eq 0 ]
 }
 
+@test "Get firmware version" {
+  run $GADC --get-firmware
+  [ "$status" -eq 0 ]
+}
 
+@test "Sleep 500ms" {
+  run $GADC --sleep 500
+  [ "$status" -eq 0 ]
+}
 
+@test "Get state" {
+  run $GADC --get--state
+  [ "$status" -eq 0 ]
+}
