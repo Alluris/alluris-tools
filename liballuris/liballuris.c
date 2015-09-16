@@ -486,8 +486,8 @@ int liballuris_get_firmware (libusb_device_handle *dev_handle, int dev, char* bu
  * \brief Query the number of digits for the interpretation of the raw fixed-point numbers
  *
  * All liballuris_get_* functions return fixed-point numbers or strings. This function queries the number
- * of digits after the radix point. For example if liballuris_get_value(..) returns 123 and digits returns 1
- * the real value is 12.3
+ * of digits after the radix point. For example if \ref liballuris_get_value returns 123 and digits returns 1
+ * the real value is 12.3. Use \ref liballuris_get_unit to get a meaningful measurement.
  *
  * Query this value is only possible if the measurement is not running,
  * else LIBALLURIS_DEVICE_BUSY is returned.
@@ -553,7 +553,7 @@ int liballuris_get_value (libusb_device_handle *dev_handle, int* value)
   out_buf[0] = 0x46;
   out_buf[1] = 3;
   out_buf[2] = 3;
-  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, 200);
   if (ret == LIBALLURIS_SUCCESS)
     *value = char_to_int24 (in_buf + 3);
   return ret;
@@ -713,7 +713,11 @@ int liballuris_tare (libusb_device_handle *dev_handle)
   out_buf[0] = 0x15;
   out_buf[1] = 3;
   out_buf[2] = 0;
-  return liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
+
+  // tare needs some time to calculate the mean
+  usleep (200000);
+  return ret;
 }
 
 /*!
