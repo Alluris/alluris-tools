@@ -1,6 +1,12 @@
 .PHONY:check
+.PHONY:all
+.PHONY:single
+.PHONY:fcn_check
 
-check: fcn_check
+all: fcn_check
+	bats *.bats
+
+single: fcn_check
 	bats gadc_digits.bats
 	bats gadc_digout.bats
 	bats gadc_limits.bats

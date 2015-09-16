@@ -214,6 +214,8 @@ static int liballuris_device_bulk_transfer (libusb_device_handle* dev_handle,
               ||  in_buf[1] != actual))
         {
           fprintf(stderr, "Error: Malformed reply. Check physical connection and EMI.\n");
+          fprintf(stderr, "(send_cmd=0x%02X != recv_cmd=0x%02X) || (recv_len=%i != actual_recv=%i),\n", out_buf[0], in_buf[0], in_buf[1], actual);
+
           return LIBALLURIS_MALFORMED_REPLY;
         }
     }
@@ -868,11 +870,12 @@ int liballuris_get_mem_mode (libusb_device_handle *dev_handle, enum liballuris_m
   // workaround for a firmware bug in versions < FIXME: add version number!
   // check if we get a second reply
   int actual;
-  int temp_ret = libusb_bulk_transfer (dev_handle, 0x81 | LIBUSB_ENDPOINT_IN, in_buf, 3, &actual, 20);
+  int temp_ret = libusb_bulk_transfer (dev_handle, 0x81 | LIBUSB_ENDPOINT_IN, in_buf, 3, &actual, 100);
   if (temp_ret == LIBALLURIS_SUCCESS)
     {
       // discard first reply
       *mode = in_buf[2];
+      //fprintf (stderr, "Warning: double answer for get_mem_mode (0x1E)\n");
     }
   else
     // bug is fixed and we got a timeout (no superfluous reply)
