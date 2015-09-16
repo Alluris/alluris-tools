@@ -53,8 +53,9 @@ If not, see <http://www.gnu.org/licenses/>.
 //! Default timeout in milliseconds while reading from the device
 #define DEFAULT_RECEIVE_TIMEOUT 100
 
-//! Default buffer size. Should be multiple of wMaxPacketSize
+//! Default send buffer size. Should be multiple of wMaxPacketSize
 #define DEFAULT_SEND_BUF_LEN 64
+//! Default receive buffer size.
 #define DEFAULT_RECV_BUF_LEN 64
 
 //! liballuris specific errors
@@ -92,7 +93,7 @@ enum liballuris_memory_mode
   LIBALLURIS_MEM_MODE_CONTINUOUS = 2  //!< Start/Stop continuous capturing to memory with key (S)
 };
 
-//! unit
+//! liballuris_unit
 enum liballuris_unit
 {
   LIBALLURIS_UNIT_N   = 0, //!< newton
@@ -103,9 +104,10 @@ enum liballuris_unit
   LIBALLURIS_UNIT_oz  = 5, //!< oz (only devices with range 5N or 10N)
 };
 
+//! liballuris_state
 struct liballuris_state
 {
-  unsigned char dummy0 : 1;
+  unsigned char dummy0                : 1; //!< dummy/unused
   unsigned char upper_limit_exceeded  : 1; //!< Force >= upper limit
   unsigned char lower_limit_underrun  : 1; //!< Force <= lower limit
   unsigned char some_peak_mode_active : 1; //!< Peak, Peak+ or Peak- active
@@ -117,12 +119,12 @@ struct liballuris_state
   //! if the memory is full and storing to memory has stopped for this reason.
   //! \sa liballuris_memory_mode
   unsigned char mem_running           : 1;
-  unsigned char dummy7                : 1;
-  unsigned char dummy8                : 1;
-  unsigned char dummy9                : 1;
+  unsigned char dummy7                : 1; //!< dummy/unused
+  unsigned char dummy8                : 1; //!< dummy/unused
+  unsigned char dummy9                : 1; //!< dummy/unused
   unsigned char overload              : 1; //!< Absolute limit (abs(F) > 150% of nominal range) is exceeded
   unsigned char fracture              : 1; //!< Only W20/W40
-  unsigned char dummy12               : 1;
+  unsigned char dummy12               : 1; //!< dummy/unused
 
   //! \brief 1 = Memory function active (P21=1 or P21=2)
   //! \sa liballuris_memory_mode
@@ -133,21 +135,22 @@ struct liballuris_state
   //! - 0 = Store single value on keypress (P21=1)
   //! \sa liballuris_memory_mode
   unsigned char mem_conti             : 1;
-  unsigned char dummy15               : 1;
-  unsigned char grenz_option          : 1; //!<
-  unsigned char dummy17               : 1;
-  unsigned char dummy18               : 1;
-  unsigned char dummy19               : 1;
-  unsigned char dummy20               : 1;
-  unsigned char dummy21               : 1;
-  unsigned char dummy22               : 1;
-  unsigned char measuring             : 1; //!<
+  unsigned char dummy15               : 1; //!< dummy/unused
+  unsigned char grenz_option          : 1; //!< FIXME
+  unsigned char dummy17               : 1; //!< dummy/unused
+  unsigned char dummy18               : 1; //!< dummy/unused
+  unsigned char dummy19               : 1; //!< dummy/unused
+  unsigned char dummy20               : 1; //!< dummy/unused
+  unsigned char dummy21               : 1; //!< dummy/unused
+  unsigned char dummy22               : 1; //!< dummy/unused
+  unsigned char measuring             : 1; //!< measurement is running
 };
 
+//! __liballuris_state__
 union __liballuris_state__
 {
-  struct liballuris_state bits;
-  unsigned int _int;
+  struct liballuris_state bits;           //!< bit access
+  unsigned int _int;                      //!< uint32 access
 };
 
 /*!

@@ -1,5 +1,6 @@
-# liballuris
-Generic driver for Alluris devices with USB measurement interface.
+# alluris-tools
+
+Collection of tools and generic driver for Alluris devices with USB measurement interface.
 
 These are:
 * FMI-S30 and FMI-S50
@@ -73,9 +74,7 @@ You firstly need to install some build-tools
 $ brew install libtool automake
 ```
 
-
 Then continue as follows:
-
 
 ```
 $ ./bootstrap_mac
@@ -84,7 +83,7 @@ $ make
 $ make install
 ```
 
-####Optional: For auto-building the documentation you'll also need [Doxygen](http://www.stack.nl/~dimitri/doxygen/)
+#### Optional: For auto-building the documentation you'll also need [Doxygen](http://www.stack.nl/~dimitri/doxygen/)
 This will require some additional steps.
 
 If you install the Doxygen GUI binary, you have to link it for using it as CLI:
@@ -98,7 +97,6 @@ The `dot`-dependency is also missing. Unfortunately, you need to change some per
 $ sudo chmod 775 /usr/local/share/man/man3 /usr/local/share/man/man5 /usr/local/share/man/man7
 $ brew install graphviz
 ```
-
 
 ## ToDo
 

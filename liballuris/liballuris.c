@@ -59,7 +59,7 @@ static int char_to_int24 (unsigned char* in)
  * Returns a constant NULL-terminated string with the ASCII name of a libusb
  * or liballuris error code. The caller must not free() the returned string.
  *
- * \param error_code The \ref error code to return the name of.
+ * \param error_code The \ref liballuris_error code to return the name of.
  * \returns The error name, or the string **UNKNOWN** if the value of
  * error_code is not a known error code.
  */
@@ -88,6 +88,12 @@ const char * liballuris_error_name (int error_code)
   return "**UNKNOWN**";
 }
 
+/*!
+ * Convert enum liballuris_unit to string
+ *
+ * \param unit as liballuris_unit
+ * \returns N, cN, kg, g, lb, oz or **UNKNOWN UNIT**
+ */
 const char * liballuris_unit_enum2str (enum liballuris_unit unit)
 {
   switch (unit)
@@ -108,6 +114,12 @@ const char * liballuris_unit_enum2str (enum liballuris_unit unit)
   return "**UNKNOWN UNIT**";
 }
 
+/*!
+ * Convert string to enum liballuris_unit
+ *
+ * \param str which can be N, cN, kg, g, lb, oz
+ * \returns enum liballuris_unit or -1 if unknown unit
+ */
 enum liballuris_unit liballuris_unit_str2enum (const char *str)
 {
   if (! strcmp (str, "N"))
@@ -126,6 +138,7 @@ enum liballuris_unit liballuris_unit_str2enum (const char *str)
     return -1;
 }
 
+//! Internal function to print send or receive buffers
 static void print_buffer (unsigned char* buf, int len)
 {
   int k;
@@ -138,7 +151,7 @@ static void print_buffer (unsigned char* buf, int len)
   printf ("\n");
 }
 
-// send/receive wrapper
+//! Internal send and receive wrapper around libusb_bulk_transfer
 static int liballuris_device_bulk_transfer (libusb_device_handle* dev_handle,
     const char* funcname,
     int send_len,
@@ -232,11 +245,12 @@ static int liballuris_device_bulk_transfer (libusb_device_handle* dev_handle,
  * Thus this function only lists devices where the application has sufficient rights to open
  * and read from the device. Check permissions if a device isn't returned.
  *
- * The retrieved list has to be freed with \ref free_alluris_device_list before the application exits.
+ * The retrieved list has to be freed with \ref liballuris_free_device_list before the application exits.
+ * \param[in] ctx pointer to libusb context
  * \param[out] alluris_devs pointer to storage for the device list
  * \param[in] length number of elements in alluris_devs
  * \param[in] read_serial Try to read the serial from devices
- * \return 0 if successful else error code
+ * \return 0 if successful else \ref liballuris_error
  * \sa liballuris_free_device_list
  */
 int liballuris_get_device_list (libusb_context* ctx, struct alluris_device_description* alluris_devs, size_t length, char read_serial)
@@ -328,9 +342,10 @@ void liballuris_free_device_list (struct alluris_device_description* alluris_dev
 
 /*!
  * \brief Open device with specified serial_number or the first available if NULL
+ * \param[in] ctx pointer to libusb context
  * \param[in] serial_number of device or NULL
  * \param[out] h storage for handle to communicate with the device
- * \return 0 if successful else error code
+ * \return 0 if successful else \ref liballuris_error
  */
 int liballuris_open_device (libusb_context* ctx, const char* serial_number, libusb_device_handle** h)
 {
@@ -361,10 +376,11 @@ int liballuris_open_device (libusb_context* ctx, const char* serial_number, libu
 
 /*!
  * \brief Open device with specified bus and device id.
+ * \param[in] ctx pointer to libusb context
  * \param[in] bus id of device
  * \param[in] device id of device
  * \param[out] h storage for handle to communicate with the device
- * \return 0 if successful else error code
+ * \return 0 if successful else \ref liballuris_error
  */
 int liballuris_open_device_with_id (libusb_context* ctx, int bus, int device, libusb_device_handle** h)
 {
@@ -390,6 +406,14 @@ int liballuris_open_device_with_id (libusb_context* ctx, int bus, int device, li
   return ret;
 }
 
+/*!
+ * \brief Clear receive buffer
+ *
+ * Try to read 64 bytes from receive endpoint fo clear the USB receive queue after some error.
+ * There is no error if a timeout occurs.
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[in] timeout read timeout
+ */
 void liballuris_clear_RX (libusb_device_handle* dev_handle, unsigned int timeout)
 {
   unsigned char data[64];
@@ -412,7 +436,7 @@ void liballuris_clear_RX (libusb_device_handle* dev_handle, unsigned int timeout
  * \param[in] dev_handle a handle for the device to communicate with
  * \param[out] buf output location for the serial number. Only populated when the return code is 0.
  * \param[in] length length of buffer in bytes
- * \return 0 if successful else error code. LIBALLURIS_DEVICE_BUSY if measurement is running
+ * \return 0 if successful else \ref liballuris_error. LIBALLURIS_DEVICE_BUSY if measurement is running
  */
 int liballuris_get_serial_number (libusb_device_handle *dev_handle, char* buf, size_t length)
 {
@@ -431,6 +455,19 @@ int liballuris_get_serial_number (libusb_device_handle *dev_handle, char* buf, s
   return ret;
 }
 
+/*!
+ * \brief Query firmware version
+ *
+ * The returned string is for example "V5.03.009"
+ * If the measurement is running, the firmware can't be read from the measurement processor
+ * and "V255.255.255" is returned instead.
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[in] dev 0=USB communication processor, 1=measurement processor
+ * \param[out] buf output location for the firmware string. Only populated when the return code is 0.
+ * \param[in] length length of buffer in bytes
+ * \return 0 if successful else \ref liballuris_error.
+ */
 int liballuris_get_firmware (libusb_device_handle *dev_handle, int dev, char* buf, size_t length)
 {
   if (dev < 0 || dev > 1)
@@ -448,7 +485,7 @@ int liballuris_get_firmware (libusb_device_handle *dev_handle, int dev, char* bu
 /*!
  * \brief Query the number of digits for the interpretation of the raw fixed-point numbers
  *
- * All liballuris_get_functions returns fixed-point numbers or strings. This function queries the number
+ * All liballuris_get_* functions return fixed-point numbers or strings. This function queries the number
  * of digits after the radix point. For example if liballuris_get_value(..) returns 123 and digits returns 1
  * the real value is 12.3
  *
@@ -457,8 +494,8 @@ int liballuris_get_firmware (libusb_device_handle *dev_handle, int dev, char* bu
  *
  * \param[in] dev_handle a handle for the device to communicate with
  * \param[out] v output location for the returned number of digits. Only populated when the return code is 0.
- * \return 0 if successful else error code
- * \sa liballuris_get_value (libusb_device_handle *dev_handle, int* v)
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_get_value
  */
 int liballuris_get_digits (libusb_device_handle *dev_handle, int* v)
 {
@@ -475,6 +512,18 @@ int liballuris_get_digits (libusb_device_handle *dev_handle, int* v)
   return ret;
 }
 
+/*!
+ * \brief Query the maximum force of the device
+ *
+ * Query this value is only possible if the measurement is not running,
+ * else LIBALLURIS_DEVICE_BUSY is returned.
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[out] fmax output location for the returned max force. Only populated when the return code is 0.
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_get_unit
+ * \sa liballuris_get_digits
+ */
 int liballuris_get_F_max (libusb_device_handle *dev_handle, int* fmax)
 {
   out_buf[0] = 0x08;
@@ -495,8 +544,9 @@ int liballuris_get_F_max (libusb_device_handle *dev_handle, int* fmax)
  *
  * \param[in] dev_handle a handle for the device to communicate with
  * \param[out] value output location for the measurement value. Only populated when the return code is 0.
- * \return 0 if successful else error code
- * \sa digits (libusb_device_handle *dev_handle, int* v)
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_get_unit
+ * \sa liballuris_get_digits
  */
 int liballuris_get_value (libusb_device_handle *dev_handle, int* value)
 {
@@ -514,8 +564,9 @@ int liballuris_get_value (libusb_device_handle *dev_handle, int* value)
  *
  * \param[in] dev_handle a handle for the device to communicate with
  * \param[out] peak output location for the peak value. Only populated when the return code is 0.
- * \return 0 if successful else error code
- * \sa digits (libusb_device_handle *dev_handle, int* v)
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_get_unit
+ * \sa liballuris_get_digits
  */
 int liballuris_get_pos_peak (libusb_device_handle *dev_handle, int* peak)
 {
@@ -533,8 +584,9 @@ int liballuris_get_pos_peak (libusb_device_handle *dev_handle, int* peak)
  *
  * \param[in] dev_handle a handle for the device to communicate with
  * \param[out] peak output location for the peak value. Only populated when the return code is 0.
- * \return 0 if successful else error code
- * \sa digits (libusb_device_handle *dev_handle, int* v)
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_get_unit
+ * \sa liballuris_get_digits
  */
 int liballuris_get_neg_peak (libusb_device_handle *dev_handle, int* peak)
 {
@@ -547,6 +599,14 @@ int liballuris_get_neg_peak (libusb_device_handle *dev_handle, int* peak)
   return ret;
 }
 
+/*!
+ * \brief Query the current state of the device
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[out] state output location for the state. Only populated when the return code is 0.
+ * \param[in] timeout in ms
+ * \return 0 if successful else \ref liballuris_error
+ */
 int liballuris_read_state (libusb_device_handle *dev_handle, struct liballuris_state* state, unsigned int timeout)
 {
   out_buf[0] = 0x46;
@@ -562,14 +622,12 @@ int liballuris_read_state (libusb_device_handle *dev_handle, struct liballuris_s
     {
       union __liballuris_state__ tmp;
       tmp._int = char_to_int24 (in_buf + 3);
-      if (tmp._int == -1)
-        return LIBALLURIS_DEVICE_BUSY;
-      else
-        *state = tmp.bits;
+      *state = tmp.bits;
     }
   return ret;
 }
 
+//! Print state to stdout
 void liballuris_print_state (libusb_device_handle *dev_handle, struct liballuris_state state)
 {
   printf ("[%c] upper limit exceeded\n",               (state.upper_limit_exceeded)? 'X': ' ');
@@ -591,8 +649,8 @@ void liballuris_print_state (libusb_device_handle *dev_handle, struct liballuris
  *
  * \param[in] dev_handle a handle for the device to communicate with
  * \param[in] enable
- * \param[in] packetlen 1..19
- * \return 0 if successful else error code
+ * \param[in] length 1..19
+ * \return 0 if successful else \ref liballuris_error
  */
 int liballuris_cyclic_measurement (libusb_device_handle *dev_handle, char enable, size_t length)
 {
@@ -612,17 +670,29 @@ int liballuris_cyclic_measurement (libusb_device_handle *dev_handle, char enable
   return ret;
 }
 
-/*
- * Increased receive timeout:
- * The sampling frequency can be selected between 10Hz and 990Hz
- * Therefore the maximum delay until the measurement completes is 1/10Hz = 100ms.
- * *2 = 200ms
+/*!
+ * \brief poll cyclic measurements
+ *
+ * Cyclic measurements has to be enabled before with liballuris_cyclic_measurement.
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[in] buf output location for the measurements. Only populated when the return code is 0.
+ * \param[in] length of block 1..19, typically the same used with liballuris_cyclic_measurement
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_cyclic_measurement
+ * \sa liballuris_get_unit
+ * \sa liballuris_get_digits
  */
-
 int liballuris_poll_measurement (libusb_device_handle *dev_handle, int* buf, size_t length)
 {
   size_t len = 5 + length * 3;
-  // FIXME: set timeout dynamically from len and sampling rate 10Hz/900Hz
+
+  /* Increased receive timeout:
+   * The sampling frequency can be selected between 10Hz and 990Hz
+   * Therefore the maximum delay until the measurement completes is 1/10Hz = 100ms.
+   * *2 = 200ms
+   * FIXME: set timeout dynamically from len and sampling rate 10Hz/900Hz */
+
   int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 0, 0, len, 2400);
   size_t k;
   for (k=0; k<length; k++)
@@ -633,7 +703,10 @@ int liballuris_poll_measurement (libusb_device_handle *dev_handle, int* buf, siz
 
 /*!
  * \brief tare measurement
- * FIXME: Genaue Funktion untersuchen
+ *
+ * Calculate the mean over several samples and store this internally as offset.
+ * This effectively "zeros" the displayed value.
+ * \return 0 if successful else \ref liballuris_error
  */
 int liballuris_tare (libusb_device_handle *dev_handle)
 {
@@ -643,6 +716,12 @@ int liballuris_tare (libusb_device_handle *dev_handle)
   return liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
 }
 
+/*!
+ * \brief Clear the stored positive peak
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \return 0 if successful else \ref liballuris_error
+ */
 int liballuris_clear_pos_peak (libusb_device_handle *dev_handle)
 {
   out_buf[0] = 0x15;
@@ -650,6 +729,13 @@ int liballuris_clear_pos_peak (libusb_device_handle *dev_handle)
   out_buf[2] = 1;
   return liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
 }
+
+/*!
+ * \brief Clear the stored negative peak
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \return 0 if successful else \ref liballuris_error
+ */
 
 int liballuris_clear_neg_peak (libusb_device_handle *dev_handle)
 {
@@ -663,10 +749,10 @@ int liballuris_clear_neg_peak (libusb_device_handle *dev_handle)
  * \brief Start measurement
  *
  * You may have to wait up to 500ms until you can read stable values with
- * liballuris_get_value().
+ * liballuris_get_value() due to "auto tare" if enabled.
  *
  * \param[in] dev_handle a handle for the device to communicate with
- * \return 0 if successful else error code
+ * \return 0 if successful else \ref liballuris_error
  * \sa liballuris_stop_measurement
  */
 int liballuris_start_measurement (libusb_device_handle *dev_handle)
@@ -705,6 +791,13 @@ int liballuris_start_measurement (libusb_device_handle *dev_handle)
   return ret;
 }
 
+/*!
+ * \brief Stop measurement
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_start_measurement
+ */
 int liballuris_stop_measurement (libusb_device_handle *dev_handle)
 {
   out_buf[0] = 0x1C;
@@ -737,6 +830,24 @@ int liballuris_stop_measurement (libusb_device_handle *dev_handle)
   return ret;
 }
 
+/*!
+ * \brief Set the upper limit
+ *
+ * Set the upper threshold value for the "LIMIT" symbol on the LCD
+ * and the digital limit output. The symbol is visible and the digital output
+ * is high if the measured value exceeds this limit.
+ *
+ * Setting this value is only possible if the measurement is not running,
+ * else LIBALLURIS_DEVICE_BUSY is returned.
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[in] limit value to set in the range -Fmax..+Fmax
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_get_upper_limit
+ * \sa liballuris_set_lower_limit
+ * \sa liballuris_get_unit
+ * \sa liballuris_get_digits
+ */
 int liballuris_set_upper_limit (libusb_device_handle *dev_handle, int limit)
 {
   struct liballuris_state state;
@@ -756,6 +867,24 @@ int liballuris_set_upper_limit (libusb_device_handle *dev_handle, int limit)
   return liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 6, DEFAULT_SEND_TIMEOUT, 6, 500);
 }
 
+/*!
+ * \brief Set the lower limit
+ *
+ * Set the lower threshold value for the "LIMIT" symbol on the LCD
+ * and the digital limit output. The symbol is visible and the digital output
+ * is high if the measured value is under this limit.
+ *
+ * Setting this value is only possible if the measurement is not running,
+ * else LIBALLURIS_DEVICE_BUSY is returned.
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[in] limit value to set in the range -Fmax..+Fmax
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_get_lower_limit
+ * \sa liballuris_set_upper_limit
+ * \sa liballuris_get_unit
+ * \sa liballuris_get_digits
+ */
 int liballuris_set_lower_limit (libusb_device_handle *dev_handle, int limit)
 {
   struct liballuris_state state;
@@ -775,6 +904,19 @@ int liballuris_set_lower_limit (libusb_device_handle *dev_handle, int limit)
   return liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 6, DEFAULT_SEND_TIMEOUT, 6, 500);
 }
 
+/*!
+ * \brief Query the upper limit
+ *
+ * Query this value is only possible if the measurement is not running,
+ * else LIBALLURIS_DEVICE_BUSY is returned.
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[out] limit output location for the limit value. Only populated when the return code is 0.
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_set_upper_limit
+ * \sa liballuris_get_unit
+ * \sa liballuris_get_digits
+ */
 int liballuris_get_upper_limit (libusb_device_handle *dev_handle, int* limit)
 {
   struct liballuris_state state;
@@ -794,6 +936,19 @@ int liballuris_get_upper_limit (libusb_device_handle *dev_handle, int* limit)
   return ret;
 }
 
+/*!
+ * \brief Query the lower limit
+ *
+ * Query this value is only possible if the measurement is not running,
+ * else LIBALLURIS_DEVICE_BUSY is returned.
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[out] limit output location for the limit value. Only populated when the return code is 0.
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_set_lower_limit
+ * \sa liballuris_get_unit
+ * \sa liballuris_get_digits
+ */
 int liballuris_get_lower_limit (libusb_device_handle *dev_handle, int* limit)
 {
   struct liballuris_state state;
@@ -813,6 +968,17 @@ int liballuris_get_lower_limit (libusb_device_handle *dev_handle, int* limit)
   return ret;
 }
 
+/*!
+ * \brief Set measurement mode
+ *
+ * Setting this value is only possible if the measurement is not running,
+ * else LIBALLURIS_DEVICE_BUSY is returned.
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[in] mode to set.
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_get_mode
+ */
 int liballuris_set_mode (libusb_device_handle *dev_handle, enum liballuris_measurement_mode mode)
 {
   if (mode < 0 || mode > 3)
@@ -831,6 +997,14 @@ int liballuris_set_mode (libusb_device_handle *dev_handle, enum liballuris_measu
   return ret;
 }
 
+/*!
+ * \brief Query measurement mode
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[out] mode output location for the mode. Only populated when the return code is 0.
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_set_mode
+ */
 int liballuris_get_mode (libusb_device_handle *dev_handle, enum liballuris_measurement_mode *mode)
 {
   out_buf[0] = 0x05;
@@ -841,6 +1015,17 @@ int liballuris_get_mode (libusb_device_handle *dev_handle, enum liballuris_measu
   return ret;
 }
 
+/*!
+ * \brief Set memory mode
+ *
+ * Setting this value is only possible if the measurement is not running,
+ * else LIBALLURIS_DEVICE_BUSY is returned.
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[in] mode to set.
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_get_mem_mode
+ */
 int liballuris_set_mem_mode (libusb_device_handle *dev_handle, enum liballuris_memory_mode mode)
 {
   if (mode < 0 || mode > 2)
@@ -859,6 +1044,14 @@ int liballuris_set_mem_mode (libusb_device_handle *dev_handle, enum liballuris_m
   return ret;
 }
 
+/*!
+ * \brief Query memory mode
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[out] mode output location for the mode. Only populated when the return code is 0.
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_set_mem_mode
+ */
 int liballuris_get_mem_mode (libusb_device_handle *dev_handle, enum liballuris_memory_mode *mode)
 {
   out_buf[0] = 0x1E;
@@ -884,6 +1077,21 @@ int liballuris_get_mem_mode (libusb_device_handle *dev_handle, enum liballuris_m
   return ret;
 }
 
+/*!
+ * \brief Set unit for all liballuris_get_* functions
+ *
+ * "kg" and "lb" are not available on 5N and 10N devices.
+ * "g" and "oz" are not available on devices with fmax > 10N
+ * LIBALLURIS_OUT_OF_RANGE is returned if you nevertheless try to do so.
+ *
+ * Setting this value is only possible if the measurement is not running,
+ * else LIBALLURIS_DEVICE_BUSY is returned.
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[in] unit to set.
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_get_unit
+ */
 int liballuris_set_unit (libusb_device_handle *dev_handle, enum liballuris_unit unit)
 {
   if (unit < 0 || unit > 5)
@@ -920,6 +1128,17 @@ int liballuris_set_unit (libusb_device_handle *dev_handle, enum liballuris_unit 
   return ret;
 }
 
+/*!
+ * \brief Query unit for all liballuris_get_* functions
+ *
+ * Query this value is only possible if the measurement is not running,
+ * else LIBALLURIS_DEVICE_BUSY is returned.
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[out] unit output location. Only populated when the return code is 0.
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_set_unit
+ */
 int liballuris_get_unit (libusb_device_handle *dev_handle, enum liballuris_unit *unit)
 {
   // F_max dependent mapping
@@ -941,6 +1160,14 @@ int liballuris_get_unit (libusb_device_handle *dev_handle, enum liballuris_unit 
   return ret;
 }
 
+/*!
+ * \brief Set the binary state of the digital outputs
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[in] v value in the range 0..7 for the three digital outputs
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_get_digout
+ */
 int liballuris_set_digout (libusb_device_handle *dev_handle, int v)
 {
   if (v < 0 || v > 7) //only 3 bits
@@ -957,6 +1184,14 @@ int liballuris_set_digout (libusb_device_handle *dev_handle, int v)
   return ret;
 }
 
+/*!
+ * \brief Query the binary state of the digital outputs
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[out] v output location. Only populated when the return code is 0.
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_get_digout
+ */
 int liballuris_get_digout (libusb_device_handle *dev_handle, int *v)
 {
   out_buf[0] = 0x22;
