@@ -28,7 +28,7 @@ If not, see <http://www.gnu.org/licenses/>.
 char do_exit = 0;
 
 const char *argp_program_version =
-  "gadc 0.1 using " PACKAGE_NAME " " PACKAGE_VERSION;
+  "gadc 0.2.0 using " PACKAGE_NAME " " PACKAGE_VERSION;
 
 const char *argp_program_bug_address =
   "<software@alluris.de>";
