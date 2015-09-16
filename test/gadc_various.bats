@@ -35,7 +35,7 @@ GADC=../cli/gadc
 }
 
 @test "Get state" {
-  run $GADC --get--state
+  run $GADC --state
   [ "$status" -eq 0 ]
 }
 
