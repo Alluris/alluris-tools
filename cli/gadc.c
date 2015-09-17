@@ -100,7 +100,6 @@ void termination_handler (int signum)
   do_exit = 1;
 }
 
-// FIXME: Im Falle eines Fehlers, sollte libusb geschlossen und das Programm beendet werden
 static void print_value (int ret, int value)
 {
   if (ret != LIBUSB_SUCCESS)

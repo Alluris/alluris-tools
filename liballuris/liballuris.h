@@ -154,16 +154,16 @@ union __liballuris_state__
 };
 
 /*!
- * \brief composition of libusdb device and alluris device informations
+ * \brief composition of libusb device and Alluris device information
  *
- * product and serial_number should help to identify a specific alluris device if more than one
+ * product and serial_number should help to identify a specific Alluris device if more than one
  * device is connected via USB.
  * \sa get_alluris_device_list, open_alluris_device, free_alluris_device_list
  */
 struct alluris_device_description
 {
   libusb_device* dev;     //!< pointer to a structure representing a USB device detected on the system
-  char product[30];       //!< product identification, for exmample "FMI-S Force-Gauge"
+  char product[30];       //!< product identification, for example "FMI-S Force-Gauge"
   char serial_number[30]; //!< serial number of device, for example "P.25412"
 };
 
