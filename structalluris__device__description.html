@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.8"/>
-<title>Generic driver and tools for Alluris devices: liballuris API Reference</title>
+<title>Generic driver and tools for Alluris devices: alluris_device_description Struct Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -37,8 +37,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </script>
   <div id="navrow1" class="tabs">
     <ul class="tablist">
-      <li class="current"><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
+      <li><a href="index.html"><span>Main&#160;Page</span></a></li>
+      <li class="current"><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
       <li><a href="files.html"><span>Files</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
@@ -58,7 +58,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       </li>
     </ul>
   </div>
-</div><!-- top -->
+  <div id="navrow2" class="tabs2">
+    <ul class="tablist">
+      <li><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
+      <li><a href="classes.html"><span>Data&#160;Structure&#160;Index</span></a></li>
+      <li><a href="functions.html"><span>Data&#160;Fields</span></a></li>
+    </ul>
+  </div>
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
      onmouseover="return searchBox.OnSearchSelectShow()"
@@ -73,17 +79,42 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </iframe>
 </div>
 
+</div><!-- top -->
 <div class="header">
+  <div class="summary">
+<a href="#pub-attribs">Data Fields</a>  </div>
   <div class="headertitle">
-<div class="title">liballuris API Reference </div>  </div>
+<div class="title">alluris_device_description Struct Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p>Generic driver for Alluris devices with USB measurement interface.</p>
-<ul>
-<li><a class="el" href="liballuris_8h.html">liballuris.h</a></li>
-<li><a class="el" href="liballuris_8c.html">liballuris.c</a> </li>
+
+<p>composition of libusb device and Alluris device information  
+ <a href="structalluris__device__description.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="liballuris_8h_source.html">liballuris.h</a>&gt;</code></p>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Data Fields</h2></td></tr>
+<tr class="memitem:a0411ece5b49b7b65291768fcab8b871d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a0411ece5b49b7b65291768fcab8b871d"></a>
+libusb_device *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structalluris__device__description.html#a0411ece5b49b7b65291768fcab8b871d">dev</a></td></tr>
+<tr class="memdesc:a0411ece5b49b7b65291768fcab8b871d"><td class="mdescLeft">&#160;</td><td class="mdescRight">pointer to a structure representing a USB device detected on the system <br /></td></tr>
+<tr class="separator:a0411ece5b49b7b65291768fcab8b871d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9866291cdc1b69e131b1106ab7d25378"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a9866291cdc1b69e131b1106ab7d25378"></a>
+char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structalluris__device__description.html#a9866291cdc1b69e131b1106ab7d25378">product</a> [30]</td></tr>
+<tr class="memdesc:a9866291cdc1b69e131b1106ab7d25378"><td class="mdescLeft">&#160;</td><td class="mdescRight">product identification, for example "FMI-S Force-Gauge" <br /></td></tr>
+<tr class="separator:a9866291cdc1b69e131b1106ab7d25378"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a290d43c910ff222cf0f384b8d976e719"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a290d43c910ff222cf0f384b8d976e719"></a>
+char&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structalluris__device__description.html#a290d43c910ff222cf0f384b8d976e719">serial_number</a> [30]</td></tr>
+<tr class="memdesc:a290d43c910ff222cf0f384b8d976e719"><td class="mdescLeft">&#160;</td><td class="mdescRight">serial number of device, for example "P.25412" <br /></td></tr>
+<tr class="separator:a290d43c910ff222cf0f384b8d976e719"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>composition of libusb device and Alluris device information </p>
+<p>product and serial_number should help to identify a specific Alluris device if more than one device is connected via USB. </p><dl class="section see"><dt>See also</dt><dd>get_alluris_device_list, open_alluris_device, free_alluris_device_list </dd></dl>
+</div><hr/>The documentation for this struct was generated from the following file:<ul>
+<li>/home/andy/src/alluris-tools/liballuris/<a class="el" href="liballuris_8h_source.html">liballuris.h</a></li>
 </ul>
-</div></div><!-- contents -->
+</div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated on Fri Sep 25 2015 13:36:47 for Generic driver and tools for Alluris devices by &#160;<a href="http://www.doxygen.org/index.html">

@@ -1,0 +1,21 @@
+var searchData=
+[
+  ['liballuris_5fdevice_5fbusy',['LIBALLURIS_DEVICE_BUSY',['../liballuris_8h.html#a9fd194b29a14d25e0e6c6234ffc09be2a2521f7cff85fb183833be2fce7b05a93',1,'liballuris.h']]],
+  ['liballuris_5fmalformed_5freply',['LIBALLURIS_MALFORMED_REPLY',['../liballuris_8h.html#a9fd194b29a14d25e0e6c6234ffc09be2a6f71c21f41fdfcfcdca2a2be88239834',1,'liballuris.h']]],
+  ['liballuris_5fmem_5fmode_5fcontinuous',['LIBALLURIS_MEM_MODE_CONTINUOUS',['../liballuris_8h.html#a2d3e65e3c54d4afbe24bfc504d6c4596a09a7f4b3f8e455e673f406a6242d4124',1,'liballuris.h']]],
+  ['liballuris_5fmem_5fmode_5fdisabled',['LIBALLURIS_MEM_MODE_DISABLED',['../liballuris_8h.html#a2d3e65e3c54d4afbe24bfc504d6c4596adb008debc05b5d5009da0d2f07c00208',1,'liballuris.h']]],
+  ['liballuris_5fmem_5fmode_5fsingle',['LIBALLURIS_MEM_MODE_SINGLE',['../liballuris_8h.html#a2d3e65e3c54d4afbe24bfc504d6c4596a1b621b4f671a3e108b8bd4b9d0b4a0c9',1,'liballuris.h']]],
+  ['liballuris_5fmode_5fpeak',['LIBALLURIS_MODE_PEAK',['../liballuris_8h.html#a2fae3e96776a9f57c3c644004b861bbfac70df00816e4dc0a810b6d39e184fb03',1,'liballuris.h']]],
+  ['liballuris_5fmode_5fpeak_5fmax',['LIBALLURIS_MODE_PEAK_MAX',['../liballuris_8h.html#a2fae3e96776a9f57c3c644004b861bbfa31d35b51ccb4740309f87bb692183193',1,'liballuris.h']]],
+  ['liballuris_5fmode_5fpeak_5fmin',['LIBALLURIS_MODE_PEAK_MIN',['../liballuris_8h.html#a2fae3e96776a9f57c3c644004b861bbfa341aaf605d073929d2adc5a3d8338ee2',1,'liballuris.h']]],
+  ['liballuris_5fmode_5fstandard',['LIBALLURIS_MODE_STANDARD',['../liballuris_8h.html#a2fae3e96776a9f57c3c644004b861bbfa21a572420b4b6039beac008008385358',1,'liballuris.h']]],
+  ['liballuris_5fout_5fof_5frange',['LIBALLURIS_OUT_OF_RANGE',['../liballuris_8h.html#a9fd194b29a14d25e0e6c6234ffc09be2a449bc858a8965427c6fa13bbfacde721',1,'liballuris.h']]],
+  ['liballuris_5fsuccess',['LIBALLURIS_SUCCESS',['../liballuris_8h.html#a9fd194b29a14d25e0e6c6234ffc09be2a6f705cf7a876f2fe940164b67230aa6a',1,'liballuris.h']]],
+  ['liballuris_5ftimeout',['LIBALLURIS_TIMEOUT',['../liballuris_8h.html#a9fd194b29a14d25e0e6c6234ffc09be2a59942c7641661ab2010937fc9c70b522',1,'liballuris.h']]],
+  ['liballuris_5funit_5fcn',['LIBALLURIS_UNIT_cN',['../liballuris_8h.html#a0599bb0f50047b56e49042520622c192a451e18355df38834ca4ffd45cc431299',1,'liballuris.h']]],
+  ['liballuris_5funit_5fg',['LIBALLURIS_UNIT_g',['../liballuris_8h.html#a0599bb0f50047b56e49042520622c192a88d41fffa5231fad23bdd96bb822055e',1,'liballuris.h']]],
+  ['liballuris_5funit_5fkg',['LIBALLURIS_UNIT_kg',['../liballuris_8h.html#a0599bb0f50047b56e49042520622c192a9f1c2a0fbe6bbedd4067cef478474ba4',1,'liballuris.h']]],
+  ['liballuris_5funit_5flb',['LIBALLURIS_UNIT_lb',['../liballuris_8h.html#a0599bb0f50047b56e49042520622c192ad67443147b382fcebba4a2aa6c0c0e5f',1,'liballuris.h']]],
+  ['liballuris_5funit_5fn',['LIBALLURIS_UNIT_N',['../liballuris_8h.html#a0599bb0f50047b56e49042520622c192aba38d74004cfeee79ea6947b2c1851f5',1,'liballuris.h']]],
+  ['liballuris_5funit_5foz',['LIBALLURIS_UNIT_oz',['../liballuris_8h.html#a0599bb0f50047b56e49042520622c192a235ec5d6c3d0b7b8c453a94f3be115d7',1,'liballuris.h']]]
+];
