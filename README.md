@@ -51,7 +51,7 @@ then
 $ ./bootstrap
 $ ./configure
 $ make
-$ make install
+$ sudo make install
 ```
 
 ### Mac OS X Yosemite (10.10.4)
@@ -62,7 +62,7 @@ You may install Homebrew: http://brew.sh/, then run
 $ brew install libtool automake libusb argp-standalone
 ```
 
-Then continue as follows:
+then
 
 ```
 $ ./bootstrap_mac
