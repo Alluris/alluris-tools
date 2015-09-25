@@ -1,7 +1,0 @@
-
-We use bats (Bash Automated Testing System) for testing.
-In debian sid https://packages.debian.org/unstable/main/bats
-or github https://github.com/sstephenson/bats
-
-The tests should all pass for supported FMI-S/B devices.
-Some may fail for CTT or FMT devices.
