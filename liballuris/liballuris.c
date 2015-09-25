@@ -59,7 +59,7 @@ static int char_to_int24 (unsigned char* in)
  * Returns a constant NULL-terminated string with the ASCII name of a libusb
  * or liballuris error code. The caller must not free() the returned string.
  *
- * \param error_code The \ref liballuris_error code to return the name of.
+ * \param error_code The \ref liballuris_error code to return the name of error.
  * \returns The error name, or the string **UNKNOWN** if the value of
  * error_code is not a known error code.
  */
@@ -249,7 +249,7 @@ static int liballuris_device_bulk_transfer (libusb_device_handle* dev_handle,
  * \param[in] ctx pointer to libusb context
  * \param[out] alluris_devs pointer to storage for the device list
  * \param[in] length number of elements in alluris_devs
- * \param[in] read_serial Try to read the serial from devices
+ * \param[in] read_serial try to read the serial from devices
  * \return 0 if successful else \ref liballuris_error
  * \sa liballuris_free_device_list
  */
@@ -327,7 +327,7 @@ int liballuris_get_device_list (libusb_context* ctx, struct alluris_device_descr
 }
 
 /*!
- * \brief free list filled from get_alluris_device_list
+ * \brief Free list filled from get_alluris_device_list
  */
 void liballuris_free_device_list (struct alluris_device_description* alluris_devs, size_t length)
 {
@@ -409,7 +409,7 @@ int liballuris_open_device_with_id (libusb_context* ctx, int bus, int device, li
 /*!
  * \brief Clear receive buffer
  *
- * Try to read 64 bytes from receive endpoint fo clear the USB receive queue after some error.
+ * Try to read 64 bytes from receive endpoint to clear the USB receive queue after some error.
  * There is no error if a timeout occurs.
  * \param[in] dev_handle a handle for the device to communicate with
  * \param[in] timeout read timeout
@@ -434,7 +434,7 @@ void liballuris_clear_RX (libusb_device_handle* dev_handle, unsigned int timeout
  * else LIBALLURIS_DEVICE_BUSY is returned.
  *
  * \param[in] dev_handle a handle for the device to communicate with
- * \param[out] buf output location for the serial number. Only populated when the return code is 0.
+ * \param[out] buf output location for the serial number. Only populated if the return code is 0.
  * \param[in] length length of buffer in bytes
  * \return 0 if successful else \ref liballuris_error. LIBALLURIS_DEVICE_BUSY if measurement is running
  */
@@ -464,7 +464,7 @@ int liballuris_get_serial_number (libusb_device_handle *dev_handle, char* buf, s
  *
  * \param[in] dev_handle a handle for the device to communicate with
  * \param[in] dev 0=USB communication processor, 1=measurement processor
- * \param[out] buf output location for the firmware string. Only populated when the return code is 0.
+ * \param[out] buf output location for the firmware string. Only populated if the return code is 0.
  * \param[in] length length of buffer in bytes
  * \return 0 if successful else \ref liballuris_error.
  */
@@ -493,7 +493,7 @@ int liballuris_get_firmware (libusb_device_handle *dev_handle, int dev, char* bu
  * else LIBALLURIS_DEVICE_BUSY is returned.
  *
  * \param[in] dev_handle a handle for the device to communicate with
- * \param[out] v output location for the returned number of digits. Only populated when the return code is 0.
+ * \param[out] v output location for the returned number of digits. Only populated if the return code is 0.
  * \return 0 if successful else \ref liballuris_error
  * \sa liballuris_get_value
  */
@@ -519,7 +519,7 @@ int liballuris_get_digits (libusb_device_handle *dev_handle, int* v)
  * else LIBALLURIS_DEVICE_BUSY is returned.
  *
  * \param[in] dev_handle a handle for the device to communicate with
- * \param[out] fmax output location for the returned max force. Only populated when the return code is 0.
+ * \param[out] fmax output location for the returned max force. Only populated if the return code is 0.
  * \return 0 if successful else \ref liballuris_error
  * \sa liballuris_get_unit
  * \sa liballuris_get_digits
@@ -543,7 +543,7 @@ int liballuris_get_F_max (libusb_device_handle *dev_handle, int* fmax)
  * \brief Query the current measurement value
  *
  * \param[in] dev_handle a handle for the device to communicate with
- * \param[out] value output location for the measurement value. Only populated when the return code is 0.
+ * \param[out] value output location for the measurement value. Only populated if the return code is 0.
  * \return 0 if successful else \ref liballuris_error
  * \sa liballuris_get_unit
  * \sa liballuris_get_digits
@@ -563,7 +563,7 @@ int liballuris_get_value (libusb_device_handle *dev_handle, int* value)
  * \brief Query positive peak value
  *
  * \param[in] dev_handle a handle for the device to communicate with
- * \param[out] peak output location for the peak value. Only populated when the return code is 0.
+ * \param[out] peak output location for the peak value. Only populated if the return code is 0.
  * \return 0 if successful else \ref liballuris_error
  * \sa liballuris_get_unit
  * \sa liballuris_get_digits
@@ -583,7 +583,7 @@ int liballuris_get_pos_peak (libusb_device_handle *dev_handle, int* peak)
  * \brief Query negative peak value
  *
  * \param[in] dev_handle a handle for the device to communicate with
- * \param[out] peak output location for the peak value. Only populated when the return code is 0.
+ * \param[out] peak output location for the peak value. Only populated if the return code is 0.
  * \return 0 if successful else \ref liballuris_error
  * \sa liballuris_get_unit
  * \sa liballuris_get_digits
@@ -603,7 +603,7 @@ int liballuris_get_neg_peak (libusb_device_handle *dev_handle, int* peak)
  * \brief Query the current state of the device
  *
  * \param[in] dev_handle a handle for the device to communicate with
- * \param[out] state output location for the state. Only populated when the return code is 0.
+ * \param[out] state output location for the state. Only populated if the return code is 0.
  * \param[in] timeout in ms
  * \return 0 if successful else \ref liballuris_error
  */
@@ -671,12 +671,12 @@ int liballuris_cyclic_measurement (libusb_device_handle *dev_handle, char enable
 }
 
 /*!
- * \brief poll cyclic measurements
+ * \brief Poll cyclic measurements
  *
- * Cyclic measurements has to be enabled before with liballuris_cyclic_measurement.
+ * Cyclic measurements have to be enabled before with liballuris_cyclic_measurement.
  *
  * \param[in] dev_handle a handle for the device to communicate with
- * \param[in] buf output location for the measurements. Only populated when the return code is 0.
+ * \param[in] buf output location for the measurements. Only populated if the return code is 0.
  * \param[in] length of block 1..19, typically the same used with liballuris_cyclic_measurement
  * \return 0 if successful else \ref liballuris_error
  * \sa liballuris_cyclic_measurement
@@ -702,7 +702,7 @@ int liballuris_poll_measurement (libusb_device_handle *dev_handle, int* buf, siz
 }
 
 /*!
- * \brief tare measurement
+ * \brief Tare measurement
  *
  * Calculate the mean over several samples and store this internally as offset.
  * This effectively "zeros" the displayed value.
@@ -770,7 +770,7 @@ int liballuris_start_measurement (libusb_device_handle *dev_handle)
   if (ret == LIBALLURIS_SUCCESS)
     {
       // The device may take up to 800ms until the measurement is running.
-      // (for example if a automatic tare is parametrized at start of measurement)
+      // (for example if an automatic tare is parametrized at start of measurement)
       // -> wait for it
       int timeout = 30; // 30 * 50ms
       struct liballuris_state state;

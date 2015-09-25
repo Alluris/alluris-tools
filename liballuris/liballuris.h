@@ -131,7 +131,7 @@ struct liballuris_state
   unsigned char mem_active            : 1;
 
   //! \brief Store with fixed rate or single values
-  //! - 1 = Store values with displayrate (3, 5 or 10Hz) in memory (P21=2)
+  //! - 1 = Store values with display rate (3, 5 or 10Hz) in memory (P21=2)
   //! - 0 = Store single value on keypress (P21=1)
   //! \sa liballuris_memory_mode
   unsigned char mem_conti             : 1;
