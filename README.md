@@ -17,7 +17,7 @@ See the comment header in the appropriate source files as well as COPYING and CO
 
 ## Documentation
 
-Doxygen is used to build html and man pages. See ./doc
+Doxygen is used to build html and man pages. See ./doc and http://alluris.github.io/alluris-tools/
 
 ## USB access permissions
 
