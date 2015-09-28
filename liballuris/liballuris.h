@@ -63,11 +63,11 @@ enum liballuris_error
 {
   LIBALLURIS_SUCCESS         = 0, //!< No error
   LIBALLURIS_MALFORMED_REPLY = 1, //!< The received reply contains a malformed header. This should never happen, check EMI and physical connection
-  //! \brief Device is in a state where it cannot process the request
+  //! \brief Device is in a state where it cannot process the request.
   //! The device cannot perform the requested operation.
   //! Some examples:
   //! - get digits or units while measurement is running
-  //! - get or change upper or lower while measurement is running
+  //! - get or change upper or lower limit while measurement is running
   //! - USB API not available, for example on a FMI-S10 device
   LIBALLURIS_DEVICE_BUSY     = 2,
   LIBALLURIS_TIMEOUT         = 3, //!< No response or status change in given time
@@ -114,7 +114,7 @@ struct liballuris_state
   unsigned char peak_plus_active      : 1; //!< Peak+ is active
   unsigned char peak_minus_active     : 1; //!< Peak- is active
 
-  //! \brief capturing to memory in progress
+  //! \brief Capturing to memory in progress.
   //! This flag indicates memory write access. In continues mode this flag goes zero
   //! if the memory is full and storing to memory has stopped for this reason.
   //! \sa liballuris_memory_mode
@@ -130,7 +130,7 @@ struct liballuris_state
   //! \sa liballuris_memory_mode
   unsigned char mem_active            : 1;
 
-  //! \brief Store with fixed rate or single values
+  //! \brief Store with fixed rate or single values.
   //! - 1 = Store values with display rate (3, 5 or 10Hz) in memory (P21=2)
   //! - 0 = Store single value on keypress (P21=1)
   //! \sa liballuris_memory_mode
@@ -143,7 +143,7 @@ struct liballuris_state
   unsigned char dummy20               : 1; //!< dummy/unused
   unsigned char dummy21               : 1; //!< dummy/unused
   unsigned char dummy22               : 1; //!< dummy/unused
-  unsigned char measuring             : 1; //!< measurement is running
+  unsigned char measuring             : 1; //!< Measurement is running
 };
 
 //! __liballuris_state__
