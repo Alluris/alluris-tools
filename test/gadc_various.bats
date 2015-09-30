@@ -64,3 +64,8 @@ GADC=../cli/gadc
   run $GADC --factory-defaults
   [ "$status" -eq 0 ]
 }
+
+@test "Power off device" {
+  run $GADC --power-off
+  [ "$status" -eq 0 ]
+}

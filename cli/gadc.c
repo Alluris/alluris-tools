@@ -83,6 +83,7 @@ static struct argp_option options[] =
   {"set-digout",   1019, "MASK",       0, "Set state of the 3 digital outputs = MASK (firmware >= V4.03.008/V5.03.008)"},
   {"get-digout",   1020, 0,            0, "Get state of the 3 digital outputs (firmware >= V4.03.008/V5.03.008)"},
   {"get-firmware", 1021, 0,            0, "Get firmware of communication and measurement processor"},
+  {"power-off",    1023, 0,            0, "Power off the device"},
   { 0,0,0,0,0,0 }
 
 };
@@ -370,6 +371,9 @@ parse_opt (int key, char *arg, struct argp_state *state)
         break;
       case 1022:  //restore factory defaults
         r = liballuris_restore_factory_defaults (arguments->h);
+        break;
+      case 1023:  //power off device
+        r = liballuris_power_off (arguments->h);
         break;
       default:
         return ARGP_ERR_UNKNOWN;

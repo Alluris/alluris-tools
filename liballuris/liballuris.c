@@ -1224,3 +1224,16 @@ int liballuris_restore_factory_defaults (libusb_device_handle *dev_handle)
   out_buf[2] = 1;
   return liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, 2000);
 }
+
+/*!
+ * \brief Power off the device
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \return 0 if successful else \ref liballuris_error
+ */
+int liballuris_power_off (libusb_device_handle *dev_handle)
+{
+  out_buf[0] = 0x13;
+  out_buf[1] = 2;
+  return liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 2, DEFAULT_SEND_TIMEOUT, 0, DEFAULT_RECEIVE_TIMEOUT);
+}

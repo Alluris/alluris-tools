@@ -220,4 +220,5 @@ int liballuris_set_digout (libusb_device_handle *dev_handle, int v);
 int liballuris_get_digout (libusb_device_handle *dev_handle, int *v);
 
 int liballuris_restore_factory_defaults (libusb_device_handle *dev_handle);
+int liballuris_power_off (libusb_device_handle *dev_handle);
 #endif
