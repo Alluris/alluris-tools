@@ -8,6 +8,7 @@ style:
 realclean:
 	$(MAKE) maintainer-clean
 	rm -rf m4 autom4te.cache
+	rm -rf doc/html doc/doxygen_sqlite3.db
 	rm -f aclocal.m4 ar-lib compile config.guess config.sub configure depcomp install-sh ltmain.sh Makefile.in missing
 	find . -name "Makefile.in" -exec rm {} \;
 	find . -name "octave-workspace" -exec rm {} \;
