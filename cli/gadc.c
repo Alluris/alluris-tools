@@ -28,7 +28,7 @@ If not, see <http://www.gnu.org/licenses/>.
 char do_exit = 0;
 
 const char *argp_program_version =
-  "gadc 0.2.0 using " PACKAGE_NAME " " PACKAGE_VERSION;
+  "gadc 0.2.1 using " PACKAGE_NAME " " PACKAGE_VERSION;
 
 const char *argp_program_bug_address =
   "<software@alluris.de>";
@@ -71,6 +71,7 @@ static struct argp_option options[] =
   {"get-mem-mode",  1015, 0,           0, "Memory mode 0=disabled, 1=single, 2=continuous"},
   {"get-unit",      1016, 0,           0, "Unit"},
   {"set-unit",      1017, "U",         0, "Unit 'N', 'cN', 'kg', 'g', 'lb', 'oz'"},
+  {"factory-defaults",1022, 0, 0, "Restore factory defaults"},
 
   {0, 0, 0, 0, "Get fixed attributes:", 5 },
   {"digits",       1008, 0,            0, "Digits"},
@@ -366,6 +367,9 @@ parse_opt (int key, char *arg, struct argp_state *state)
           fprintf(stderr, "Error: '%s'\n", liballuris_error_name (r));
         else
           printf ("%s\n", firmware_buf);
+        break;
+      case 1022:  //restore factory defaults
+        r = liballuris_restore_factory_defaults (arguments->h);
         break;
       default:
         return ARGP_ERR_UNKNOWN;

@@ -1205,3 +1205,22 @@ int liballuris_get_digout (libusb_device_handle *dev_handle, int *v)
     *v = in_buf[2];
   return ret;
 }
+
+/*!
+ * \brief Restore factory defaults
+ *
+ * Restore factory defaults and set idle mode.
+ *
+ * Only possible if the measurement is not running,
+ * else LIBALLURIS_DEVICE_BUSY is returned.
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \return 0 if successful else \ref liballuris_error
+ */
+int liballuris_restore_factory_defaults (libusb_device_handle *dev_handle)
+{
+  out_buf[0] = 0x16;
+  out_buf[1] = 3;
+  out_buf[2] = 1;
+  return liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, 2000);
+}

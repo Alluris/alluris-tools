@@ -59,3 +59,8 @@ GADC=../cli/gadc
   run $GADC --version
   [ "$status" -eq 0 ]
 }
+
+@test "Restore factory defaults" {
+  run $GADC --factory-defaults
+  [ "$status" -eq 0 ]
+}
