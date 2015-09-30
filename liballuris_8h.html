@@ -105,8 +105,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 Include dependency graph for liballuris.h:</div>
 <div class="dyncontent">
 <div class="center"><img src="liballuris_8h__incl.png" border="0" usemap="#_2home_2andy_2src_2alluris-tools_2liballuris_2liballuris_8h" alt=""/></div>
-<map name="_2home_2andy_2src_2alluris-tools_2liballuris_2liballuris_8h" id="_2home_2andy_2src_2alluris-tools_2liballuris_2liballuris_8h">
-</map>
 </div>
 </div><div class="textblock"><div class="dynheader">
 This graph shows which files directly or indirectly include this file:</div>
@@ -301,6 +299,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="liba
 <tr class="memitem:af72b68580c01978b42d8c12933efced3"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="liballuris_8h.html#af72b68580c01978b42d8c12933efced3">liballuris_get_digout</a> (libusb_device_handle *dev_handle, int *v)</td></tr>
 <tr class="memdesc:af72b68580c01978b42d8c12933efced3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Query the binary state of the digital outputs.  <a href="#af72b68580c01978b42d8c12933efced3">More...</a><br /></td></tr>
 <tr class="separator:af72b68580c01978b42d8c12933efced3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a599ae091830e9089c4681d8e43c905f0"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="liballuris_8h.html#a599ae091830e9089c4681d8e43c905f0">liballuris_restore_factory_defaults</a> (libusb_device_handle *dev_handle)</td></tr>
+<tr class="memdesc:a599ae091830e9089c4681d8e43c905f0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Restore factory defaults.  <a href="#a599ae091830e9089c4681d8e43c905f0">More...</a><br /></td></tr>
+<tr class="separator:a599ae091830e9089c4681d8e43c905f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Header for generic Alluris device driver. </p>
@@ -324,10 +325,10 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="liba
 <p>The received reply contains a malformed header. This should never happen, check EMI and physical connection </p>
 </td></tr>
 <tr><td class="fieldname"><a class="anchor" id="a9fd194b29a14d25e0e6c6234ffc09be2a2521f7cff85fb183833be2fce7b05a93"></a>LIBALLURIS_DEVICE_BUSY&#160;</td><td class="fielddoc">
-<p>Device is in a state where it cannot process the request The device cannot perform the requested operation. Some examples: </p>
+<p>Device is in a state where it cannot process the request. The device cannot perform the requested operation. Some examples: </p>
 <ul>
 <li>get digits or units while measurement is running</li>
-<li>get or change upper or lower while measurement is running</li>
+<li>get or change upper or lower limit while measurement is running</li>
 <li>USB API not available, for example on a FMI-S10 device </li>
 </ul>
 </td></tr>
@@ -1343,6 +1344,33 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="liba
 
 </div>
 </div>
+<a class="anchor" id="a599ae091830e9089c4681d8e43c905f0"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int liballuris_restore_factory_defaults </td>
+          <td>(</td>
+          <td class="paramtype">libusb_device_handle *&#160;</td>
+          <td class="paramname"><em>dev_handle</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Restore factory defaults. </p>
+<p>Restore factory defaults and set idle mode.</p>
+<p>Only possible if the measurement is not running, else LIBALLURIS_DEVICE_BUSY is returned.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">dev_handle</td><td>a handle for the device to communicate with </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 if successful else <a class="el" href="liballuris_8h.html#a9fd194b29a14d25e0e6c6234ffc09be2">liballuris_error</a> </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="a5cde9b94cb21e5695a363e220f599442"></a>
 <div class="memitem">
 <div class="memproto">
@@ -1708,7 +1736,7 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="liba
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Sep 25 2015 13:36:47 for Generic driver and tools for Alluris devices by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Sep 30 2015 15:42:33 for Generic driver and tools for Alluris devices by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.8
 </small></address>
