@@ -105,5 +105,6 @@ GADC=../cli/gadc
 ## FIMXE: please also check
 ##   --read-memory
 ##   --delete-memory
+##   --get-stats
 ## For example enable 2=continuous, apply some force, read memory, caclulate
 ## and compare statistics, delete memory

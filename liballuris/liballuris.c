@@ -1278,3 +1278,32 @@ int liballuris_delete_memory (libusb_device_handle *dev_handle)
   out_buf[2] = 1;
   return liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
 }
+
+/*!
+ * \brief Get statistics from measurement memory
+ *
+ * stats[0] = MAX_PLUS
+ * stats[1] = MIN_PLUS
+ * stats[2] = MAX_MINUS
+ * stats[3] = MIN_MINUS
+ * stats[4] = AVERAGE
+ * stats[5] = DEVIATION
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[out] stats output location for statistics. Only populated when the return code is 0.
+ * \param[in] length of stats buffer. Should be 6
+ * \return 0 if successful else \ref liballuris_error
+ */
+int liballuris_get_mem_statistics (libusb_device_handle *dev_handle, int* stats, size_t length)
+{
+  out_buf[0] = 0x09;
+  out_buf[1] = 2;
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 2, DEFAULT_SEND_TIMEOUT, 20, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret == LIBALLURIS_SUCCESS)
+    {
+      int k;
+      for (k=0; k<length; ++k)
+        stats[k] = char_to_int24 (in_buf + 2 + k*3);
+    }
+  return ret;
+}

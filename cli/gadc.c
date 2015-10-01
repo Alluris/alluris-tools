@@ -86,6 +86,7 @@ static struct argp_option options[] =
   {"power-off",    1023, 0,            0, "Power off the device"},
   {"delete-memory",1024, 0,            0, "Delete the measurement memory"},
   {"read-memory",  1025, "ADR",        0, "Read adr 0..999 or -1 for whole memory"},
+  {"get-stats",    1026, 0,            0, "Get statistic (MAX_PLUS, MIN_PLUS, MAX_MINUS, MIN_MINUS, AVERAGE, DEVIATION) from memory values"},
   { 0,0,0,0,0,0 }
 
 };
@@ -176,6 +177,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
   char *endptr = NULL;
   int r = 0;
   int value, num_samples;
+  int stats[6];
   struct liballuris_state device_state;
   char firmware_buf[21];
 
@@ -394,6 +396,11 @@ parse_opt (int key, char *arg, struct argp_state *state)
             r = liballuris_read_memory (arguments->h, star_adr++, &value);
             print_value (r, value);
           }
+        break;
+      case 1026:  //get-stats
+        r = liballuris_get_mem_statistics (arguments->h, stats, 6);
+        for (value=0; value < 6; value++)
+          print_value (r, stats[value]);
         break;
       default:
         return ARGP_ERR_UNKNOWN;
