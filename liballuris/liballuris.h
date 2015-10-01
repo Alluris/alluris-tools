@@ -226,4 +226,6 @@ int liballuris_read_memory (libusb_device_handle *dev_handle, int adr, int* mem_
 int liballuris_delete_memory (libusb_device_handle *dev_handle);
 
 int liballuris_get_mem_statistics (libusb_device_handle *dev_handle, int* stats, size_t length);
+
+int liballuris_sim_keypress (libusb_device_handle *dev_handle, unsigned char mask);
 #endif

@@ -1282,15 +1282,14 @@ int liballuris_delete_memory (libusb_device_handle *dev_handle)
 /*!
  * \brief Get statistics from measurement memory
  *
- * stats[0] = MAX_PLUS
- * stats[1] = MIN_PLUS
- * stats[2] = MAX_MINUS
- * stats[3] = MIN_MINUS
- * stats[4] = AVERAGE
- * stats[5] = DEVIATION
- *
  * \param[in] dev_handle a handle for the device to communicate with
  * \param[out] stats output location for statistics. Only populated when the return code is 0.
+ * - stats[0] = MAX_PLUS
+ * - stats[1] = MIN_PLUS
+ * - stats[2] = MAX_MINUS
+ * - stats[3] = MIN_MINUS
+ * - stats[4] = AVERAGE
+ * - stats[5] = DEVIATION
  * \param[in] length of stats buffer. Should be 6
  * \return 0 if successful else \ref liballuris_error
  */
@@ -1306,4 +1305,25 @@ int liballuris_get_mem_statistics (libusb_device_handle *dev_handle, int* stats,
         stats[k] = char_to_int24 (in_buf + 2 + k*3);
     }
   return ret;
+}
+
+/*!
+ * \brief Simulate keypress
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[in] mask
+ * - Bit 0 = S1 key with label (I)
+ * - Bit 1 = S2 key with label (S)
+ * - Bit 2 = S3 key with label (>0<)
+ * - Bit 3 = simulate a long keypress
+ * \return 0 if successful else \ref liballuris_error
+ */
+int liballuris_sim_keypress (libusb_device_handle *dev_handle, unsigned char mask)
+{
+  if (mask > 0x0F || mask < 0)
+    return LIBALLURIS_OUT_OF_RANGE;
+  out_buf[0] = 0x14;
+  out_buf[1] = 3;
+  out_buf[2] = mask & 0x0F ;
+  return liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
 }

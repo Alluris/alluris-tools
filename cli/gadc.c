@@ -87,6 +87,7 @@ static struct argp_option options[] =
   {"delete-memory",1024, 0,            0, "Delete the measurement memory"},
   {"read-memory",  1025, "ADR",        0, "Read adr 0..999 or -1 for whole memory"},
   {"get-stats",    1026, 0,            0, "Get statistic (MAX_PLUS, MIN_PLUS, MAX_MINUS, MIN_MINUS, AVERAGE, DEVIATION) from memory values"},
+  {"keypress",     1027, "KEY",        0, "Sim. keypress. Bit 0=S1, 1=S2, 2=S3, 3=long_press. For ex. 12 => long press of S3"},
   { 0,0,0,0,0,0 }
 
 };
@@ -401,6 +402,10 @@ parse_opt (int key, char *arg, struct argp_state *state)
         r = liballuris_get_mem_statistics (arguments->h, stats, 6);
         for (value=0; value < 6; value++)
           print_value (r, stats[value]);
+        break;
+      case 1027:  //simulate keypress
+        value = strtol (arg, &endptr, 10);
+        r = liballuris_sim_keypress (arguments->h, value);
         break;
       default:
         return ARGP_ERR_UNKNOWN;

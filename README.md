@@ -104,8 +104,8 @@ Using other compilers and/or build systems should also be feasible.
 
 * ~~ID_READ_MEMORY~~
 * ~~ID_DELETE_MEMORY~~
-* ID_STATISTIK
-* ID_TASTENDRUCK
+* ~~ID_STATISTIK~~
+* ~~ID_TASTENDRUCK~~
 * ID_DIGIN_CONFIG
 * ID_STATUS
 * ID_SET_SIGN
