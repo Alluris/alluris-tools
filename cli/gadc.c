@@ -84,6 +84,8 @@ static struct argp_option options[] =
   {"get-digout",   1020, 0,            0, "Get state of the 3 digital outputs (firmware >= V4.03.008/V5.03.008)"},
   {"get-firmware", 1021, 0,            0, "Get firmware of communication and measurement processor"},
   {"power-off",    1023, 0,            0, "Power off the device"},
+  {"delete-memory",1024, 0,            0, "Delete the measurement memory"},
+  {"read-memory",  1025, "ADR",        0, "Read adr 0..999 or -1 for whole memory"},
   { 0,0,0,0,0,0 }
 
 };
@@ -374,6 +376,24 @@ parse_opt (int key, char *arg, struct argp_state *state)
         break;
       case 1023:  //power off device
         r = liballuris_power_off (arguments->h);
+        break;
+      case 1024:  //delete-memory
+        r = liballuris_delete_memory (arguments->h);
+        break;
+      case 1025:  //read-memory
+        value = strtol (arg, &endptr, 10);
+        int star_adr = value;
+        int stop_adr = value;
+        if (value == -1)
+          {
+            star_adr = 0;
+            stop_adr = 999;
+          }
+        while (star_adr <= stop_adr)
+          {
+            r = liballuris_read_memory (arguments->h, star_adr++, &value);
+            print_value (r, value);
+          }
         break;
       default:
         return ARGP_ERR_UNKNOWN;

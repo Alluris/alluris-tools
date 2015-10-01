@@ -932,9 +932,9 @@ int liballuris_get_upper_limit (libusb_device_handle *dev_handle, int* limit)
     return LIBALLURIS_DEVICE_BUSY;
 
   out_buf[0] = 0x19;
-  out_buf[1] = 6;
+  out_buf[1] = 3;
   out_buf[2] = 0; //maximum
-  ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 6, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
+  ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
   if (ret == LIBALLURIS_SUCCESS)
     *limit = char_to_int24 (in_buf + 3);
   return ret;
@@ -964,9 +964,9 @@ int liballuris_get_lower_limit (libusb_device_handle *dev_handle, int* limit)
     return LIBALLURIS_DEVICE_BUSY;
 
   out_buf[0] = 0x19;
-  out_buf[1] = 6;
+  out_buf[1] = 3;
   out_buf[2] = 1; //minimum
-  ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 6, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
+  ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
   if (ret == LIBALLURIS_SUCCESS)
     *limit = char_to_int24 (in_buf + 3);
   return ret;
@@ -1240,4 +1240,41 @@ int liballuris_power_off (libusb_device_handle *dev_handle)
   out_buf[0] = 0x13;
   out_buf[1] = 2;
   return liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 2, DEFAULT_SEND_TIMEOUT, 0, DEFAULT_RECEIVE_TIMEOUT);
+}
+
+/*!
+ * \brief Read the measurement memory
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[in] adr 0..999
+ * \param[out] mem_value output location for the stored value. Only populated when the return code is 0.
+ * \return 0 if successful else \ref liballuris_error
+ */
+int liballuris_read_memory (libusb_device_handle *dev_handle, int adr, int* mem_value)
+{
+  if (adr < 0 || adr > 999)
+    return LIBALLURIS_OUT_OF_RANGE;
+
+  out_buf[0] = 0x06;
+  out_buf[1] = 4;
+  out_buf[2] = adr & 0xFF;
+  out_buf[3] = (adr >> 8) & 0xFF;
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 4, DEFAULT_SEND_TIMEOUT, 5, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret == LIBALLURIS_SUCCESS)
+    *mem_value = char_to_int24 (in_buf + 2);
+  return ret;
+}
+
+/*!
+ * \brief Delete the measurement memory
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \return 0 if successful else \ref liballuris_error
+ */
+int liballuris_delete_memory (libusb_device_handle *dev_handle)
+{
+  out_buf[0] = 0x07;
+  out_buf[1] = 3;
+  out_buf[2] = 1;
+  return liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
 }
