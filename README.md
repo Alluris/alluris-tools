@@ -97,4 +97,16 @@ Using other compilers and/or build systems should also be feasible.
 * ~~Fix liballuris_set_mem_mode, liballuris_get_mem_mode~~ (Done)
 * Overhaul liballuris_print_state, document liballuris_state
 * ~~Test unit cN and oz on 5N or 10N device~~ (Done)
-* Implement full command set
+* Implement full command set (see below)
+
+### Not yet implemented low level commands
+
+* ID_READ_MEMORY
+* ID_DELETE_MEMORY
+* ID_STATISTIK
+* ID_TASTENDRUCK
+* ID_DIGIN_CONFIG
+* ID_STATUS
+* ID_SET_SIGN
+* ID_GET_SIGN
+* ID_SET_DATA_RATIO
