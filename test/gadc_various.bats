@@ -60,6 +60,16 @@ GADC=../cli/gadc
   [ "$status" -eq 0 ]
 }
 
+@test "Try to restore factory defaults while measuring, check for LIBALLURIS_DEVICE_BUSY" {
+  run $GADC --start --factory-defaults
+  [ "$status" -eq 2 ]
+}
+
+@test "Stop device to restore factory defaults" {
+  run $GADC --stop
+  [ "$status" -eq 0 ]
+}
+
 @test "Restore factory defaults" {
   run $GADC --factory-defaults
   [ "$status" -eq 0 ]

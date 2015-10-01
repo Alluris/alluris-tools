@@ -1222,7 +1222,11 @@ int liballuris_restore_factory_defaults (libusb_device_handle *dev_handle)
   out_buf[0] = 0x16;
   out_buf[1] = 3;
   out_buf[2] = 1;
-  return liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, 2000);
+  // Long receive timeout (>1.9s) because device performs many slow EEPROM write operations
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, 2000);
+  if (ret == LIBALLURIS_SUCCESS && in_buf[2] == 0xFF)
+    ret = LIBALLURIS_DEVICE_BUSY;
+  return ret;
 }
 
 /*!
