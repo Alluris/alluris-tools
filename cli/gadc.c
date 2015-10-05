@@ -88,6 +88,7 @@ static struct argp_option options[] =
   {"read-memory",  1025, "ADR",        0, "Read adr 0..999 or -1 for whole memory"},
   {"get-stats",    1026, 0,            0, "Get statistic (MAX_PLUS, MIN_PLUS, MAX_MINUS, MIN_MINUS, AVERAGE, DEVIATION) from memory values"},
   {"keypress",     1027, "KEY",        0, "Sim. keypress. Bit 0=S1, 1=S2, 2=S3, 3=long_press. For ex. 12 => long press of S3"},
+  {"get-mem-count",1028, 0,            0, "Get number of values in memory"},
   { 0,0,0,0,0,0 }
 
 };
@@ -400,12 +401,25 @@ parse_opt (int key, char *arg, struct argp_state *state)
         break;
       case 1026:  //get-stats
         r = liballuris_get_mem_statistics (arguments->h, stats, 6);
-        for (value=0; value < 6; value++)
-          print_value (r, stats[value]);
+        if (r != LIBUSB_SUCCESS)
+          fprintf(stderr, "Error: '%s'\n", liballuris_error_name (r));
+        else
+          {
+            printf ("MAX_PLUS  = %4i\n", stats[0]);
+            printf ("MIN_PLUS  = %4i\n", stats[1]);
+            printf ("MAX_MINUS = %4i\n", stats[2]);
+            printf ("MIN_MINUS = %4i\n", stats[3]);
+            printf ("AVERAGE   = %4i\n", stats[4]);
+            printf ("DEVIATION = %6.1f\n", stats[5]/10.0);
+          }
         break;
       case 1027:  //simulate keypress
         value = strtol (arg, &endptr, 10);
         r = liballuris_sim_keypress (arguments->h, value);
+        break;
+      case 1028: //get-mem-count
+        r = liballuris_get_mem_count (arguments->h, &value);
+        print_value (r, value);
         break;
       default:
         return ARGP_ERR_UNKNOWN;
