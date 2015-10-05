@@ -224,6 +224,7 @@ int liballuris_power_off (libusb_device_handle *dev_handle);
 
 int liballuris_read_memory (libusb_device_handle *dev_handle, int adr, int* mem_value);
 int liballuris_delete_memory (libusb_device_handle *dev_handle);
+int liballuris_get_mem_count (libusb_device_handle *dev_handle, int* v);
 
 int liballuris_get_mem_statistics (libusb_device_handle *dev_handle, int* stats, size_t length);
 

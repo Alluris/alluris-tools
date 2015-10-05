@@ -1249,6 +1249,7 @@ int liballuris_power_off (libusb_device_handle *dev_handle)
  * \param[in] adr 0..999
  * \param[out] mem_value output location for the stored value. Only populated when the return code is 0.
  * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_get_mem_count
  */
 int liballuris_read_memory (libusb_device_handle *dev_handle, int adr, int* mem_value)
 {
@@ -1277,6 +1278,29 @@ int liballuris_delete_memory (libusb_device_handle *dev_handle)
   out_buf[1] = 3;
   out_buf[2] = 1;
   return liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
+}
+
+/*!
+ * \brief Query the number of values stored in memory
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[out] v output location for the number of values. Only populated if the return code is 0.
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_read_memory
+ */
+int liballuris_get_mem_count (libusb_device_handle *dev_handle, int* v)
+{
+  out_buf[0] = 0x08;
+  out_buf[1] = 3;
+  out_buf[2] = 5;
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret == LIBALLURIS_SUCCESS)
+    {
+      *v = char_to_int24 (in_buf + 3);
+      if (*v == -1)
+        return LIBALLURIS_DEVICE_BUSY;
+    }
+  return ret;
 }
 
 /*!
