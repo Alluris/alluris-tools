@@ -214,6 +214,24 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="liba
 <tr class="memitem:a599ae091830e9089c4681d8e43c905f0"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="liballuris_8c.html#a599ae091830e9089c4681d8e43c905f0">liballuris_restore_factory_defaults</a> (libusb_device_handle *dev_handle)</td></tr>
 <tr class="memdesc:a599ae091830e9089c4681d8e43c905f0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Restore factory defaults.  <a href="#a599ae091830e9089c4681d8e43c905f0">More...</a><br /></td></tr>
 <tr class="separator:a599ae091830e9089c4681d8e43c905f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aef59bf463d61e3f6c04d858039d3fb4b"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="liballuris_8c.html#aef59bf463d61e3f6c04d858039d3fb4b">liballuris_power_off</a> (libusb_device_handle *dev_handle)</td></tr>
+<tr class="memdesc:aef59bf463d61e3f6c04d858039d3fb4b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Power off the device.  <a href="#aef59bf463d61e3f6c04d858039d3fb4b">More...</a><br /></td></tr>
+<tr class="separator:aef59bf463d61e3f6c04d858039d3fb4b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9f65eeaadb7c1eea03aa2990f9e4fd00"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="liballuris_8c.html#a9f65eeaadb7c1eea03aa2990f9e4fd00">liballuris_read_memory</a> (libusb_device_handle *dev_handle, int adr, int *mem_value)</td></tr>
+<tr class="memdesc:a9f65eeaadb7c1eea03aa2990f9e4fd00"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read the measurement memory.  <a href="#a9f65eeaadb7c1eea03aa2990f9e4fd00">More...</a><br /></td></tr>
+<tr class="separator:a9f65eeaadb7c1eea03aa2990f9e4fd00"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a38c9ade6760718acd6a7b6969477c003"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="liballuris_8c.html#a38c9ade6760718acd6a7b6969477c003">liballuris_delete_memory</a> (libusb_device_handle *dev_handle)</td></tr>
+<tr class="memdesc:a38c9ade6760718acd6a7b6969477c003"><td class="mdescLeft">&#160;</td><td class="mdescRight">Delete the measurement memory.  <a href="#a38c9ade6760718acd6a7b6969477c003">More...</a><br /></td></tr>
+<tr class="separator:a38c9ade6760718acd6a7b6969477c003"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af57697d92aa858aa31078b4d4ea2274b"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="liballuris_8c.html#af57697d92aa858aa31078b4d4ea2274b">liballuris_get_mem_count</a> (libusb_device_handle *dev_handle, int *v)</td></tr>
+<tr class="memdesc:af57697d92aa858aa31078b4d4ea2274b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Query the number of values stored in memory.  <a href="#af57697d92aa858aa31078b4d4ea2274b">More...</a><br /></td></tr>
+<tr class="separator:af57697d92aa858aa31078b4d4ea2274b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abda2dce3158399f6eb60dfd4739dbbe5"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="liballuris_8c.html#abda2dce3158399f6eb60dfd4739dbbe5">liballuris_get_mem_statistics</a> (libusb_device_handle *dev_handle, int *stats, size_t length)</td></tr>
+<tr class="memdesc:abda2dce3158399f6eb60dfd4739dbbe5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get statistics from measurement memory.  <a href="#abda2dce3158399f6eb60dfd4739dbbe5">More...</a><br /></td></tr>
+<tr class="separator:abda2dce3158399f6eb60dfd4739dbbe5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a159837d38259c662ca1074fdaec6e048"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="liballuris_8c.html#a159837d38259c662ca1074fdaec6e048">liballuris_sim_keypress</a> (libusb_device_handle *dev_handle, unsigned char mask)</td></tr>
+<tr class="memdesc:a159837d38259c662ca1074fdaec6e048"><td class="mdescLeft">&#160;</td><td class="mdescRight">Simulate keypress.  <a href="#a159837d38259c662ca1074fdaec6e048">More...</a><br /></td></tr>
+<tr class="separator:a159837d38259c662ca1074fdaec6e048"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Implementation of generic Alluris device driver. </p>
@@ -339,6 +357,31 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="liba
     <tr><td class="paramdir">[in]</td><td class="paramname">dev_handle</td><td>a handle for the device to communicate with </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">enable</td><td></td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">length</td><td>1..19 </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 if successful else <a class="el" href="liballuris_8h.html#a9fd194b29a14d25e0e6c6234ffc09be2">liballuris_error</a> </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="a38c9ade6760718acd6a7b6969477c003"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int liballuris_delete_memory </td>
+          <td>(</td>
+          <td class="paramtype">libusb_device_handle *&#160;</td>
+          <td class="paramname"><em>dev_handle</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Delete the measurement memory. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">dev_handle</td><td>a handle for the device to communicate with </td></tr>
   </table>
   </dd>
 </dl>
@@ -631,6 +674,43 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="liba
 
 </div>
 </div>
+<a class="anchor" id="af57697d92aa858aa31078b4d4ea2274b"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int liballuris_get_mem_count </td>
+          <td>(</td>
+          <td class="paramtype">libusb_device_handle *&#160;</td>
+          <td class="paramname"><em>dev_handle</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int *&#160;</td>
+          <td class="paramname"><em>v</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Query the number of values stored in memory. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">dev_handle</td><td>a handle for the device to communicate with </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">v</td><td>output location for the number of values. Only populated if the return code is 0. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 if successful else <a class="el" href="liballuris_8h.html#a9fd194b29a14d25e0e6c6234ffc09be2">liballuris_error</a> </dd></dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="liballuris_8c.html#a9f65eeaadb7c1eea03aa2990f9e4fd00" title="Read the measurement memory. ">liballuris_read_memory</a> </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="a4a1d46ed7346a55b03c8f7e5fa1a39a2"></a>
 <div class="memitem">
 <div class="memproto">
@@ -665,6 +745,57 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="liba
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>0 if successful else <a class="el" href="liballuris_8h.html#a9fd194b29a14d25e0e6c6234ffc09be2">liballuris_error</a> </dd></dl>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="liballuris_8c.html#af343ec8040d9b372cfcc9de6fc395b55" title="Set memory mode. ">liballuris_set_mem_mode</a> </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="abda2dce3158399f6eb60dfd4739dbbe5"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int liballuris_get_mem_statistics </td>
+          <td>(</td>
+          <td class="paramtype">libusb_device_handle *&#160;</td>
+          <td class="paramname"><em>dev_handle</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int *&#160;</td>
+          <td class="paramname"><em>stats</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get statistics from measurement memory. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">dev_handle</td><td>a handle for the device to communicate with </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">stats</td><td>output location for statistics. Only populated when the return code is 0.<ul>
+<li>stats[0] = MAX_PLUS</li>
+<li>stats[1] = MIN_PLUS</li>
+<li>stats[2] = MAX_MINUS</li>
+<li>stats[3] = MIN_MINUS</li>
+<li>stats[4] = AVERAGE</li>
+<li>stats[5] = DEVIATION </li>
+</ul>
+</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">length</td><td>of stats buffer. Should be 6 </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 if successful else <a class="el" href="liballuris_8h.html#a9fd194b29a14d25e0e6c6234ffc09be2">liballuris_error</a> </dd></dl>
 
 </div>
 </div>
@@ -1089,6 +1220,75 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="liba
 
 </div>
 </div>
+<a class="anchor" id="aef59bf463d61e3f6c04d858039d3fb4b"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int liballuris_power_off </td>
+          <td>(</td>
+          <td class="paramtype">libusb_device_handle *&#160;</td>
+          <td class="paramname"><em>dev_handle</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Power off the device. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">dev_handle</td><td>a handle for the device to communicate with </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 if successful else <a class="el" href="liballuris_8h.html#a9fd194b29a14d25e0e6c6234ffc09be2">liballuris_error</a> </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="a9f65eeaadb7c1eea03aa2990f9e4fd00"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int liballuris_read_memory </td>
+          <td>(</td>
+          <td class="paramtype">libusb_device_handle *&#160;</td>
+          <td class="paramname"><em>dev_handle</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>adr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int *&#160;</td>
+          <td class="paramname"><em>mem_value</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Read the measurement memory. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">dev_handle</td><td>a handle for the device to communicate with </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">adr</td><td>0..999 </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">mem_value</td><td>output location for the stored value. Only populated when the return code is 0. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 if successful else <a class="el" href="liballuris_8h.html#a9fd194b29a14d25e0e6c6234ffc09be2">liballuris_error</a> </dd></dl>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="liballuris_8c.html#af57697d92aa858aa31078b4d4ea2274b" title="Query the number of values stored in memory. ">liballuris_get_mem_count</a> </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="a88cba8bdaab7fdc9232710a8380db8ab"></a>
 <div class="memitem">
 <div class="memproto">
@@ -1401,6 +1601,48 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="liba
 
 </div>
 </div>
+<a class="anchor" id="a159837d38259c662ca1074fdaec6e048"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int liballuris_sim_keypress </td>
+          <td>(</td>
+          <td class="paramtype">libusb_device_handle *&#160;</td>
+          <td class="paramname"><em>dev_handle</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned char&#160;</td>
+          <td class="paramname"><em>mask</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Simulate keypress. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">dev_handle</td><td>a handle for the device to communicate with </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">mask</td><td><ul>
+<li>Bit 0 = S1 key with label (I)</li>
+<li>Bit 1 = S2 key with label (S)</li>
+<li>Bit 2 = S3 key with label (&gt;0&lt;)</li>
+<li>Bit 3 = simulate a long keypress </li>
+</ul>
+</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 if successful else <a class="el" href="liballuris_8h.html#a9fd194b29a14d25e0e6c6234ffc09be2">liballuris_error</a> </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="aec4159114f53fc03599237a2812027a2"></a>
 <div class="memitem">
 <div class="memproto">
@@ -1524,7 +1766,7 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="liba
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Sep 30 2015 15:42:33 for Generic driver and tools for Alluris devices by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Oct 5 2015 08:51:37 for Generic driver and tools for Alluris devices by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.8
 </small></address>
