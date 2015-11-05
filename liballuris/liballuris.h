@@ -167,66 +167,76 @@ struct alluris_device_description
   char serial_number[30]; //!< serial number of device, for example "P.25412"
 };
 
-const char * liballuris_error_name (int error_code);
-const char * liballuris_unit_enum2str (enum liballuris_unit unit);
-enum liballuris_unit liballuris_unit_str2enum (const char *str);
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
-int liballuris_get_device_list (libusb_context* ctx, struct alluris_device_description* alluris_devs, size_t length, char read_serial);
-int liballuris_open_device (libusb_context* ctx, const char* serial_number, libusb_device_handle** h);
-int liballuris_open_device_with_id (libusb_context* ctx, int bus, int device, libusb_device_handle** h);
-void liballuris_free_device_list (struct alluris_device_description* alluris_devs, size_t length);
+  const char * liballuris_error_name (int error_code);
+  const char * liballuris_unit_enum2str (enum liballuris_unit unit);
+  enum liballuris_unit liballuris_unit_str2enum (const char *str);
 
-void liballuris_clear_RX (libusb_device_handle* dev_handle, unsigned int timeout);
+  int liballuris_get_device_list (libusb_context* ctx, struct alluris_device_description* alluris_devs, size_t length, char read_serial);
+  int liballuris_open_device (libusb_context* ctx, const char* serial_number, libusb_device_handle** h);
+  int liballuris_open_device_with_id (libusb_context* ctx, int bus, int device, libusb_device_handle** h);
+  void liballuris_free_device_list (struct alluris_device_description* alluris_devs, size_t length);
 
-int liballuris_get_serial_number (libusb_device_handle *dev_handle, char* buf, size_t length);
-int liballuris_get_firmware (libusb_device_handle *dev_handle, int dev, char* buf, size_t length);
-int liballuris_get_digits (libusb_device_handle *dev_handle, int* v);
-int liballuris_get_F_max (libusb_device_handle *dev_handle, int* fmax);
+  void liballuris_clear_RX (libusb_device_handle* dev_handle, unsigned int timeout);
 
-int liballuris_get_value (libusb_device_handle *dev_handle, int* value);
-int liballuris_get_pos_peak (libusb_device_handle *dev_handle, int* peak);
-int liballuris_get_neg_peak (libusb_device_handle *dev_handle, int* peak);
+  int liballuris_get_serial_number (libusb_device_handle *dev_handle, char* buf, size_t length);
+  int liballuris_get_firmware (libusb_device_handle *dev_handle, int dev, char* buf, size_t length);
+  int liballuris_get_digits (libusb_device_handle *dev_handle, int* v);
+  int liballuris_get_F_max (libusb_device_handle *dev_handle, int* fmax);
 
-/* read and print state */
-int liballuris_read_state (libusb_device_handle *dev_handle, struct liballuris_state* state, unsigned int timeout);
-void liballuris_print_state (libusb_device_handle *dev_handle, struct liballuris_state state);
+  int liballuris_get_value (libusb_device_handle *dev_handle, int* value);
+  int liballuris_get_pos_peak (libusb_device_handle *dev_handle, int* peak);
+  int liballuris_get_neg_peak (libusb_device_handle *dev_handle, int* peak);
 
-int liballuris_cyclic_measurement (libusb_device_handle *dev_handle, char enable, size_t length);
-int liballuris_poll_measurement (libusb_device_handle *dev_handle, int* buf, size_t length);
+  /* read and print state */
+  int liballuris_read_state (libusb_device_handle *dev_handle, struct liballuris_state* state, unsigned int timeout);
+  void liballuris_print_state (libusb_device_handle *dev_handle, struct liballuris_state state);
 
-int liballuris_tare (libusb_device_handle *dev_handle);
-int liballuris_clear_pos_peak (libusb_device_handle *dev_handle);
-int liballuris_clear_neg_peak (libusb_device_handle *dev_handle);
+  int liballuris_cyclic_measurement (libusb_device_handle *dev_handle, char enable, size_t length);
+  int liballuris_poll_measurement (libusb_device_handle *dev_handle, int* buf, size_t length);
 
-int liballuris_start_measurement (libusb_device_handle *dev_handle);
-int liballuris_stop_measurement (libusb_device_handle *dev_handle);
+  int liballuris_tare (libusb_device_handle *dev_handle);
+  int liballuris_clear_pos_peak (libusb_device_handle *dev_handle);
+  int liballuris_clear_neg_peak (libusb_device_handle *dev_handle);
 
-int liballuris_set_upper_limit (libusb_device_handle *dev_handle, int limit);
-int liballuris_set_lower_limit (libusb_device_handle *dev_handle, int limit);
+  int liballuris_start_measurement (libusb_device_handle *dev_handle);
+  int liballuris_stop_measurement (libusb_device_handle *dev_handle);
 
-int liballuris_get_upper_limit (libusb_device_handle *dev_handle, int* limit);
-int liballuris_get_lower_limit (libusb_device_handle *dev_handle, int* limit);
+  int liballuris_set_upper_limit (libusb_device_handle *dev_handle, int limit);
+  int liballuris_set_lower_limit (libusb_device_handle *dev_handle, int limit);
 
-int liballuris_set_mode (libusb_device_handle *dev_handle, enum liballuris_measurement_mode mode);
-int liballuris_get_mode (libusb_device_handle *dev_handle, enum liballuris_measurement_mode *mode);
+  int liballuris_get_upper_limit (libusb_device_handle *dev_handle, int* limit);
+  int liballuris_get_lower_limit (libusb_device_handle *dev_handle, int* limit);
 
-int liballuris_set_mem_mode (libusb_device_handle *dev_handle, enum liballuris_memory_mode mode);
-int liballuris_get_mem_mode (libusb_device_handle *dev_handle, enum liballuris_memory_mode *mode);
+  int liballuris_set_mode (libusb_device_handle *dev_handle, enum liballuris_measurement_mode mode);
+  int liballuris_get_mode (libusb_device_handle *dev_handle, enum liballuris_measurement_mode *mode);
 
-int liballuris_set_unit (libusb_device_handle *dev_handle, enum liballuris_unit unit);
-int liballuris_get_unit (libusb_device_handle *dev_handle, enum liballuris_unit *unit);
+  int liballuris_set_mem_mode (libusb_device_handle *dev_handle, enum liballuris_memory_mode mode);
+  int liballuris_get_mem_mode (libusb_device_handle *dev_handle, enum liballuris_memory_mode *mode);
 
-int liballuris_set_digout (libusb_device_handle *dev_handle, int v);
-int liballuris_get_digout (libusb_device_handle *dev_handle, int *v);
+  int liballuris_set_unit (libusb_device_handle *dev_handle, enum liballuris_unit unit);
+  int liballuris_get_unit (libusb_device_handle *dev_handle, enum liballuris_unit *unit);
 
-int liballuris_restore_factory_defaults (libusb_device_handle *dev_handle);
-int liballuris_power_off (libusb_device_handle *dev_handle);
+  int liballuris_set_digout (libusb_device_handle *dev_handle, int v);
+  int liballuris_get_digout (libusb_device_handle *dev_handle, int *v);
 
-int liballuris_read_memory (libusb_device_handle *dev_handle, int adr, int* mem_value);
-int liballuris_delete_memory (libusb_device_handle *dev_handle);
-int liballuris_get_mem_count (libusb_device_handle *dev_handle, int* v);
+  int liballuris_restore_factory_defaults (libusb_device_handle *dev_handle);
+  int liballuris_power_off (libusb_device_handle *dev_handle);
 
-int liballuris_get_mem_statistics (libusb_device_handle *dev_handle, int* stats, size_t length);
+  int liballuris_read_memory (libusb_device_handle *dev_handle, int adr, int* mem_value);
+  int liballuris_delete_memory (libusb_device_handle *dev_handle);
+  int liballuris_get_mem_count (libusb_device_handle *dev_handle, int* v);
 
-int liballuris_sim_keypress (libusb_device_handle *dev_handle, unsigned char mask);
+  int liballuris_get_mem_statistics (libusb_device_handle *dev_handle, int* stats, size_t length);
+
+  int liballuris_sim_keypress (libusb_device_handle *dev_handle, unsigned char mask);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
