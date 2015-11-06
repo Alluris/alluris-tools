@@ -728,6 +728,47 @@ int liballuris_poll_measurement (libusb_device_handle *dev_handle, int* buf, siz
 }
 
 /*!
+ * \brief Poll cyclic measurements without waiting
+ *
+ * Cyclic measurements have to be enabled before with liballuris_cyclic_measurement.
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[in] buf output location for the measurements. Only populated if the return code is 0.
+ * \param[in] length of block 1..19, typically the same used with liballuris_cyclic_measurement
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_cyclic_measurement
+ * \sa liballuris_get_unit
+ * \sa liballuris_get_digits
+ */
+int liballuris_poll_measurement_no_wait (libusb_device_handle *dev_handle, int* buf, size_t length, size_t *actual_num_values)
+{
+  int actual=0;
+  int r = 0;
+
+  size_t len = 5 + length * 3;
+  *actual_num_values = 0;
+  r = libusb_bulk_transfer (dev_handle, 0x81 | LIBUSB_ENDPOINT_IN, in_buf, len, &actual, 5);
+  //printf ("actual = %i, %s\n", actual, libusb_error_name(r));
+
+  if (r == LIBUSB_ERROR_TIMEOUT && actual > 0)
+    {
+      // this isn't expected
+      fprintf (stderr, "Error in liballuris_poll_measurement_no_wait: LIBUSB_ERROR_TIMEOUT and actual > 0\n");
+      fprintf (stderr, "please file a bug report\n");
+      return r;
+    }
+
+  if (r == LIBUSB_SUCCESS && actual == len)
+    {
+      size_t k;
+      *actual_num_values = (actual - 5) / 3;
+      for (k=0; k < (*actual_num_values); k++)
+        buf[k] = char_to_int24 (in_buf + 5 + k*3);
+    }
+  return r;
+}
+
+/*!
  * \brief Tare measurement
  *
  * Calculate the mean over several samples and store this internally as offset.
