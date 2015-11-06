@@ -24,7 +24,7 @@ GADC=../cli/gadc
   [ "$status" -eq 0 ]
 }
 
-@test "Set mode=0, start, tare, capture on value, stop" {
+@test "Set mode=0, start, tare, capture one value, stop" {
   run $GADC --set-mode 1 --start --tare -v --stop
   [ "$status" -eq 0 ]
   [ "$output" -eq 0 ]
@@ -32,6 +32,11 @@ GADC=../cli/gadc
 
 @test "Get firmware version" {
   run $GADC --get-firmware
+  [ "$status" -eq 0 ]
+}
+
+@test "Read calibration date" {
+  run $GADC --cal-date
   [ "$status" -eq 0 ]
 }
 

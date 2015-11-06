@@ -89,6 +89,7 @@ static struct argp_option options[] =
   {"get-stats",    1026, 0,            0, "Get statistic (MAX_PLUS, MIN_PLUS, MAX_MINUS, MIN_MINUS, AVERAGE, DEVIATION) from memory values"},
   {"keypress",     1027, "KEY",        0, "Sim. keypress. Bit 0=S1, 1=S2, 2=S3, 3=long_press. For ex. 12 => long press of S3"},
   {"get-mem-count",1028, 0,            0, "Get number of values in memory"},
+  {"cal-date",     1029, 0,            0, "Get the calibration date as YYMM"},
   { 0,0,0,0,0,0 }
 
 };
@@ -419,6 +420,10 @@ parse_opt (int key, char *arg, struct argp_state *state)
         break;
       case 1028: //get-mem-count
         r = liballuris_get_mem_count (arguments->h, &value);
+        print_value (r, value);
+        break;
+      case 1029: //cal-date
+        r = liballuris_get_calibration_date (arguments->h, &value);
         print_value (r, value);
         break;
       default:

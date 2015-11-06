@@ -185,6 +185,7 @@ extern "C"
 
   int liballuris_get_serial_number (libusb_device_handle *dev_handle, char* buf, size_t length);
   int liballuris_get_firmware (libusb_device_handle *dev_handle, int dev, char* buf, size_t length);
+  int liballuris_get_calibration_date (libusb_device_handle *dev_handle, int* v);
   int liballuris_get_digits (libusb_device_handle *dev_handle, int* v);
   int liballuris_get_F_max (libusb_device_handle *dev_handle, int* fmax);
 

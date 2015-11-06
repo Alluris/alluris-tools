@@ -458,7 +458,7 @@ int liballuris_get_serial_number (libusb_device_handle *dev_handle, char* buf, s
 /*!
  * \brief Query firmware version
  *
- * The returned string is for example "V5.03.009"
+ * The returned string in buf is for example "V5.03.009"
  * If the measurement is running, the firmware can't be read from the measurement processor
  * and "V255.255.255" is returned instead.
  *
@@ -479,6 +479,32 @@ int liballuris_get_firmware (libusb_device_handle *dev_handle, int dev, char* bu
   int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
   if (ret == LIBALLURIS_SUCCESS)
     snprintf (buf, length, "V%i.%02i.%03i", in_buf[5], in_buf[4], in_buf[3]);
+  return ret;
+}
+
+/*!
+ * \brief Query calibration date
+ *
+ * The returned int v is YYMM for example "1502" for February 2015
+ * If the measurement is running, the calibration date can't be read from the measurement processor
+ * and LIBALLURIS_DEVICE_BUSY is returned instead.
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[out] v output location for the calibration date. Only populated if the return code is 0.
+ * \return 0 if successful else \ref liballuris_error.
+ */
+int liballuris_get_calibration_date (libusb_device_handle *dev_handle, int* v)
+{
+  out_buf[0] = 0x08;
+  out_buf[1] = 3;
+  out_buf[2] = 7;
+  int ret = liballuris_device_bulk_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret == LIBALLURIS_SUCCESS)
+    {
+      *v = char_to_int24 (in_buf + 3);
+      if (*v == -1)
+        return LIBALLURIS_DEVICE_BUSY;
+    }
   return ret;
 }
 
