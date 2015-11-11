@@ -19,7 +19,6 @@ GADC=../cli/gadc
   [ "${lines[4]}"  = "[ ] peak- mode active" ]
   [ "${lines[5]}"  = "[ ] Store to memory in progress" ]
   [ "${lines[6]}"  = "[ ] overload (abs(F) > 150%)" ]
-  [ "${lines[7]}"  = "[X] fracture detected (only W20/W40)" ]
   [ "${lines[8]}"  = "[ ] mem active (P21=1 or P21=2)" ]
   [ "${lines[9]}"  = "[ ] mem-conti (store with displayrate)" ]
   [ "${lines[10]}" = "[ ] grenz_option" ]
