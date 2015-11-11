@@ -98,6 +98,7 @@ Using other compilers and/or build systems should also be feasible.
 * Overhaul liballuris_print_state, document liballuris_state
 * ~~Test unit cN and oz on 5N or 10N device~~ (Done)
 * Add bats test for gadc  --read-memory and --delete-memory to test/gadc_mem_mode.bats
+* Check needed delay after "keypress" command
 * Implement full command set (see below)
 
 ### Not yet implemented low level commands
