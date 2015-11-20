@@ -65,7 +65,7 @@ static int char_to_int24 (unsigned char* in)
  */
 const char * liballuris_error_name (int error_code)
 {
-  enum libusb_error error = error_code;
+  enum libusb_error error = (enum libusb_error) error_code;
 
   if (error < 0)
     return libusb_error_name (error);
@@ -135,7 +135,7 @@ enum liballuris_unit liballuris_unit_str2enum (const char *str)
   else if (! strcmp (str, "oz"))
     return LIBALLURIS_UNIT_oz;
   else
-    return -1;
+    return (enum liballuris_unit) -1;
 }
 
 //! Internal function to print send or receive buffers
@@ -1092,7 +1092,7 @@ int liballuris_get_mode (libusb_device_handle *dev_handle, enum liballuris_measu
   out_buf[1] = 2;
   int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 2, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
   if (ret == LIBALLURIS_SUCCESS)
-    *mode = in_buf[2];
+    *mode = (enum liballuris_measurement_mode) in_buf[2];
   return ret;
 }
 
@@ -1139,7 +1139,7 @@ int liballuris_get_mem_mode (libusb_device_handle *dev_handle, enum liballuris_m
   out_buf[1] = 2;
   int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 2, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
   if (ret == LIBALLURIS_SUCCESS)
-    *mode = in_buf[2];
+    *mode = (enum liballuris_memory_mode) in_buf[2];
 
   // workaround for a firmware bug in versions < FIXME: add version number!
   // check if we get a second reply
@@ -1148,7 +1148,7 @@ int liballuris_get_mem_mode (libusb_device_handle *dev_handle, enum liballuris_m
   if (temp_ret == LIBALLURIS_SUCCESS)
     {
       // discard first reply
-      *mode = in_buf[2];
+      *mode = (enum liballuris_memory_mode) in_buf[2];
       //fprintf (stderr, "Warning: double answer for get_mem_mode (0x1E)\n");
     }
   else
@@ -1195,7 +1195,7 @@ int liballuris_set_unit (libusb_device_handle *dev_handle, enum liballuris_unit 
       if (unit == 2 || unit == 4) //kg and lb not available on 5N and 10N devices
         return LIBALLURIS_OUT_OF_RANGE;
       if (unit == 3 || unit == 5)
-        unit--;
+        unit = (enum liballuris_unit)((int)(unit) - 1);
     }
   else if (unit == 1 || unit == 3 || unit == 5) //g and oz not available on devices with fmax > 10N
     return LIBALLURIS_OUT_OF_RANGE;
@@ -1232,11 +1232,11 @@ int liballuris_get_unit (libusb_device_handle *dev_handle, enum liballuris_unit 
   out_buf[1] = 2;
   ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 2, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
   if (ret == LIBALLURIS_SUCCESS)
-    *unit = in_buf[2];
+    *unit = (enum liballuris_unit) in_buf[2];
 
   // mapping from chapter 3.15.3
   if (fmax <= 10 && (*unit == 2 || *unit == 4))
-    *unit = *unit + 1;
+    *unit = (enum liballuris_unit)((int)(*unit) + 1);
 
   return ret;
 }

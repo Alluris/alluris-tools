@@ -37,6 +37,7 @@ If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <unistd.h> 
 #include <libusb-1.0/libusb.h>
 
 #ifndef liballuris_h

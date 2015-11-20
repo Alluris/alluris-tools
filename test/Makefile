@@ -18,4 +18,6 @@ single: fcn_check
 	bats gadc_state.bats
 
 fcn_check:
+	## check for a problem in bats where duplicate test strings cause problems
+	## See https://github.com/sstephenson/bats/issues/125
 	grep -H "@test" *.bats | sort | uniq -d
