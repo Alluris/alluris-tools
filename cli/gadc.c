@@ -89,7 +89,7 @@ static struct argp_option options[] =
   {"get-stats",    1026, 0,            0, "Get statistic (MAX_PLUS, MIN_PLUS, MAX_MINUS, MIN_MINUS, AVERAGE, DEVIATION) from memory values"},
   {"keypress",     1027, "KEY",        0, "Sim. keypress. Bit 0=S1, 1=S2, 2=S3, 3=long_press. For ex. 12 => long press of S3"},
   {"get-mem-count",1028, 0,            0, "Get number of values in memory"},
-  {"cal-date",     1029, 0,            0, "Get the calibration date as YYMM"},
+  {"next-cal-date",1029, 0,            0, "Get the next calibration date as YYMM"},
   { 0,0,0,0,0,0 }
 
 };
@@ -100,6 +100,7 @@ struct arguments
   libusb_context* ctx;
   libusb_device_handle* h;
   int error;
+  int last_key;
 };
 
 void termination_handler (int signum)
@@ -176,6 +177,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
   /* Get the input argument from argp_parse, which we
      know is a pointer to our arguments structure. */
   struct arguments *arguments = state->input;
+  arguments->last_key = key;
 
   char *endptr = NULL;
   int r = 0;
@@ -422,8 +424,8 @@ parse_opt (int key, char *arg, struct argp_state *state)
         r = liballuris_get_mem_count (arguments->h, &value);
         print_value (r, value);
         break;
-      case 1029: //cal-date
-        r = liballuris_get_calibration_date (arguments->h, &value);
+      case 1029: //next-cal-date
+        r = liballuris_get_next_calibration_date (arguments->h, &value);
         print_value (r, value);
         break;
       default:
@@ -469,6 +471,7 @@ int main(int argc, char** argv)
   arguments.ctx          = NULL;
   arguments.h            = NULL;
   arguments.error        = 0;
+  arguments.last_key     = 0;
 
   int r = libusb_init (&arguments.ctx);
   if (r < 0)
@@ -500,7 +503,7 @@ int main(int argc, char** argv)
 
           if (arguments.error)
             {
-              fprintf(stderr, "Error executing commands: '%s'\n", liballuris_error_name (arguments.error));
+              fprintf(stderr, "Error executing key = %i: '%s'\n", arguments.last_key, liballuris_error_name (arguments.error));
               r = arguments.error;
 
               // cleanup after error
