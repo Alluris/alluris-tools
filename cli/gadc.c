@@ -75,6 +75,7 @@ static struct argp_option options[] =
 
   {0, 0, 0, 0, "Get fixed attributes:", 5 },
   {"digits",       1008, 0,            0, "Digits"},
+  {"resolution",   1030, 0,            0, "Resolution (1, 2 or 5)"},
   {"fmax",         1018, 0,            0, "F max"},
 
   {0, 0, 0, 0, "Misc:", 6 },
@@ -428,6 +429,10 @@ parse_opt (int key, char *arg, struct argp_state *state)
         r = liballuris_get_next_calibration_date (arguments->h, &value);
         print_value (r, value);
         break;
+      case 1030: //get_resolution
+        r = liballuris_get_resolution (arguments->h, &value);
+        print_value (r, value);
+        break;
       default:
         return ARGP_ERR_UNKNOWN;
       }
@@ -511,7 +516,7 @@ int main(int argc, char** argv)
               liballuris_clear_RX (arguments.h, 1000);
 
               // disable streaming
-              liballuris_cyclic_measurement (arguments.h, 0, 0);
+              liballuris_cyclic_measurement (arguments.h, 0, 19);
 
               //empty read RX buffer
               fprintf(stderr, "Clearing RX buffer, ");

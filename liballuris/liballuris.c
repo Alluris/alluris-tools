@@ -552,7 +552,7 @@ int liballuris_read_flash (libusb_device_handle *dev_handle, int adr, unsigned s
 
 /*!
  * \brief Query calibration date
- *
+ * Since firmware 5.04.005
  * The returned int v is days since year 2000
  *
  * \param[in] dev_handle a handle for the device to communicate with
@@ -565,13 +565,14 @@ int liballuris_get_calibration_date (libusb_device_handle *dev_handle, unsigned 
   return liballuris_read_flash (dev_handle, 0, v);
 }
 
+//! Since firmware 5.04.005
 int liballuris_get_calibration_number (libusb_device_handle *dev_handle, char* buf, size_t length)
 {
   // PIC flash organisation
   // word adr; word value (16bit)
   // 0       ; cal_date, days since 1.1.2000, unsigned short
   // 1..4    ; uncertainty, double
-  // 5..24   ; calibration_number as char[40] 
+  // 5..24   ; calibration_number as char[40]
 
   if (length > 40)
     length = 40;
@@ -590,6 +591,7 @@ int liballuris_get_calibration_number (libusb_device_handle *dev_handle, char* b
   return ret;
 }
 
+//! Since firmware 5.04.005
 int liballuris_get_uncertainty (libusb_device_handle *dev_handle, double* v)
 {
   // see liballuris_get_calibration_number for flash organisation
@@ -624,6 +626,41 @@ int liballuris_get_digits (libusb_device_handle *dev_handle, int* v)
   out_buf[0] = 0x08;
   out_buf[1] = 3;
   out_buf[2] = 3;
+  int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret == LIBALLURIS_SUCCESS)
+    {
+      *v = char_to_int24 (in_buf + 3);
+      if (*v == -1)
+        return LIBALLURIS_DEVICE_BUSY;
+    }
+  return ret;
+}
+
+/*!
+ * \brief Query the resolution
+ *
+ * Since firmware 5.04.005
+ *
+ * The resolution as floating point number is 10^(-get_digits) * get_resolution.
+ * Possible values for resolution are 1, 2, 5.
+ *
+ * Example: get_unit returns LIBALLURIS_UNIT_N, get_digit returns 2,
+ * get_resolution returns 5 -> real resolution of 0.05N
+ *
+ * Query this value is only possible if the measurement is not running,
+ * else LIBALLURIS_DEVICE_BUSY is returned.
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[out] v output location for the returned resolution. Only populated if the return code is 0.
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_get_digits
+ */
+
+int liballuris_get_resolution (libusb_device_handle *dev_handle, int* v)
+{
+  out_buf[0] = 0x08;
+  out_buf[1] = 3;
+  out_buf[2] = 16;
   int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
   if (ret == LIBALLURIS_SUCCESS)
     {
@@ -1566,7 +1603,8 @@ int liballuris_set_autostop (libusb_device_handle *dev_handle, int v)
   out_buf[0] = 0x33;
   out_buf[1] = 3;
   out_buf[2] = v;
-  int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
+  // reply for set_autostop may take up to 500ms, use 1s as timeout
+  int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, 1000);
 
   if (in_buf[2] != v)
     return LIBALLURIS_DEVICE_BUSY;

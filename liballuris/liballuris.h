@@ -193,6 +193,7 @@ int liballuris_get_calibration_number (libusb_device_handle *dev_handle, char* b
 int liballuris_get_uncertainty (libusb_device_handle *dev_handle, double* v);
 
 int liballuris_get_digits (libusb_device_handle *dev_handle, int* v);
+int liballuris_get_resolution (libusb_device_handle *dev_handle, int* v);
 int liballuris_get_F_max (libusb_device_handle *dev_handle, int* fmax);
 
 int liballuris_get_value (libusb_device_handle *dev_handle, int* value);
