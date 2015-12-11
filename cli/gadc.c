@@ -89,7 +89,7 @@ static struct argp_option options[] =
   {"get-stats",    1026, 0,            0, "Get statistic (MAX_PLUS, MIN_PLUS, MAX_MINUS, MIN_MINUS, AVERAGE, DEVIATION) from memory values"},
   {"keypress",     1027, "KEY",        0, "Sim. keypress. Bit 0=S1, 1=S2, 2=S3, 3=long_press. For ex. 12 => long press of S3"},
   {"get-mem-count",1028, 0,            0, "Get number of values in memory"},
-  {"next-cal-date",1029, 0,            0, "Get the next calibration date as YYMM"},
+  {"get-next-cal-date",1029, 0,        0, "Get the next calibration date as YYMM"},
   { 0,0,0,0,0,0 }
 
 };
@@ -319,7 +319,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
       case 1010:
         r = liballuris_read_state (arguments->h, &device_state, 300);
         if (r == LIBUSB_SUCCESS)
-          liballuris_print_state (arguments->h, device_state);
+          liballuris_print_state (device_state);
         break;
       case 1011:
         value = strtol (arg, &endptr, 10);

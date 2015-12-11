@@ -99,6 +99,18 @@ Using other compilers and/or build systems should also be feasible.
 * ~~Test unit cN and oz on 5N or 10N device~~ (Done)
 * Add bats test for gadc  --read-memory and --delete-memory to test/gadc_mem_mode.bats
 * Check needed delay after "keypress" command
+* Add bats test and doxygen documentation for new commands
++ get_next_calibration_date
++ read_flash
++ get_calibration_date
++ get_calibration_number
++ get_uncertainty
++ set_peak_level
++ get_peak_level
++ set_autostop
++ get_autostop
++ set_key_lock
+
 * Implement full command set (see below)
 
 ### Not yet implemented low level commands

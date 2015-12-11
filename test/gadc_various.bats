@@ -35,8 +35,8 @@ GADC=../cli/gadc
   [ "$status" -eq 0 ]
 }
 
-@test "Read calibration date" {
-  run $GADC --cal-date
+@test "Read next calibration date" {
+  run $GADC --get-next-cal-date
   [ "$status" -eq 0 ]
 }
 

@@ -37,7 +37,7 @@ If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <unistd.h> 
+#include <unistd.h>
 #include <libusb-1.0/libusb.h>
 
 #ifndef liballuris_h
@@ -186,7 +186,12 @@ void liballuris_clear_RX (libusb_device_handle* dev_handle, unsigned int timeout
 
 int liballuris_get_serial_number (libusb_device_handle *dev_handle, char* buf, size_t length);
 int liballuris_get_firmware (libusb_device_handle *dev_handle, int dev, char* buf, size_t length);
-int liballuris_get_calibration_date (libusb_device_handle *dev_handle, int* v);
+int liballuris_get_next_calibration_date (libusb_device_handle *dev_handle, int* v);
+int liballuris_read_flash (libusb_device_handle *dev_handle, int adr, unsigned short *v);
+int liballuris_get_calibration_date (libusb_device_handle *dev_handle, unsigned short* v);
+int liballuris_get_calibration_number (libusb_device_handle *dev_handle, char* buf, size_t length);
+int liballuris_get_uncertainty (libusb_device_handle *dev_handle, double* v);
+
 int liballuris_get_digits (libusb_device_handle *dev_handle, int* v);
 int liballuris_get_F_max (libusb_device_handle *dev_handle, int* fmax);
 
@@ -196,7 +201,7 @@ int liballuris_get_neg_peak (libusb_device_handle *dev_handle, int* peak);
 
 /* read and print state */
 int liballuris_read_state (libusb_device_handle *dev_handle, struct liballuris_state* state, unsigned int timeout);
-void liballuris_print_state (libusb_device_handle *dev_handle, struct liballuris_state state);
+void liballuris_print_state (struct liballuris_state state);
 
 int liballuris_cyclic_measurement (libusb_device_handle *dev_handle, char enable, size_t length);
 int liballuris_poll_measurement (libusb_device_handle *dev_handle, int* buf, size_t length);
@@ -237,6 +242,14 @@ int liballuris_get_mem_count (libusb_device_handle *dev_handle, int* v);
 int liballuris_get_mem_statistics (libusb_device_handle *dev_handle, int* stats, size_t length);
 
 int liballuris_sim_keypress (libusb_device_handle *dev_handle, unsigned char mask);
+
+int liballuris_set_peak_level (libusb_device_handle *dev_handle, int v);
+int liballuris_get_peak_level (libusb_device_handle *dev_handle, int *v);
+
+int liballuris_set_autostop (libusb_device_handle *dev_handle, int v);
+int liballuris_get_autostop (libusb_device_handle *dev_handle, int *v);
+
+int liballuris_set_key_lock (libusb_device_handle *dev_handle, char active);
 
 #ifdef __cplusplus
 }
