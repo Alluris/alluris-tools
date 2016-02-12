@@ -31,9 +31,9 @@ static unsigned char out_buf[DEFAULT_SEND_BUF_LEN];
 static unsigned char in_buf[DEFAULT_RECV_BUF_LEN];
 
 // minimum length of "in" is 2 bytes
-static short char_to_uint16 (unsigned char* in)
+static unsigned short char_to_uint16 (unsigned char* in)
 {
-  short ret;
+  unsigned short ret;
   memcpy (&ret, in, 2);
   return ret;
 }
@@ -473,7 +473,7 @@ int liballuris_get_serial_number (libusb_device_handle *dev_handle, char* buf, s
   int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
   if (ret == LIBALLURIS_SUCCESS)
     {
-      short tmp = char_to_uint16 (in_buf + 3);
+      unsigned short tmp = char_to_uint16 (in_buf + 3);
       if (tmp == -1)
         return LIBALLURIS_DEVICE_BUSY;
       else
