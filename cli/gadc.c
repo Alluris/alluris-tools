@@ -91,6 +91,7 @@ static struct argp_option options[] =
   {"keypress",     1027, "KEY",        0, "Sim. keypress. Bit 0=S1, 1=S2, 2=S3, 3=long_press. For ex. 12 => long press of S3"},
   {"get-mem-count",1028, 0,            0, "Get number of values in memory"},
   {"get-next-cal-date",1029, 0,        0, "Get the next calibration date as YYMM"},
+  {"set-keylock",  1031, "V",          0, "Lock (V=1) or unlock (V=0) keys. Power-off with S1 is still possible. Disconnecting USB automatically unlocks the keys. (firmware >= V4.04.005/V5.04.005)"},
   { 0,0,0,0,0,0 }
 
 };
@@ -432,6 +433,10 @@ parse_opt (int key, char *arg, struct argp_state *state)
       case 1030: //get_resolution
         r = liballuris_get_resolution (arguments->h, &value);
         print_value (r, value);
+        break;
+      case 1031: //set-keylock
+        value = strtol (arg, &endptr, 10);
+        r = liballuris_set_key_lock (arguments->h, value);
         break;
       default:
         return ARGP_ERR_UNKNOWN;
