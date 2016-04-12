@@ -6,7 +6,7 @@
 ##   --delete-memory
 ##   --get-stats
 ##   --get-mem-count
-## For example enable 2=continuous, apply some force, read memory, caclulate
+## For example enable 2=continuous, apply some force, read memory, calculate
 ## and compare statistics, delete memory
 
 GADC=../cli/gadc
@@ -25,7 +25,6 @@ GADC=../cli/gadc
   ## FIXME: this should also work without --sleep
   run $GADC --keypress 2 --sleep 1000 --keypress 2 --sleep 1000
   run $GADC --get-mem-count
-  echo "huhu $output" >&2
   [ "$status" -eq 0 ]
   [ "$output" -eq 2 ]
 }

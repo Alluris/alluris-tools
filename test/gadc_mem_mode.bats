@@ -3,10 +3,6 @@
 ## Tests gadc
 ##    --get-mem-mode         Memory mode 0=disabled, 1=single, 2=continuous
 ##    --set-mem-mode=MODE    Memory mode 0=disabled, 1=single, 2=continuous
-##    --read-memory
-##    --delete-memory
-##    --get-stats
-##    --get-mem-count
 
 ## --set-mem-mode=MODE only works if measurement is stopped
 ## --get-mem-mode also works while measurement is running

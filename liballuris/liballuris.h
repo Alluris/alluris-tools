@@ -44,6 +44,7 @@ If not, see <http://www.gnu.org/licenses/>.
 #define liballuris_h
 
 //#define PRINT_DEBUG_MSG
+//#define DEBUG_TIMING
 
 //! Number of device which can be enumerated and simultaneously opened
 #define MAX_NUM_DEVICES 4
