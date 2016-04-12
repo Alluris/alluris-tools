@@ -409,12 +409,12 @@ parse_opt (int key, char *arg, struct argp_state *state)
           fprintf(stderr, "Error: '%s'\n", liballuris_error_name (r));
         else
           {
-            printf ("MAX_PLUS  = %4i\n", stats[0]);
-            printf ("MIN_PLUS  = %4i\n", stats[1]);
-            printf ("MAX_MINUS = %4i\n", stats[2]);
-            printf ("MIN_MINUS = %4i\n", stats[3]);
-            printf ("AVERAGE   = %4i\n", stats[4]);
-            printf ("DEVIATION = %6.1f\n", stats[5]/10.0);
+            printf ("MAX_PLUS  (raw) = %5i\n", stats[0]);
+            printf ("MIN_PLUS  (raw) = %5i\n", stats[1]);
+            printf ("MAX_MINUS (raw) = %5i\n", stats[2]);
+            printf ("MIN_MINUS (raw) = %5i\n", stats[3]);
+            printf ("AVERAGE   (raw) = %5i\n", stats[4]);
+            printf ("VARIANCE        = %9.3f\n", stats[5]/1000.0);
           }
         break;
       case 1027:  //simulate keypress
