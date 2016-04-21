@@ -33,7 +33,7 @@ static unsigned char in_buf[DEFAULT_RECV_BUF_LEN];
 // minimum length of "in" is 2 bytes
 static unsigned short char_to_uint16 (unsigned char* in)
 {
-  unsigned short ret;
+  unsigned short ret = 0;
   memcpy (&ret, in, 2);
   return ret;
 }
@@ -41,7 +41,7 @@ static unsigned short char_to_uint16 (unsigned char* in)
 // minimum length of "in" is 3 bytes
 static int char_to_uint24 (unsigned char* in)
 {
-  int ret;
+  int ret = 0;
   memcpy (&ret, in, 3);
   return ret;
 }
