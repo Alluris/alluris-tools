@@ -30,12 +30,12 @@ GADC=../cli/gadc
 }
 
 @test "Start measurement, read 10 samples" {
-  run gadc --start -s 10
+  run $GADC --start -s 10
   [ "$status" -eq 0 ]
 }
 
 @test "Set mode = 1, check for LIBALLURIS_DEVICE_BUSY" {
-  run gadc --set-mode 1
+  run $GADC --set-mode 1
   [ "$status" -eq 2 ]
 }
 
@@ -62,12 +62,12 @@ GADC=../cli/gadc
 }
 
 @test "Start measurement, read 900 samples" {
-  run gadc --start -s 900
+  run $GADC --start -s 900
   [ "$status" -eq 0 ]
 }
 
 @test "Set mode = 0, check for LIBALLURIS_DEVICE_BUSY" {
-  run gadc --set-mode 0
+  run $GADC --set-mode 0
   [ "$status" -eq 2 ]
 }
 
