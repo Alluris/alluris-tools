@@ -26,6 +26,8 @@ AC_CHECK_LIB([usb-1.0], [libusb_open],,
 # FIXME: this is only needed for MacOS X: find a better way
 AC_CHECK_LIB(argp, argp_parse)
 
+CFLAGS+=" -Wall -Wextra"
+
 AC_CONFIG_FILES([Makefile
                 doc/Makefile
                 liballuris/Makefile

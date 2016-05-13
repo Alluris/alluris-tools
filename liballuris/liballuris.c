@@ -340,8 +340,13 @@ int liballuris_get_device_list (libusb_context* ctx, struct alluris_device_descr
                         strncpy (alluris_devs[num_alluris_devices].product, "No product information available", sizeof (alluris_devs[0].product));
 
                       if (read_serial)
-                        // get serial number from device
-                        liballuris_get_serial_number (h, alluris_devs[num_alluris_devices].serial_number, sizeof (alluris_devs[0].serial_number));
+                        {
+                          // get serial number from device
+                          r = liballuris_get_serial_number (h, alluris_devs[num_alluris_devices].serial_number, sizeof (alluris_devs[0].serial_number));
+                          if (r == LIBALLURIS_DEVICE_BUSY)
+                            // measurement is running, serial cannot be read
+                            strcpy (alluris_devs[num_alluris_devices].serial_number, "*BUSY*");
+                        }
 
                       num_alluris_devices++;
                       libusb_release_interface (h, 0);
@@ -495,7 +500,7 @@ int liballuris_get_serial_number (libusb_device_handle *dev_handle, char* buf, s
   if (ret == LIBALLURIS_SUCCESS)
     {
       unsigned short tmp = char_to_uint16 (in_buf + 3);
-      if (tmp == -1)
+      if (tmp == 65535)
         return LIBALLURIS_DEVICE_BUSY;
       else
         snprintf (buf, length, "%c.%i", in_buf[5] + 'A', tmp);
