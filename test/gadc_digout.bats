@@ -57,10 +57,22 @@ GADC=../cli/gadc
   [ "$output" -eq 7 ]
 }
 
+# get-digin is available since V4.04.007/V5.04.007
+#@test "Get digin while measurement" {
+#  run $GADC --get-digin
+#  [ "$status" -eq 0 ]
+#}
+
 @test "Stop measurement" {
   run $GADC --stop
   [ "$status" -eq 0 ]
 }
+
+# get-digin is available since V4.04.007/V5.04.007
+#@test "Get digin" {
+#  run $GADC --get-digin
+#  [ "$status" -eq 0 ]
+#}
 
 @test "Set digout = 0, get digout and compare again" {
   run $GADC --set-digout 0 --get-digout

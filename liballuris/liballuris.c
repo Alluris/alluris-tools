@@ -733,7 +733,9 @@ int liballuris_get_value (libusb_device_handle *dev_handle, int* value)
   out_buf[0] = 0x46;
   out_buf[1] = 3;
   out_buf[2] = 3;
-  int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, DEFAULT_RECEIVE_TIMEOUT);
+  // worst execution time = 0.466s
+  // when P13=1Hz (effectively 2Hz) and mode=0 (10Hz)
+  int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, 700);
   if (ret == LIBALLURIS_SUCCESS)
     *value = char_to_int24 (in_buf + 3);
   return ret;
@@ -784,20 +786,16 @@ int liballuris_get_neg_peak (libusb_device_handle *dev_handle, int* peak)
  *
  * \param[in] dev_handle a handle for the device to communicate with
  * \param[out] state output location for the state. Only populated if the return code is 0.
- * \param[in] timeout in ms
  * \return 0 if successful else \ref liballuris_error
  */
-int liballuris_read_state (libusb_device_handle *dev_handle, struct liballuris_state* state, unsigned int timeout)
+int liballuris_read_state (libusb_device_handle *dev_handle, struct liballuris_state* state)
 {
   out_buf[0] = 0x46;
   out_buf[1] = 3;
   out_buf[2] = 2;
 
-#ifdef PRINT_DEBUG_MSG
-  printf ("liballuris_read_state timeout=%i\n", timeout);
-#endif
-
-  int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, timeout);
+  // worst execution time = 0.47s
+  int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 6, 705);
   if (ret == LIBALLURIS_SUCCESS)
     {
       union __liballuris_state__ tmp;
@@ -878,11 +876,15 @@ int liballuris_poll_measurement (libusb_device_handle *dev_handle, int* buf, siz
 
   /* Increased receive timeout:
    * The sampling frequency can be selected between 10Hz and 990Hz
-   * Therefore the maximum delay until the measurement completes is 1/10Hz = 100ms.
-   * *2 = 200ms
-   * FIXME: set timeout dynamically from len and sampling rate 10Hz/900Hz */
+   * Therefore the maximum delay until one measurement completes is 1/10Hz = 100ms.
+   * Since the block size can be up to 19 (see liballuris_cyclic_measurement) the typically delay
+   * in 10Hz mode and blocksize 19 is >1.9s
+   *
+   * Test case: "gadc --stop --set-mode 0 --start -s 19"
+  */
 
-  int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 0, 0, len, 2400);
+  // worst execution time = 2.4s
+  int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 0, 0, len, 3600);
   size_t k;
   for (k=0; k<length; k++)
     buf[k] = char_to_int24 (in_buf + 5 + k*3);
@@ -998,34 +1000,10 @@ int liballuris_start_measurement (libusb_device_handle *dev_handle)
 
   if (ret == LIBALLURIS_SUCCESS)
     {
-      usleep (1000000);
-      //printf ("liballuris_start_measurement: sleep 1s...\n");
-      // The device may take up to 800ms until the measurement is running.
-      // (for example if an automatic tare is parametrized at start of measurement)
-      // -> wait for it
-      /*
-            int timeout = 30; // 30 * 50ms
-            struct liballuris_state state;
-
-            do
-              {
-                timeout--;
-                ret = liballuris_read_state (dev_handle, &state, 1000);
-                if (! state.measuring)
-                  usleep (50000);
-              }
-            while (!ret && timeout && !state.measuring);
-
-      #ifdef PRINT_DEBUG_MSG
-           printf ("liballuris_start_measurement timeout left = %i\n", timeout);
-      #endif
-
-            if (! timeout)
-              ret = LIBALLURIS_TIMEOUT;
-      */
-
+      // wait until measurement processor is configured and running
+      // this may take up to 100ms if P13=1
+      usleep (150000);
     }
-
   return ret;
 }
 
@@ -1045,28 +1023,9 @@ int liballuris_stop_measurement (libusb_device_handle *dev_handle)
 
   if (ret == LIBUSB_SUCCESS)
     {
-      usleep (1000000);
-      //printf ("liballuris_stop_measurement: sleep 1s...\n");
-      /*
-            // the device may take approximately 100ms (1/10Hz) until the measurement is stopped.
-            int timeout = 20; // 20 * 20ms
-            struct liballuris_state state;
-            do
-              {
-                timeout--;
-                ret = liballuris_read_state (dev_handle, &state, 500);
-                if (state.measuring)
-                  usleep (20000);
-              }
-            while (!ret && timeout && state.measuring);
-
-      #ifdef PRINT_DEBUG_MSG
-            printf ("liballuris_stop_measurement timeout left = %i\n", timeout);
-      #endif
-
-            if (! timeout)
-              ret = LIBALLURIS_TIMEOUT;
-      */
+      // wait until measurement processor is stopped
+      // this may take up to 1100ms if P13=1
+      usleep (1100000);
     }
 
   return ret;
@@ -1093,7 +1052,7 @@ int liballuris_stop_measurement (libusb_device_handle *dev_handle)
 int liballuris_set_upper_limit (libusb_device_handle *dev_handle, int limit)
 {
   struct liballuris_state state;
-  int ret = liballuris_read_state (dev_handle, &state, DEFAULT_RECEIVE_TIMEOUT);
+  int ret = liballuris_read_state (dev_handle, &state);
   if (ret)
     return ret;
 
@@ -1105,8 +1064,9 @@ int liballuris_set_upper_limit (libusb_device_handle *dev_handle, int limit)
   out_buf[2] = 0; //maximum
   memcpy (out_buf+3, (unsigned char *) &limit, 3);
 
+  // worst execution time = 0.468s
   // Increased receive timeout due to EEPROM write operation
-  return liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 6, DEFAULT_SEND_TIMEOUT, 6, 500);
+  return liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 6, DEFAULT_SEND_TIMEOUT, 6, 702);
 }
 
 /*!
@@ -1130,7 +1090,7 @@ int liballuris_set_upper_limit (libusb_device_handle *dev_handle, int limit)
 int liballuris_set_lower_limit (libusb_device_handle *dev_handle, int limit)
 {
   struct liballuris_state state;
-  int ret = liballuris_read_state (dev_handle, &state, DEFAULT_RECEIVE_TIMEOUT);
+  int ret = liballuris_read_state (dev_handle, &state);
   if (ret)
     return ret;
 
@@ -1142,8 +1102,9 @@ int liballuris_set_lower_limit (libusb_device_handle *dev_handle, int limit)
   out_buf[2] = 1; //minimum
   memcpy (out_buf+3, (unsigned char *) &limit, 3);
 
+  // worst execution time = 0.468s
   // Increased receive timeout due to EEPROM write operation
-  return liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 6, DEFAULT_SEND_TIMEOUT, 6, 500);
+  return liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 6, DEFAULT_SEND_TIMEOUT, 6, 702);
 }
 
 /*!
@@ -1162,7 +1123,7 @@ int liballuris_set_lower_limit (libusb_device_handle *dev_handle, int limit)
 int liballuris_get_upper_limit (libusb_device_handle *dev_handle, int* limit)
 {
   struct liballuris_state state;
-  int ret = liballuris_read_state (dev_handle, &state, DEFAULT_RECEIVE_TIMEOUT);
+  int ret = liballuris_read_state (dev_handle, &state);
   if (ret)
     return ret;
 
@@ -1194,7 +1155,7 @@ int liballuris_get_upper_limit (libusb_device_handle *dev_handle, int* limit)
 int liballuris_get_lower_limit (libusb_device_handle *dev_handle, int* limit)
 {
   struct liballuris_state state;
-  int ret = liballuris_read_state (dev_handle, &state, DEFAULT_RECEIVE_TIMEOUT);
+  int ret = liballuris_read_state (dev_handle, &state);
   if (ret)
     return ret;
 
@@ -1278,7 +1239,8 @@ int liballuris_set_mem_mode (libusb_device_handle *dev_handle, enum liballuris_m
   out_buf[0] = 0x1D;
   out_buf[1] = 3;
   out_buf[2] = mode;
-  int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, 600);
+  // worst execution time = 0.475s
+  int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, 712);
 
   if (in_buf[2] != mode)
     return LIBALLURIS_DEVICE_BUSY;
@@ -1362,7 +1324,8 @@ int liballuris_set_unit (libusb_device_handle *dev_handle, enum liballuris_unit 
     return LIBALLURIS_OUT_OF_RANGE;
 
   out_buf[2] = unit;
-  ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, 500);
+  // worst execution time = 0.482s
+  ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, 723);
 
   if (in_buf[2] != unit)
     return LIBALLURIS_DEVICE_BUSY;
@@ -1432,11 +1395,29 @@ int liballuris_set_digout (libusb_device_handle *dev_handle, int v)
  * \param[in] dev_handle a handle for the device to communicate with
  * \param[out] v output location. Only populated when the return code is 0.
  * \return 0 if successful else \ref liballuris_error
- * \sa liballuris_get_digout
+ * \sa liballuris_set_digout
  */
 int liballuris_get_digout (libusb_device_handle *dev_handle, int *v)
 {
   out_buf[0] = 0x22;
+  out_buf[1] = 2;
+  int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 2, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
+  if (ret == LIBALLURIS_SUCCESS)
+    *v = in_buf[2];
+  return ret;
+}
+
+/*!
+ * \brief Query the binary state of the digital input
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[out] v output location. Only populated when the return code is 0.
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_get_digout
+ */
+int liballuris_get_digin (libusb_device_handle *dev_handle, int *v)
+{
+  out_buf[0] = 0x27;
   out_buf[1] = 2;
   int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 2, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
   if (ret == LIBALLURIS_SUCCESS)
@@ -1460,8 +1441,9 @@ int liballuris_restore_factory_defaults (libusb_device_handle *dev_handle)
   out_buf[0] = 0x16;
   out_buf[1] = 3;
   out_buf[2] = 1;
-  // Long receive timeout (>1.9s) because device performs many slow EEPROM write operations
-  int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, 2000);
+  // worst execution time = 2.34s (on TTT)
+  // Long receive timeout because device performs many slow EEPROM write operations
+  int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, 3510);
   if (ret == LIBALLURIS_SUCCESS && in_buf[2] == 0xFF)
     ret = LIBALLURIS_DEVICE_BUSY;
   return ret;
@@ -1551,7 +1533,7 @@ int liballuris_get_mem_count (libusb_device_handle *dev_handle, int* v)
  * - stats[2] = MAX_MINUS
  * - stats[3] = MIN_MINUS
  * - stats[4] = AVERAGE
- * - stats[5] = VARIANCE
+ * - stats[5] = VARIANCE (firmware < V5.04.007 fixed 3 digits, newer version use same digits as the other values)
  * \param[in] length of stats buffer. Should be 6
  * \return 0 if successful else \ref liballuris_error
  */

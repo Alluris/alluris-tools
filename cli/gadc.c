@@ -71,23 +71,30 @@ static struct argp_option options[] =
   {"get-mem-mode",  1015, 0,           0, "Memory mode 0=disabled, 1=single, 2=continuous"},
   {"get-unit",      1016, 0,           0, "Unit"},
   {"set-unit",      1017, "U",         0, "Unit 'N', 'cN', 'kg', 'g', 'lb', 'oz'"},
-  {"factory-defaults",1022, 0, 0, "Restore factory defaults"},
+  {"factory-defaults",1022, 0,         0, "Restore factory defaults"},
+  {"set-auto-stop", 1032, "S",         0, "Set auto-stop 0..30"},
+  {"get-auto-stop", 1033, 0,           0, "Get auto-stop"},
 
   {0, 0, 0, 0, "Get fixed attributes:", 5 },
-  {"digits",       1008, 0,            0, "Digits"},
+  {"digits",       1008, 0,            0, "Digits of used fixed-point numbers"},
   {"resolution",   1030, 0,            0, "Resolution (1, 2 or 5)"},
-  {"fmax",         1018, 0,            0, "F max"},
+  {"fmax",         1018, 0,            0, "Fmax"},
 
   {0, 0, 0, 0, "Misc:", 6 },
   {"state",        1010, 0,            0, "Read RAM state"},
   {"sleep",        1011, "T",          0, "Sleep T milliseconds"},
   {"set-digout",   1019, "MASK",       0, "Set state of the 3 digital outputs = MASK (firmware >= V4.03.008/V5.03.008)"},
   {"get-digout",   1020, 0,            0, "Get state of the 3 digital outputs (firmware >= V4.03.008/V5.03.008)"},
+  {"get-digin",    1034, 0,            0, "Get state of the digital input (firmware >= V4.04.007/V5.04.007)"},
   {"get-firmware", 1021, 0,            0, "Get firmware of communication and measurement processor"},
   {"power-off",    1023, 0,            0, "Power off the device"},
   {"delete-memory",1024, 0,            0, "Delete the measurement memory"},
   {"read-memory",  1025, "ADR",        0, "Read adr 0..999 or -1 for whole memory"},
-  {"get-stats",    1026, 0,            0, "Get statistic (MAX_PLUS, MIN_PLUS, MAX_MINUS, MIN_MINUS, AVERAGE, DEVIATION) from memory values"},
+  {
+    "get-stats",    1026, 0,            0, "Get statistic (MAX_PLUS, MIN_PLUS, MAX_MINUS, MIN_MINUS, AVERAGE, VARIANCE) from memory values. "\
+    "All values are fixed-point numbers (see --digits) except DEVIATION which uses 3 digits in firmware "\
+    "< V5.04.007 and --digits in newer versions."
+  },
   {"keypress",     1027, "KEY",        0, "Sim. keypress. Bit 0=S1, 1=S2, 2=S3, 3=long_press. For ex. 12 => long press of S3"},
   {"get-mem-count",1028, 0,            0, "Get number of values in memory"},
   {"get-next-cal-date",1029, 0,        0, "Get the next calibration date as YYMM"},
@@ -123,7 +130,7 @@ static int print_multiple (libusb_device_handle *dev_handle, int num)
 {
   // check if measurement is running
   struct liballuris_state state;
-  int ret = liballuris_read_state (dev_handle, &state, 1000);
+  int ret = liballuris_read_state (dev_handle, &state);
   if (ret == LIBUSB_SUCCESS)
     {
       if (state.measuring)
@@ -319,7 +326,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
         print_value (r, value);
         break;
       case 1010:
-        r = liballuris_read_state (arguments->h, &device_state, 300);
+        r = liballuris_read_state (arguments->h, &device_state);
         if (r == LIBUSB_SUCCESS)
           liballuris_print_state (device_state);
         break;
@@ -415,7 +422,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
             printf ("MAX_MINUS (raw) = %5i\n", stats[2]);
             printf ("MIN_MINUS (raw) = %5i\n", stats[3]);
             printf ("AVERAGE   (raw) = %5i\n", stats[4]);
-            printf ("VARIANCE        = %9.3f\n", stats[5]/1000.0);
+            printf ("VARIANCE  (raw) = %5i\n", stats[5]);
           }
         break;
       case 1027:  //simulate keypress
@@ -430,14 +437,32 @@ parse_opt (int key, char *arg, struct argp_state *state)
         r = liballuris_get_next_calibration_date (arguments->h, &value);
         print_value (r, value);
         break;
+
       case 1030: //get_resolution
         r = liballuris_get_resolution (arguments->h, &value);
         print_value (r, value);
         break;
+
       case 1031: //set-keylock
         value = strtol (arg, &endptr, 10);
         r = liballuris_set_key_lock (arguments->h, value);
         break;
+
+      case 1032: //set-auto-stop
+        value = strtol (arg, &endptr, 10);
+        r = liballuris_set_autostop (arguments->h, value);
+        break;
+
+      case 1033: //get-auto-stop
+        r = liballuris_get_autostop (arguments->h, &value);
+        print_value (r, value);
+        break;
+
+      case 1034: //get-digin
+        r = liballuris_get_digin (arguments->h, &value);
+        print_value (r, value);
+        break;
+
       default:
         return ARGP_ERR_UNKNOWN;
       }

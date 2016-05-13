@@ -22,11 +22,17 @@ GADC=../cli/gadc
 }
 
 @test "Get digits while running, check for LIBALLURIS_DEVICE_BUSY" {
-  run $GADC --digits
+  run $GADC --sleep 500 --digits
   [ "$status" -eq 2 ]
 }
 
 @test "Stop measurement again" {
   run $GADC --stop
   [ "$status" -eq 0 ]
+}
+
+@test "Get digits again " {
+  run $GADC --digits
+  [ "$status" -eq 0 ]
+  [ "$output" -ge 0 ] && [ "$output" -le 3 ]
 }
