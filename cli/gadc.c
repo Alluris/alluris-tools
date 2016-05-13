@@ -43,62 +43,61 @@ static char args_doc[] = "";
 static struct argp_option options[] =
 {
   {0, 0, 0, 0, "Device discovery and connection:", 1},
-  {"list",         'l', 0,             0, "List accessible (stopped and not claimed) devices"},
-  {"serial",       1009, "SERIAL",     0, "Connect to specific alluris device using serial number. This only works if the device is stopped."},
-  {NULL,           'b',  "Bus,Device", 0, "Connect to specific alluris device using bus and device id"},
+  {"list",         'l', 0,             0, "List accessible (stopped and not claimed) devices", 0},
+  {"serial",       1009, "SERIAL",     0, "Connect to specific alluris device using serial number. This only works if the device is stopped.", 0},
+  {NULL,           'b',  "Bus,Device", 0, "Connect to specific alluris device using bus and device id", 0},
 
   {0, 0, 0, 0, "Measurement:", 2 },
-  {"start",        1006, 0,            0, "Start"},
-  {"stop",         1007, 0,            0, "Stop"},
-  {"value",        'v', 0,             0, "Value"},
-  {"pos-peak",     'p', 0,             0, "Positive peak"},
-  {"neg-peak",     'n', 0,             0, "Negative peak"},
-  {"sample",       's', "NUM",         0, "Capture NUM values (Inf if NUM==0)"},
+  {"start",        1006, 0,            0, "Start", 0},
+  {"stop",         1007, 0,            0, "Stop", 0},
+  {"value",        'v', 0,             0, "Value", 0},
+  {"pos-peak",     'p', 0,             0, "Positive peak", 0},
+  {"neg-peak",     'n', 0,             0, "Negative peak", 0},
+  {"sample",       's', "NUM",         0, "Capture NUM values (Inf if NUM==0)", 0},
 
   {0, 0, 0, 0, "Tare:", 3 },
-  {"tare",         't', 0,             0, "Tare measurement"},
-  {"clear-pos",    1000, 0,            0, "Clear positive peak"},
-  {"clear-neg",    1001, 0,            0, "Clear negative peak"},
+  {"tare",         't', 0,             0, "Tare measurement", 0},
+  {"clear-pos",    1000, 0,            0, "Clear positive peak", 0},
+  {"clear-neg",    1001, 0,            0, "Clear negative peak", 0},
 
   {0, 0, 0, 0, "Settings:", 4 },
-  {"set-upper-limit", 1002, "P3",      0, "Param P3, upper limit"},
-  {"set-lower-limit", 1003, "P4",      0, "Param P4, lower limit"},
-  {"get-upper-limit", 1004, 0,         0, "Param P3, upper limit"},
-  {"get-lower-limit", 1005, 0,         0, "Param P4, lower limit"},
-  {"set-mode",      1012, "MODE",      0, "Measurement mode 0=std, 1=peak, 2=peak+, 3=peak-"},
-  {"get-mode",      1013, 0,           0, "Measurement mode 0=std, 1=peak, 2=peak+, 3=peak-"},
-  {"set-mem-mode",  1014, "MODE",      0, "Memory mode 0=disabled, 1=single, 2=continuous"},
-  {"get-mem-mode",  1015, 0,           0, "Memory mode 0=disabled, 1=single, 2=continuous"},
-  {"get-unit",      1016, 0,           0, "Unit"},
-  {"set-unit",      1017, "U",         0, "Unit 'N', 'cN', 'kg', 'g', 'lb', 'oz'"},
-  {"factory-defaults",1022, 0,         0, "Restore factory defaults"},
-  {"set-auto-stop", 1032, "S",         0, "Set auto-stop 0..30"},
-  {"get-auto-stop", 1033, 0,           0, "Get auto-stop"},
+  {"set-upper-limit", 1002, "P3",      0, "Param P3, upper limit", 0},
+  {"set-lower-limit", 1003, "P4",      0, "Param P4, lower limit", 0},
+  {"get-upper-limit", 1004, 0,         0, "Param P3, upper limit", 0},
+  {"get-lower-limit", 1005, 0,         0, "Param P4, lower limit", 0},
+  {"set-mode",      1012, "MODE",      0, "Measurement mode 0=std, 1=peak, 2=peak+, 3=peak-", 0},
+  {"get-mode",      1013, 0,           0, "Measurement mode 0=std, 1=peak, 2=peak+, 3=peak-", 0},
+  {"set-mem-mode",  1014, "MODE",      0, "Memory mode 0=disabled, 1=single, 2=continuous", 0},
+  {"get-mem-mode",  1015, 0,           0, "Memory mode 0=disabled, 1=single, 2=continuous", 0},
+  {"get-unit",      1016, 0,           0, "Unit", 0},
+  {"set-unit",      1017, "U",         0, "Unit 'N', 'cN', 'kg', 'g', 'lb', 'oz'", 0},
+  {"factory-defaults",1022, 0,         0, "Restore factory defaults", 0},
+  {"set-auto-stop", 1032, "S",         0, "Set auto-stop 0..30", 0},
+  {"get-auto-stop", 1033, 0,           0, "Get auto-stop", 0},
 
   {0, 0, 0, 0, "Get fixed attributes:", 5 },
-  {"digits",       1008, 0,            0, "Digits of used fixed-point numbers"},
-  {"resolution",   1030, 0,            0, "Resolution (1, 2 or 5)"},
-  {"fmax",         1018, 0,            0, "Fmax"},
+  {"digits",       1008, 0,            0, "Digits of used fixed-point numbers", 0},
+  {"resolution",   1030, 0,            0, "Resolution (1, 2 or 5)", 0},
+  {"fmax",         1018, 0,            0, "Fmax", 0},
 
   {0, 0, 0, 0, "Misc:", 6 },
-  {"state",        1010, 0,            0, "Read RAM state"},
-  {"sleep",        1011, "T",          0, "Sleep T milliseconds"},
-  {"set-digout",   1019, "MASK",       0, "Set state of the 3 digital outputs = MASK (firmware >= V4.03.008/V5.03.008)"},
-  {"get-digout",   1020, 0,            0, "Get state of the 3 digital outputs (firmware >= V4.03.008/V5.03.008)"},
-  {"get-digin",    1034, 0,            0, "Get state of the digital input (firmware >= V4.04.007/V5.04.007)"},
-  {"get-firmware", 1021, 0,            0, "Get firmware of communication and measurement processor"},
-  {"power-off",    1023, 0,            0, "Power off the device"},
-  {"delete-memory",1024, 0,            0, "Delete the measurement memory"},
-  {"read-memory",  1025, "ADR",        0, "Read adr 0..999 or -1 for whole memory"},
+  {"state",        1010, 0,            0, "Read RAM state", 0},
+  {"sleep",        1011, "T",          0, "Sleep T milliseconds", 0},
+  {"set-digout",   1019, "MASK",       0, "Set state of the 3 digital outputs = MASK (firmware >= V4.03.008/V5.03.008)", 0},
+  {"get-digout",   1020, 0,            0, "Get state of the 3 digital outputs (firmware >= V4.03.008/V5.03.008)", 0},
+  {"get-digin",    1034, 0,            0, "Get state of the digital input (firmware >= V4.04.007/V5.04.007)", 0},
+  {"get-firmware", 1021, 0,            0, "Get firmware of communication and measurement processor", 0},
+  {"power-off",    1023, 0,            0, "Power off the device", 0},
+  {"delete-memory",1024, 0,            0, "Delete the measurement memory", 0},
+  {"read-memory",  1025, "ADR",        0, "Read adr 0..999 or -1 for whole memory", 0},
   {
     "get-stats",    1026, 0,            0, "Get statistic (MAX_PLUS, MIN_PLUS, MAX_MINUS, MIN_MINUS, AVERAGE, VARIANCE) from memory values. "\
     "All values are fixed-point numbers (see --digits) except DEVIATION which uses 3 digits in firmware "\
-    "< V5.04.007 and --digits in newer versions."
-  },
-  {"keypress",     1027, "KEY",        0, "Sim. keypress. Bit 0=S1, 1=S2, 2=S3, 3=long_press. For ex. 12 => long press of S3"},
-  {"get-mem-count",1028, 0,            0, "Get number of values in memory"},
-  {"get-next-cal-date",1029, 0,        0, "Get the next calibration date as YYMM"},
-  {"set-keylock",  1031, "V",          0, "Lock (V=1) or unlock (V=0) keys. Power-off with S1 is still possible. Disconnecting USB automatically unlocks the keys. (firmware >= V4.04.005/V5.04.005)"},
+    "< V5.04.007 and --digits in newer versions.", 0},
+  {"keypress",     1027, "KEY",        0, "Sim. keypress. Bit 0=S1, 1=S2, 2=S3, 3=long_press. For ex. 12 => long press of S3", 0},
+  {"get-mem-count",1028, 0,            0, "Get number of values in memory", 0},
+  {"get-next-cal-date",1029, 0,        0, "Get the next calibration date as YYMM", 0},
+  {"set-keylock",  1031, "V",          0, "Lock (V=1) or unlock (V=0) keys. Power-off with S1 is still possible. Disconnecting USB automatically unlocks the keys. (firmware >= V4.04.005/V5.04.005)", 0},
   { 0,0,0,0,0,0 }
 
 };
@@ -115,6 +114,7 @@ struct arguments
 void termination_handler (int signum)
 {
   //fprintf(stderr, "Received signal %i, terminating program\n", signum);
+  (void) signum;
   do_exit = 1;
 }
 
@@ -152,8 +152,7 @@ static int print_multiple (libusb_device_handle *dev_handle, int num)
               ret = liballuris_poll_measurement (dev_handle, tempx, block_size);
               if (ret == LIBUSB_SUCCESS)
                 {
-                  int j = (num < block_size)? num : block_size;
-                  int k=0;
+                  int k = 0;
                   while (k < block_size && (cnt < num || !num))
                     {
                       printf ("%i\n", tempx[k++]);
