@@ -219,7 +219,7 @@ static int liballuris_interrupt_transfer (libusb_device_handle* dev_handle,
       struct timeval t1, t2;
       gettimeofday (&t1, NULL);
 #endif
-      bzero (in_buf, sizeof (in_buf));
+      memset (in_buf, 0, sizeof (in_buf));
       r = libusb_interrupt_transfer (dev_handle, 0x81 | LIBUSB_ENDPOINT_IN, in_buf, reply_len, &actual, receive_timeout);
 #ifdef DEBUG_TIMING
       gettimeofday (&t2, NULL);
