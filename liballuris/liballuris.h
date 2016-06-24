@@ -90,9 +90,10 @@ enum liballuris_measurement_mode
 //! memory mode
 enum liballuris_memory_mode
 {
-  LIBALLURIS_MEM_MODE_DISABLED   = 0, //!< no memory active
-  LIBALLURIS_MEM_MODE_SINGLE     = 1, //!< Store single value with key (S)
-  LIBALLURIS_MEM_MODE_CONTINUOUS = 2  //!< Start/Stop continuous capturing to memory with key (S)
+  LIBALLURIS_MEM_MODE_DISABLED    = 0, //!< no memory active
+  LIBALLURIS_MEM_MODE_SINGLE      = 1, //!< Store single value with key (S)
+  LIBALLURIS_MEM_MODE_CONTINUOUS  = 2, //!< Start/Stop continuous capturing to memory with key (S)
+  LIBALLURIS_MEM_MODE_QUICK_CHECK = 3  //!< Only for TTT (standalone quick check)
 };
 
 //! liballuris_unit

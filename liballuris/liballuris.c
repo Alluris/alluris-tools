@@ -235,14 +235,6 @@ static int liballuris_interrupt_transfer (libusb_device_handle* dev_handle,
         }
 #endif
 
-      // if we want to disable streaming (0x01 0x04 0x00....) then reread and discard ID_SAMPLE 0x02
-      if (r == LIBUSB_SUCCESS && out_buf[0] == 0x01 && out_buf[2] == 0x00 && in_buf[0] == 0x02)
-        {
-          liballuris_clear_RX (dev_handle, 250);
-          liballuris_clear_RX (dev_handle, 250);
-          return LIBUSB_SUCCESS;
-        }
-
       if (r != LIBUSB_SUCCESS || actual != reply_len)
         {
           if (r == LIBUSB_ERROR_OVERFLOW)
@@ -849,16 +841,17 @@ int liballuris_cyclic_measurement (libusb_device_handle *dev_handle, char enable
   out_buf[3] = length;
 
   //printf ("liballuris_cyclic_measurement enable=%i\n", enable);
-  int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 4, DEFAULT_SEND_TIMEOUT, 4, DEFAULT_RECEIVE_TIMEOUT);
-
-  // we expect LIBUSB_ERROR_OVERFLOW if we try to disable streaming
-  if (ret == LIBUSB_ERROR_OVERFLOW)
+  int ret;
+  if (enable)
+    ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 4, DEFAULT_SEND_TIMEOUT, 4, DEFAULT_RECEIVE_TIMEOUT);
+  else
     {
-      liballuris_clear_RX (dev_handle, 10);
-      // one more try
-      ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 4, DEFAULT_SEND_TIMEOUT, 4, DEFAULT_RECEIVE_TIMEOUT);
-      liballuris_clear_RX (dev_handle, 10);
+      ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 4, DEFAULT_SEND_TIMEOUT, 0, 0);
+      liballuris_clear_RX (dev_handle, 100);
+      liballuris_clear_RX (dev_handle, 100);
+      liballuris_clear_RX (dev_handle, 100);
     }
+
   return ret;
 }
 
@@ -1236,9 +1229,9 @@ int liballuris_get_mode (libusb_device_handle *dev_handle, enum liballuris_measu
  */
 int liballuris_set_mem_mode (libusb_device_handle *dev_handle, enum liballuris_memory_mode mode)
 {
-  if (mode < 0 || mode > 2)
+  if (mode < 0 || mode > 3)
     {
-      fprintf (stderr, "Error: memory mode %i out of range 0..2\n", mode);
+      fprintf (stderr, "Error: memory mode %i out of range 0..3\n", mode);
       return LIBALLURIS_OUT_OF_RANGE;
     }
   out_buf[0] = 0x1D;
@@ -1577,15 +1570,17 @@ int liballuris_sim_keypress (libusb_device_handle *dev_handle, unsigned char mas
   return liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
 }
 
+// Parameter P7
 int liballuris_set_peak_level (libusb_device_handle *dev_handle, int v)
 {
-  if (v < 1 || v > 9)
+  if (v < 1 || v > 99)
     return LIBALLURIS_OUT_OF_RANGE;
 
   out_buf[0] = 0x31;
   out_buf[1] = 3;
   out_buf[2] = v;
-  int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
+  // worst execution time = 0.484s
+  int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, 726);
 
   if (in_buf[2] != v)
     return LIBALLURIS_DEVICE_BUSY;
@@ -1593,6 +1588,7 @@ int liballuris_set_peak_level (libusb_device_handle *dev_handle, int v)
   return ret;
 }
 
+// Parameter P7
 int liballuris_get_peak_level (libusb_device_handle *dev_handle, int *v)
 {
   out_buf[0] = 0x32;
