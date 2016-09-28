@@ -1000,7 +1000,7 @@ int liballuris_start_measurement (libusb_device_handle *dev_handle)
     {
       // wait until measurement processor is configured and running
       // this may take up to 100ms if P13=1
-      usleep (150000);
+      usleep (250000);
     }
   return ret;
 }
@@ -1023,7 +1023,7 @@ int liballuris_stop_measurement (libusb_device_handle *dev_handle)
     {
       // wait until measurement processor is stopped
       // this may take up to 1100ms if P13=1
-      usleep (1100000);
+      usleep (2000000);
     }
 
   return ret;
