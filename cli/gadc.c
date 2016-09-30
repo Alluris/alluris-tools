@@ -130,7 +130,7 @@ static int print_multiple (libusb_device_handle *dev_handle, int num)
 {
   // check if measurement is running
   struct liballuris_state state;
-  int ret = liballuris_read_state (dev_handle, &state);
+  int ret = liballuris_read_state (dev_handle, &state, 3000);
   if (ret == LIBUSB_SUCCESS)
     {
       if (state.measuring)
@@ -325,7 +325,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
         print_value (r, value);
         break;
       case 1010:
-        r = liballuris_read_state (arguments->h, &device_state);
+        r = liballuris_read_state (arguments->h, &device_state, 3000);
         if (r == LIBUSB_SUCCESS)
           liballuris_print_state (device_state);
         break;

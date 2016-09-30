@@ -203,7 +203,7 @@ int liballuris_get_pos_peak (libusb_device_handle *dev_handle, int* peak);
 int liballuris_get_neg_peak (libusb_device_handle *dev_handle, int* peak);
 
 /* read and print state */
-int liballuris_read_state (libusb_device_handle *dev_handle, struct liballuris_state* state);
+int liballuris_read_state (libusb_device_handle *dev_handle, struct liballuris_state* state, unsigned int timeout);
 void liballuris_print_state (struct liballuris_state state);
 
 int liballuris_cyclic_measurement (libusb_device_handle *dev_handle, char enable, size_t length);

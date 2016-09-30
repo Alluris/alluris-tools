@@ -18,13 +18,13 @@ GADC=../cli/gadc
 
 @test "S1 starts measurement" {
   # wait until auto-tara has completed
-  run $GADC --keypress 1 --sleep 1500 --state
+  run $GADC --keypress 1 --state
   [ "$status" -eq 0 ]
   [ "${lines[11]}" = "[X] measurement running" ]
 }
 
 @test "S1 stops measurement" {
-  run $GADC --keypress 1 --sleep 500 --state
+  run $GADC --keypress 1 --state
   [ "$status" -eq 0 ]
   [ "${lines[11]}" = "[ ] measurement running" ]
 }
