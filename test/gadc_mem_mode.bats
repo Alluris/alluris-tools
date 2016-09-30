@@ -44,8 +44,11 @@ GADC=../cli/gadc
   [ "$output" -eq 2 ]
 }
 
-@test "Set mem mode = 3, check for LIBALLURIS_OUT_OF_RANGE" {
-  run $GADC --set-mem-mode 3
+## mem mode = 3 for TTT only
+## (LIBALLURIS_MEM_MODE_QUICK_CHECK)
+
+@test "Set mem mode = 4, check for LIBALLURIS_OUT_OF_RANGE" {
+  run $GADC --set-mem-mode 4
   [ "$status" -eq 4 ]
 }
 

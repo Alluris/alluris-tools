@@ -1,15 +1,11 @@
-.PHONY:check
 .PHONY:all
-.PHONY:single
 .PHONY:fcn_check
 
 all: fcn_check
-	bats *.bats
-
-single: fcn_check
 	-bats gadc_digits.bats
 	-bats gadc_digout.bats
 	-bats gadc_limits.bats
+	-bats gadc_mem_capture.bats
 	-bats gadc_mem_mode.bats
 	-bats gadc_mode.bats
 	-bats gadc_peaks.bats
