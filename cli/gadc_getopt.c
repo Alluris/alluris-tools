@@ -7,7 +7,27 @@ const char *program_name = "gadc";
 const char *program_version = "0.2.3";
 
 const char *program_bug_address = "<software@alluris.de>";
-  
+
+static struct option const long_options[] =
+{
+  {"bus_device", required_argument, NULL, 'b'},
+  {"list", no_argument, NULL, 'l'},
+  {"serial", no_argument, NULL, 'S'},
+  {"neg-peak", no_argument, NULL, 'n'},
+  {"pos-peak", no_argument, NULL, 'p'},
+  {"start", no_argument, NULL, 'a'},
+  {"stop", no_argument, NULL, 'o'},
+  {"sample", required_argument, NULL, 's'},
+  {"value", no_argument, NULL, 'v'},
+  {"tare", no_argument, NULL, 't'},
+
+
+
+
+
+  {NULL, 0, NULL, 0}
+};
+
 void usage ()
 {
   printf ("Usage: %s [OPTION]...\n", program_name);
@@ -15,10 +35,10 @@ void usage ()
 Generic Alluris device control\n\
 \n\
  Device discovery and connection:\n\
+  -l, --list                 List accessible (stopped and not claimed) devices\n\
   -b Bus,Device              Connect to specific alluris device using bus and\n\
                              device id\n\
-  -l, --list                 List accessible (stopped and not claimed) devices\n\
-      --serial=SERIAL        Connect to specific alluris device using serial\n\
+  --serial=SERIAL            Connect to specific alluris device using serial\n\
                              number. This only works if the device is stopped.\n\
 \n\
  Measurement:\n\
