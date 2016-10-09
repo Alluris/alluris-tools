@@ -47,7 +47,7 @@ If not, see <http://www.gnu.org/licenses/>.
 //#define DEBUG_TIMING
 
 //! Number of device which can be enumerated and simultaneously opened
-#define MAX_NUM_DEVICES 4
+#define MAX_NUM_DEVICES 8
 
 //! Default timeout in milliseconds while writing to the device
 #define DEFAULT_SEND_TIMEOUT 50
