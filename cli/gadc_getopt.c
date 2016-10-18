@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <signal.h>
+#include <assert.h>
 #include <liballuris.h>
 
 const char *program_name = "gadc";
@@ -22,7 +23,7 @@ Generic Alluris device control\n\
   -l, --list                 List accessible (stopped and not claimed) devices\n\
   -b Bus,Device              Connect to specific alluris device using bus and\n\
                              device id\n\
-  --serial=SERIAL            Connect to specific alluris device using serial\n\
+  -S, --serial=SERIAL        Connect to specific alluris device using serial\n\
                              number. This only works if the device is stopped.\n\
 \n\
  Measurement:\n\
@@ -110,7 +111,7 @@ void list_devices (libusb_context* ctx)
 {
   // list accessible devices and exit
   // FIXME: document that a running measurement prohibits reading the serial_number
-      
+
   struct alluris_device_description alluris_devs[MAX_NUM_DEVICES];
   ssize_t cnt = liballuris_get_device_list (ctx, alluris_devs, MAX_NUM_DEVICES, 1);
 
@@ -130,7 +131,100 @@ void list_devices (libusb_context* ctx)
   // free device list
   liballuris_free_device_list (alluris_devs, MAX_NUM_DEVICES);
 }
-      
+
+/*!
+ * \brief Check if a device is already connected (h != 0) and connect else
+ *
+ * If serial_or_bus_id contains one dot (.), it's considered as a serial number
+ * for example L.12345, if it contains a comma (,) serial_or_bus_id is considered to
+ * be bus_id,device_id pair.
+ * \param[in] ctx pointer to libusb context
+ * \param[in] serial_or_bus_id serial or bus_id,device_id or NULL
+ * \return 0 if successful else \ref liballuris_error
+ */
+
+int open_if_not_opened (libusb_context* ctx, const char* serial_or_bus_id, libusb_device_handle** h)
+{
+  printf ("open_if_not_opened h=%x\n", *h);
+
+  int r = 0;
+  if (! *h)
+    {
+      if (! serial_or_bus_id) //connect to first available device
+        {
+          r = liballuris_open_device (ctx, serial_or_bus_id, h);
+          if (r)
+            {
+              fprintf (stderr, "Couldn't open device: %s\n", liballuris_error_name (r));
+              return r;
+            }
+        }
+      else //bus,device or serial
+        {
+          // decide whether it's a serial number or a bus,device pair
+          char* pc = strchr (serial_or_bus_id, ',');
+          if (pc)
+            {
+              // split "Bus,Device"
+              char *endptr, *endptr2 = NULL;
+              int bus = strtol (serial_or_bus_id, &endptr, 10);
+              if (endptr == serial_or_bus_id)
+                {
+                  fprintf (stderr, "Error: Can't find bus_id in 'bus_id,device_id' ('%s')\n", serial_or_bus_id);
+                }
+              if (*endptr != ',')
+                {
+                  fprintf (stderr, "Error: Wrong delimiter '%c' (use ',' instead)\n", *endptr);
+                }
+              int device = strtol (++endptr, &endptr2, 10);
+              if (endptr2 == endptr)
+                {
+                  fprintf (stderr, "Error: Can't find device_id in 'bus_id,device_id' ('%s')\n", serial_or_bus_id);
+                }
+
+              r = liballuris_open_device_with_id (ctx, bus, device, h);
+              if (r)
+                {
+                  fprintf (stderr, "Couldn't open device with bus=%i and device=%i: %s\n", bus, device, liballuris_error_name (r));
+                }
+            }
+          else // serial
+            {
+              r = liballuris_open_device (ctx, serial_or_bus_id, h);
+              if (r)
+                {
+                  fprintf (stderr, "Couldn't open device with serial='%s': %s\n", serial_or_bus_id, liballuris_error_name (r));
+                  return r;
+                }
+            }
+        }
+
+      if (h)
+        {
+          r = libusb_claim_interface (*h, 0);
+          if (r)
+            {
+              fprintf (stderr, "Couldn't claim interface: %s\n", liballuris_error_name (r));
+            }
+        }
+    }
+  printf ("open_if_not_opened h=%x\n", *h);
+  return r;
+}
+
+void cleanup (libusb_device_handle* h)
+{
+  // cleanup after error
+  liballuris_clear_RX (h, 1000);
+
+  // disable streaming
+  liballuris_cyclic_measurement (h, 0, 19);
+
+  //empty read RX buffer
+  fprintf(stderr, "Clearing RX buffer, ");
+  liballuris_clear_RX (h, 1000);
+}
+
 static struct option const long_options[] =
 {
   {"list", no_argument, NULL, 'l'},
@@ -219,91 +313,89 @@ main (int argc, char **argv)
 
   int c;
 
-  /* First parse to get optional device serial number, bud and device id or list devices */
-  while (1)
+  //usage ();
+
+  /* First parse to get optional device serial number, bus_id and device id or list devices */
+  while (! do_exit)
     {
+      /* getopt_long stores the option index here. */
       int option_index = 0;
-      c = getopt_long (argc, argv, "b:lSnpaos:vt",
+      c = getopt_long (argc, argv, "b:lS:npaos:vt",
                        long_options, &option_index);
 
+      //printf ("option_index=%i\n", option_index);
+      //printf ("optind=%i\n", optind);
+
+      /* Detect the end of the options. */
       if (c == -1)
         break;
 
-    switch (c)
-      {
+      int value;
+      switch (c)
+        {
+        case 0:
+          /* If this option set a flag, do nothing else now. */
+          if (long_options[option_index].flag != 0)
+            break;
+          printf ("option %s", long_options[option_index].name);
+          if (optarg)
+            printf (" with arg %s", optarg);
+          printf ("\n");
+          break;
+
         case 'l': // list
-          puts ("option -l\n");
+          list_devices (ctx);
+          do_exit = 1;
           break;
 
         case 'b': // bus,device id
-          printf ("option -b with value `%s'\n", optarg);
-        break;
-
         case 'S': // serial
-          printf ("option -s with value `%s'\n", optarg);
+          printf ("option -%c with value `%s'\n", c, optarg);
+
+          if (h)
+            {
+              printf ("libusb_release_interface\n");
+              libusb_release_interface (h, 0);
+
+              printf ("libusb_close\n");
+              libusb_close (h);
+
+              h = 0;
+            }
+          r = open_if_not_opened (ctx, optarg, &h);
+          if (r)
+            do_exit = 1;
+          break;
+
+        case 'n': // neg-peak
+          puts ("option -n\n");
+          do_exit = open_if_not_opened (ctx, NULL, &h) != 0;
+          r = liballuris_get_neg_peak (h, &value);
+          print_value (r, value);
+          break;
+
+        case 'p': // pos-peak
+          puts ("option -p\n");
+          do_exit = open_if_not_opened (ctx, NULL, &h) != 0;
+          r = liballuris_get_pos_peak (h, &value);
+          print_value (r, value);
+          break;
+
+        case 'v': // read one sample
+          puts ("option -v\n");
+          do_exit = open_if_not_opened (ctx, NULL, &h) != 0;
+          r = liballuris_get_value (h, &value);
+          print_value (r, value);
           break;
 
         case '?':
           /* getopt_long already printed an error message. */
           break;
 
-      }
+        default:
+          abort ();
+        }
     }
-  
-  /* Reset optind to 1 for a second run*/
-  optind = 1;
-
-  //usage ();
-  while (1)
-    {
-    /* getopt_long stores the option index here. */
-    int option_index = 0;
-
-    c = getopt_long (argc, argv, "b:lSnpaos:vt",
-                     long_options, &option_index);
-
-    
-    //printf ("option_index=%i\n", option_index);
-    //printf ("optind=%i\n", optind);
-
-    /* Detect the end of the options. */
-    if (c == -1)
-      break;
-
-    switch (c)
-      {
-      case 0:
-        /* If this option set a flag, do nothing else now. */
-        if (long_options[option_index].flag != 0)
-          break;
-        printf ("option %s", long_options[option_index].name);
-        if (optarg)
-          printf (" with arg %s", optarg);
-        printf ("\n");
-        break;
-
-      case 'l': // list
-      case 'b': // bus,device id
-      case 'S': // serial
-        // already handled
-        break;
-
-      case 'n': // neg-peak
-        puts ("option -n\n");
-        break;
-
-      case 'p': // pos-peak
-        puts ("option -p\n");
-        break;
-
-      case '?':
-        /* getopt_long already printed an error message. */
-        break;
-
-      default:
-        abort ();
-      }
-  }
 
   /* Print any remaining command line arguments (not options). */
   if (optind < argc)
@@ -313,6 +405,16 @@ main (int argc, char **argv)
         printf ("%s ", argv[optind++]);
       putchar ('\n');
     }
- 
+
+  if (h)
+    {
+      printf ("libusb_release_interface\n");
+      libusb_release_interface (h, 0);
+    }
+
+  printf ("libusb_close\n");
+  libusb_close (h);
+
+  libusb_exit (ctx);
   return EXIT_SUCCESS;
 }
