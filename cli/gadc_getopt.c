@@ -394,8 +394,12 @@ main (int argc, char **argv)
           printf ("\n");
         }
 
-      if (c!='b' && c!='S' && c!='l' && c)
-        r = open_if_not_opened (ctx, NULL, &h);
+      if (c!='b' && c!='S' && c!='l' && c!='V' && c)
+        {
+          r = open_if_not_opened (ctx, NULL, &h);
+          if (r)
+            break;
+        }
 
       switch (c)
         {
@@ -476,18 +480,34 @@ main (int argc, char **argv)
         }
 
         case 1010: // clear-neg
+          r = liballuris_clear_neg_peak (h);
           break;
         case 1011: // clear-pos
+          r = liballuris_clear_pos_peak (h);
           break;
         case 't': // tare
+          r = liballuris_tare (h);
+          break;
+        case 1020: // factory-defaults
+          r = liballuris_restore_factory_defaults (h);
           break;
 
-        case 1020: // factory-defaults
-          break;
         case 1021: // get-auto-stop
+        {
+          int value;
+          r = liballuris_get_autostop (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
           break;
+        }
+
         case 1022: // set-auto-stop
+        {
+          int value = strtol (optarg, NULL, 10);
+          r = liballuris_set_autostop (h, value);
           break;
+        }
+
         case 1023: // get-lower-limit
         {
           int value;
@@ -499,23 +519,242 @@ main (int argc, char **argv)
 
         case 1024: // set-lower-limit
         {
-          int value;
-          value = strtol (optarg, NULL, 10);
+          int value = strtol (optarg, NULL, 10);
           r = liballuris_set_lower_limit (h, value);
           break;
         }
 
         case 1025: // get-upper-limit
+        {
+          int value;
+          r = liballuris_get_upper_limit (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
           break;
+        }
+
         case 1026: // set-upper-limit
+        {
+          int value = strtol (optarg, NULL, 10);
+          r = liballuris_set_upper_limit (h, value);
           break;
+        }
+
         case 1027: // get-mode
+        {
+          enum liballuris_measurement_mode r_mode;
+          r = liballuris_get_mode (h, &r_mode);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", r_mode);
           break;
+        }
+
         case 1028: // set-mode
+        {
+          enum liballuris_measurement_mode r_mode = strtol (optarg, NULL, 10);
+          r = liballuris_set_mode (h, r_mode);
           break;
+        }
+
         case 1029: // get-mem-mode
+        {
+          enum liballuris_memory_mode r_mem_mode;
+          r = liballuris_get_mem_mode (h, &r_mem_mode);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", r_mem_mode);
           break;
+        }
+
         case 1030: // set-mem-mode
+        {
+          enum liballuris_memory_mode r_mem_mode = strtol (optarg, NULL, 10);
+          r = liballuris_set_mem_mode (h, r_mem_mode);
+          break;
+        }
+
+        case 1031: // get-unit
+        {
+          enum liballuris_unit r_unit;
+          r = liballuris_get_unit (h, &r_unit);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%s\n", liballuris_unit_enum2str (r_unit));
+          break;
+        }
+
+        case 1032: // set-unit
+        {
+          enum liballuris_unit r_unit = liballuris_unit_str2enum (optarg);
+          r = liballuris_set_unit (h, r_unit);
+          break;
+        }
+
+        case 1040: // digits
+        {
+          int value;
+          r = liballuris_get_digits (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
+          break;
+        }
+
+        case 1041: // fmax
+        {
+          int value;
+          r = liballuris_get_F_max (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
+          break;
+        }
+
+        case 1042: // resolution
+        {
+          int value;
+          r = liballuris_get_resolution (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
+          break;
+        }
+
+        case 1060: // delete-memory
+          r = liballuris_delete_memory (h);
+          break;
+
+        case 1061: // get-digin
+        {
+          int value;
+          r = liballuris_get_digin (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
+          break;
+        }
+
+        case 1062: // get-digout
+        {
+          int value;
+          r = liballuris_get_digout (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
+          break;
+        }
+
+        case 1063: // get-firmware
+        {
+          char firmware_buf[21];
+          r = liballuris_get_firmware (h, 0, firmware_buf, 21);
+          if (r == LIBUSB_SUCCESS)
+            {
+              printf ("%s;", firmware_buf);
+              r = liballuris_get_firmware (h, 1, firmware_buf, 21);
+              if (r == LIBUSB_SUCCESS)
+                printf ("%s\n", firmware_buf);
+            }
+          break;
+        }
+
+        case 1064: // get-mem-count
+        {
+          int value;
+          r = liballuris_get_mem_count (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
+          break;
+        }
+
+        case 1065: // get-next-cal-date
+        {
+          int value;
+          r = liballuris_get_next_calibration_date (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
+          break;
+        }
+
+        case 1066: // get-stats
+        {
+          int stats[6];
+          r = liballuris_get_mem_statistics (h, stats, 6);
+          if (r == LIBUSB_SUCCESS)
+            {
+              printf ("MAX_PLUS  (raw) = %5i\n", stats[0]);
+              printf ("MIN_PLUS  (raw) = %5i\n", stats[1]);
+              printf ("MAX_MINUS (raw) = %5i\n", stats[2]);
+              printf ("MIN_MINUS (raw) = %5i\n", stats[3]);
+              printf ("AVERAGE   (raw) = %5i\n", stats[4]);
+              printf ("VARIANCE  (raw) = %5i\n", stats[5]);
+            }
+          break;
+        }
+
+        case 1067: // keypress
+        {
+          int value = strtol (optarg, NULL, 10);
+          r = liballuris_sim_keypress (h, value);
+          break;
+        }
+
+        case 1068: // power-off
+          r = liballuris_power_off (h);
+          break;
+
+        case 1069: // read-memory
+        {
+          int value = strtol (optarg, NULL, 10);
+          int start_adr = value;
+          int stop_adr = value;
+          if (value == -1)
+            {
+              start_adr = 0;
+              stop_adr = 999;
+            }
+          while (start_adr <= stop_adr)
+            {
+              r = liballuris_read_memory (h, start_adr++, &value);
+              if (r == LIBUSB_SUCCESS)
+                printf ("%i\n", value);
+            }
+          break;
+        }
+
+        case 1070: // set-digout
+        {
+          int value = strtol (optarg, NULL, 10);
+          r = liballuris_set_digout (h, value);
+          break;
+        }
+
+        case 1071: // set-keylock
+        {
+          int value = strtol (optarg, NULL, 10);
+          r = liballuris_set_key_lock (h, value);
+          break;
+        }
+
+        case 1072: // sleep [ms]
+        {
+          int value = strtol (optarg, NULL, 10);
+          usleep (value * 1000);
+          break;
+        }
+
+        case 1073: // state
+        {
+          struct liballuris_state device_state;
+          r = liballuris_read_state (h, &device_state, 3000);
+          if (r == LIBUSB_SUCCESS)
+            liballuris_print_state (device_state);
+          break;
+        }
+
+        case 1074: // help
+          usage ();
+          break;
+
+        case 'V': // version
+          printf ("%s version %s, Copyright (c) 2015-2016 Alluris GmbH & Co. KG\n",
+                  program_name,
+                  program_version);
+          printf (" built on %s %s. ", __DATE__, __TIME__);
+          printf ("Please report problems to %s\n", program_bug_address);
           break;
 
         case '?':
@@ -533,11 +772,13 @@ main (int argc, char **argv)
   if (r)
     {
       fprintf(stderr, "Error: '%s' ", liballuris_error_name (r));
-      if (!option_index)
-        fprintf (stderr, "while processing short option '%c'", c);
-      else
+
+      if (option_index >= 0)
         fprintf (stderr, "while processing long option '%s'",
                  long_options[option_index].name);
+      else if (c > 0)
+        fprintf (stderr, "while processing short option '%c'", c);
+
       if (optarg)
         fprintf (stderr, " with optarg = '%s'", optarg);
       fprintf (stderr, "\n");
@@ -557,11 +798,11 @@ main (int argc, char **argv)
     {
       printf ("libusb_release_interface\n");
       libusb_release_interface (h, 0);
+
+      printf ("libusb_close\n");
+      libusb_close (h);
     }
 
-  printf ("libusb_close\n");
-  libusb_close (h);
   libusb_exit (ctx);
-
   return r;
 }
