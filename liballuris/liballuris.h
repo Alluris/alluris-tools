@@ -75,7 +75,8 @@ enum liballuris_error
   LIBALLURIS_TIMEOUT         = 3, //!< No response or status change in given time
   //! \brief Parameter out of valid range or invalid mode/state
   //! For example set unit which isn't supported (for example 'oz' for 500N device)
-  LIBALLURIS_OUT_OF_RANGE    = 4
+  LIBALLURIS_OUT_OF_RANGE    = 4,
+  LIBALLURIS_PARSE_ERROR     = 5
 };
 
 //! measurement mode

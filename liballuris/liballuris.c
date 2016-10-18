@@ -86,6 +86,8 @@ const char * liballuris_error_name (int error_code)
           return "LIBALLURIS_TIMEOUT";
         case LIBALLURIS_OUT_OF_RANGE:
           return "LIBALLURIS_OUT_OF_RANGE";
+        case LIBALLURIS_PARSE_ERROR:
+          return "LIBALLURIS_PARSE_ERROR";
         default:
           return "**UNKNOWN LIBALLURIS_ERROR**";
         }
