@@ -93,7 +93,8 @@ static struct argp_option options[] =
   {
     "get-stats",    1026, 0,            0, "Get statistic (MAX_PLUS, MIN_PLUS, MAX_MINUS, MIN_MINUS, AVERAGE, VARIANCE) from memory values. "\
     "All values are fixed-point numbers (see --digits) except DEVIATION which uses 3 digits in firmware "\
-    "< V5.04.007 and --digits in newer versions.", 0},
+    "< V5.04.007 and --digits in newer versions.", 0
+  },
   {"keypress",     1027, "KEY",        0, "Sim. keypress. Bit 0=S1, 1=S2, 2=S3, 3=long_press. For ex. 12 => long press of S3", 0},
   {"get-mem-count",1028, 0,            0, "Get number of values in memory", 0},
   {"get-next-cal-date",1029, 0,        0, "Get the next calibration date as YYMM", 0},
@@ -558,5 +559,6 @@ int main(int argc, char** argv)
       //printf ("libusb_close\n");
       libusb_close (arguments.h);
     }
+  libusb_exit (arguments.ctx);
   return r;
 }
