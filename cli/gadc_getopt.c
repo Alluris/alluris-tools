@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <signal.h>
+#include <errno.h>
 #include <assert.h>
 #include <liballuris.h>
 
@@ -95,7 +96,7 @@ Generic Alluris device control\n\
 
 void termination_handler (int signum)
 {
-  //fprintf(stderr, "Received signal %i, terminating program\n", signum);
+  //fprintf (stderr, "Received signal %i, terminating program\n", signum);
   (void) signum;
   do_exit = 1;
 }
@@ -262,11 +263,23 @@ void cleanup (libusb_device_handle* h)
   //liballuris_clear_RX (h, 1000);
 
   // disable streaming
+  fprintf (stderr, "INFO: Disable streaming, ");
   liballuris_cyclic_measurement (h, 0, 19);
 
   //empty read RX buffer
-  fprintf(stderr, "Clearing RX buffer, ");
+  fprintf (stderr, "clearing RX buffer...\n");
   liballuris_clear_RX (h, 1000);
+}
+
+int get_base10_int (const char *p, int* value)
+{
+  char *endptr;
+  *value = strtol (p, &endptr, 10);
+  if (errno == ERANGE)
+    return LIBALLURIS_OUT_OF_RANGE;
+  if (endptr == p) // no digits
+    return LIBALLURIS_PARSE_ERROR;
+  return 0;
 }
 
 static struct option const long_options[] =
@@ -328,6 +341,13 @@ static struct option const long_options[] =
 int
 main (int argc, char **argv)
 {
+  /*
+  int value;
+  int ret = get_base10_int ("-5888", &value);
+  fprintf (stderr, "get_base10_int returned '%s'\n", liballuris_error_name (ret));
+  return 0;
+  */
+
   if (argc == 1)
     {
       fprintf (stderr, "Error: No commands.\n");
@@ -456,17 +476,21 @@ main (int argc, char **argv)
 
         case 's': // read multiple samples
         {
-          int num_samples = strtol (optarg, NULL, 10);
-          if (num_samples >= 0)
+          int num_samples;
+          r = get_base10_int (optarg, &num_samples);
+          if (r == LIBUSB_SUCCESS)
             {
-              printf ("num_samples=%i\n", num_samples);
-              r = print_multiple (h, num_samples);
-              printf ("print_multiple returned %i\n", r);
-            }
-          else
-            {
-              fprintf (stderr, "Error: NUM(=%i) has to be > 1 or 0 (read until sigint or sigterm)\n", num_samples);
-              r = LIBALLURIS_OUT_OF_RANGE;
+              if (num_samples >= 0)
+                {
+                  //printf ("num_samples=%i\n", num_samples);
+                  r = print_multiple (h, num_samples);
+                  //printf ("print_multiple returned %i\n", r);
+                }
+              else
+                {
+                  fprintf (stderr, "Error: NUM(=%i) has to be > 1 or 0 (read until sigint or sigterm)\n", num_samples);
+                  r = LIBALLURIS_OUT_OF_RANGE;
+                }
             }
           break;
         }
@@ -503,8 +527,10 @@ main (int argc, char **argv)
 
         case 1022: // set-auto-stop
         {
-          int value = strtol (optarg, NULL, 10);
-          r = liballuris_set_autostop (h, value);
+          int value;
+          r = get_base10_int (optarg, &value);
+          if (r == LIBUSB_SUCCESS)
+            r = liballuris_set_autostop (h, value);
           break;
         }
 
@@ -519,8 +545,10 @@ main (int argc, char **argv)
 
         case 1024: // set-lower-limit
         {
-          int value = strtol (optarg, NULL, 10);
-          r = liballuris_set_lower_limit (h, value);
+          int value;
+          r = get_base10_int (optarg, &value);
+          if (r == LIBUSB_SUCCESS)
+            r = liballuris_set_lower_limit (h, value);
           break;
         }
 
@@ -535,8 +563,10 @@ main (int argc, char **argv)
 
         case 1026: // set-upper-limit
         {
-          int value = strtol (optarg, NULL, 10);
-          r = liballuris_set_upper_limit (h, value);
+          int value;
+          r = get_base10_int (optarg, &value);
+          if (r == LIBUSB_SUCCESS)
+            r = liballuris_set_upper_limit (h, value);
           break;
         }
 
@@ -551,8 +581,10 @@ main (int argc, char **argv)
 
         case 1028: // set-mode
         {
-          enum liballuris_measurement_mode r_mode = strtol (optarg, NULL, 10);
-          r = liballuris_set_mode (h, r_mode);
+          enum liballuris_measurement_mode r_mode;
+          r = get_base10_int (optarg, &r_mode);
+          if (r == LIBUSB_SUCCESS)
+            r = liballuris_set_mode (h, r_mode);
           break;
         }
 
@@ -567,8 +599,11 @@ main (int argc, char **argv)
 
         case 1030: // set-mem-mode
         {
-          enum liballuris_memory_mode r_mem_mode = strtol (optarg, NULL, 10);
-          r = liballuris_set_mem_mode (h, r_mem_mode);
+          enum liballuris_memory_mode r_mem_mode;
+          int value;
+          r = liballuris_get_upper_limit (h, &r_mem_mode);
+          if (r == LIBUSB_SUCCESS)
+            r = liballuris_set_mem_mode (h, r_mem_mode);
           break;
         }
 
@@ -687,8 +722,10 @@ main (int argc, char **argv)
 
         case 1067: // keypress
         {
-          int value = strtol (optarg, NULL, 10);
-          r = liballuris_sim_keypress (h, value);
+          int value;
+          r = get_base10_int (optarg, &value);
+          if (r == LIBUSB_SUCCESS)
+            r = liballuris_sim_keypress (h, value);
           break;
         }
 
@@ -698,41 +735,51 @@ main (int argc, char **argv)
 
         case 1069: // read-memory
         {
-          int value = strtol (optarg, NULL, 10);
-          int start_adr = value;
-          int stop_adr = value;
-          if (value == -1)
+          int value;
+          r = get_base10_int (optarg, &value);
+          if (r == LIBUSB_SUCCESS)
             {
-              start_adr = 0;
-              stop_adr = 999;
-            }
-          while (start_adr <= stop_adr)
-            {
-              r = liballuris_read_memory (h, start_adr++, &value);
-              if (r == LIBUSB_SUCCESS)
-                printf ("%i\n", value);
+              int start_adr = value;
+              int stop_adr = value;
+              if (value == -1)
+                {
+                  start_adr = 0;
+                  stop_adr = 999;
+                }
+              while (start_adr <= stop_adr)
+                {
+                  r = liballuris_read_memory (h, start_adr++, &value);
+                  if (r == LIBUSB_SUCCESS)
+                    printf ("%i\n", value);
+                }
             }
           break;
         }
 
         case 1070: // set-digout
         {
-          int value = strtol (optarg, NULL, 10);
-          r = liballuris_set_digout (h, value);
+          int value;
+          r = get_base10_int (optarg, &value);
+          if (r == LIBUSB_SUCCESS)
+            r = liballuris_set_digout (h, value);
           break;
         }
 
         case 1071: // set-keylock
         {
-          int value = strtol (optarg, NULL, 10);
-          r = liballuris_set_key_lock (h, value);
+          int value;
+          r = get_base10_int (optarg, &value);
+          if (r == LIBUSB_SUCCESS)
+            r = liballuris_set_key_lock (h, value);
           break;
         }
 
         case 1072: // sleep [ms]
         {
-          int value = strtol (optarg, NULL, 10);
-          usleep (value * 1000);
+          int value;
+          r = get_base10_int (optarg, &value);
+          if (r == LIBUSB_SUCCESS)
+            usleep (value * 1000);
           break;
         }
 
@@ -771,7 +818,7 @@ main (int argc, char **argv)
   // add option info
   if (r)
     {
-      fprintf(stderr, "Error: '%s' ", liballuris_error_name (r));
+      fprintf (stderr, "Error: '%s' ", liballuris_error_name (r));
 
       if (option_index >= 0)
         fprintf (stderr, "while processing long option '%s'",
@@ -796,10 +843,10 @@ main (int argc, char **argv)
 
   if (h)
     {
-      printf ("libusb_release_interface\n");
+      //printf ("libusb_release_interface\n");
       libusb_release_interface (h, 0);
 
-      printf ("libusb_close\n");
+      //printf ("libusb_close\n");
       libusb_close (h);
     }
 
