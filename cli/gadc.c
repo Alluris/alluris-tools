@@ -396,13 +396,6 @@ main (int argc, char **argv)
       if (c == -1)
         break;
 
-      /*
-      printf ("option_index=%i\n", option_index);
-      printf ("option name '%s'\n", long_options[option_index].name);
-      printf ("optind=%i\n", optind);
-      printf ("c='%c'=%i\n", c, c);
-      */
-
       //be chatty
       if (verbose_flag && c != '?' && c > 0)
         {
@@ -439,10 +432,10 @@ main (int argc, char **argv)
 
           if (h)
             {
-              printf ("libusb_release_interface\n");
+              //printf ("libusb_release_interface\n");
               libusb_release_interface (h, 0);
 
-              printf ("libusb_close\n");
+              //printf ("libusb_close\n");
               libusb_close (h);
 
               h = 0;
@@ -484,9 +477,9 @@ main (int argc, char **argv)
             {
               if (num_samples >= 0)
                 {
-                  printf ("num_samples=%i\n", num_samples);
+                  //printf ("num_samples=%i\n", num_samples);
                   r = print_multiple (h, num_samples);
-                  printf ("print_multiple returned %i\n", r);
+                  //printf ("print_multiple returned %i\n", r);
                 }
               else
                 {
