@@ -1,130 +1,106 @@
-/*
-
-Copyright (C) 2015 Alluris GmbH & Co. KG <weber@alluris.de>
-
-Generic Alluris device control (gadc)
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  See ../COPYING
-If not, see <http://www.gnu.org/licenses/>.
-
-*/
-
 #include <stdio.h>
-#include <argp.h>
+#include <stdlib.h>
+#include <getopt.h>
 #include <signal.h>
+#include <errno.h>
+#include <assert.h>
 #include <liballuris.h>
 
-char do_exit = 0;
+const char *program_name = "gadc";
 
-const char *argp_program_version =
-  "gadc 0.2.1 using " PACKAGE_NAME " " PACKAGE_VERSION;
+const char *program_version = "0.2.3";
 
-const char *argp_program_bug_address =
-  "<software@alluris.de>";
+const char *program_bug_address = "<software@alluris.de>";
 
-static char doc[] =
-  "Generic Alluris device control";
+static char do_exit = 0;
+static int verbose_flag;
 
-/* A description of the arguments we accept. */
-static char args_doc[] = "";
-
-/* The options we understand. */
-static struct argp_option options[] =
+void usage ()
 {
-  {0, 0, 0, 0, "Device discovery and connection:", 1},
-  {"list",         'l', 0,             0, "List accessible (stopped and not claimed) devices", 0},
-  {"serial",       1009, "SERIAL",     0, "Connect to specific alluris device using serial number. This only works if the device is stopped.", 0},
-  {NULL,           'b',  "Bus,Device", 0, "Connect to specific alluris device using bus and device id", 0},
-
-  {0, 0, 0, 0, "Measurement:", 2 },
-  {"start",        1006, 0,            0, "Start", 0},
-  {"stop",         1007, 0,            0, "Stop", 0},
-  {"value",        'v', 0,             0, "Value", 0},
-  {"pos-peak",     'p', 0,             0, "Positive peak", 0},
-  {"neg-peak",     'n', 0,             0, "Negative peak", 0},
-  {"sample",       's', "NUM",         0, "Capture NUM values (Inf if NUM==0)", 0},
-
-  {0, 0, 0, 0, "Tare:", 3 },
-  {"tare",         't', 0,             0, "Tare measurement", 0},
-  {"clear-pos",    1000, 0,            0, "Clear positive peak", 0},
-  {"clear-neg",    1001, 0,            0, "Clear negative peak", 0},
-
-  {0, 0, 0, 0, "Settings:", 4 },
-  {"set-upper-limit", 1002, "P3",      0, "Param P3, upper limit", 0},
-  {"set-lower-limit", 1003, "P4",      0, "Param P4, lower limit", 0},
-  {"get-upper-limit", 1004, 0,         0, "Param P3, upper limit", 0},
-  {"get-lower-limit", 1005, 0,         0, "Param P4, lower limit", 0},
-  {"set-mode",      1012, "MODE",      0, "Measurement mode 0=std, 1=peak, 2=peak+, 3=peak-", 0},
-  {"get-mode",      1013, 0,           0, "Measurement mode 0=std, 1=peak, 2=peak+, 3=peak-", 0},
-  {"set-mem-mode",  1014, "MODE",      0, "Memory mode 0=disabled, 1=single, 2=continuous", 0},
-  {"get-mem-mode",  1015, 0,           0, "Memory mode 0=disabled, 1=single, 2=continuous", 0},
-  {"get-unit",      1016, 0,           0, "Unit", 0},
-  {"set-unit",      1017, "U",         0, "Unit 'N', 'cN', 'kg', 'g', 'lb', 'oz'", 0},
-  {"factory-defaults",1022, 0,         0, "Restore factory defaults", 0},
-  {"set-auto-stop", 1032, "S",         0, "Set auto-stop 0..30", 0},
-  {"get-auto-stop", 1033, 0,           0, "Get auto-stop", 0},
-
-  {0, 0, 0, 0, "Get fixed attributes:", 5 },
-  {"digits",       1008, 0,            0, "Digits of used fixed-point numbers", 0},
-  {"resolution",   1030, 0,            0, "Resolution (1, 2 or 5)", 0},
-  {"fmax",         1018, 0,            0, "Fmax", 0},
-
-  {0, 0, 0, 0, "Misc:", 6 },
-  {"state",        1010, 0,            0, "Read RAM state", 0},
-  {"sleep",        1011, "T",          0, "Sleep T milliseconds", 0},
-  {"set-digout",   1019, "MASK",       0, "Set state of the 3 digital outputs = MASK (firmware >= V4.03.008/V5.03.008)", 0},
-  {"get-digout",   1020, 0,            0, "Get state of the 3 digital outputs (firmware >= V4.03.008/V5.03.008)", 0},
-  {"get-digin",    1034, 0,            0, "Get state of the digital input (firmware >= V4.04.007/V5.04.007)", 0},
-  {"get-firmware", 1021, 0,            0, "Get firmware of communication and measurement processor", 0},
-  {"power-off",    1023, 0,            0, "Power off the device", 0},
-  {"delete-memory",1024, 0,            0, "Delete the measurement memory", 0},
-  {"read-memory",  1025, "ADR",        0, "Read adr 0..999 or -1 for whole memory", 0},
-  {
-    "get-stats",    1026, 0,            0, "Get statistic (MAX_PLUS, MIN_PLUS, MAX_MINUS, MIN_MINUS, AVERAGE, VARIANCE) from memory values. "\
-    "All values are fixed-point numbers (see --digits) except DEVIATION which uses 3 digits in firmware "\
-    "< V5.04.007 and --digits in newer versions.", 0
-  },
-  {"keypress",     1027, "KEY",        0, "Sim. keypress. Bit 0=S1, 1=S2, 2=S3, 3=long_press. For ex. 12 => long press of S3", 0},
-  {"get-mem-count",1028, 0,            0, "Get number of values in memory", 0},
-  {"get-next-cal-date",1029, 0,        0, "Get the next calibration date as YYMM", 0},
-  {"set-keylock",  1031, "V",          0, "Lock (V=1) or unlock (V=0) keys. Power-off with S1 is still possible. Disconnecting USB automatically unlocks the keys. (firmware >= V4.04.005/V5.04.005)", 0},
-  { 0,0,0,0,0,0 }
-
-};
-
-/* Used by main to communicate with parse_opt. */
-struct arguments
-{
-  libusb_context* ctx;
-  libusb_device_handle* h;
-  int error;
-  int last_key;
-};
+  printf ("Usage: %s [OPTION]...\n", program_name);
+  fputs ("\
+Generic Alluris device control\n\
+\n\
+ Device discovery and connection:\n\
+  -l, --list                 List accessible (stopped and not claimed) devices\n\
+  -b Bus,Device              Connect to specific alluris device using bus and\n\
+                             device id\n\
+  -S, --serial=SERIAL        Connect to specific alluris device using serial\n\
+                             number. This only works if the device is stopped.\n\
+\n\
+ Measurement:\n\
+  -n, --neg-peak             Negative peak\n\
+  -p, --pos-peak             Positive peak\n\
+      --start                Start\n\
+      --stop                 Stop\n\
+  -s, --sample=NUM           Capture NUM values (Inf if NUM==0)\n\
+  -v, --value                Get single value without starting streaming\n\
+\n\
+ Tare:\n\
+      --clear-neg            Clear negative peak\n\
+      --clear-pos            Clear positive peak\n\
+  -t, --tare                 Tare measurement\n\
+\n\
+ Settings:\n\
+      --factory-defaults     Restore factory defaults\n\
+      --get-auto-stop        Get auto-stop\n\
+      --set-auto-stop=S      Set auto-stop 0..30\n\
+      --get-lower-limit      Param P4, lower limit\n\
+      --set-lower-limit=P4   Param P4, lower limit\n\
+      --get-upper-limit      Param P3, upper limit\n\
+      --set-upper-limit=P3   Param P3, upper limit\n\
+      --get-mode             Measurement mode 0=std, 1=peak, 2=peak+, 3=peak-\n\
+      --set-mode=MODE        Measurement mode 0=std, 1=peak, 2=peak+, 3=peak-\n\
+      --get-mem-mode         Memory mode 0=disabled, 1=single, 2=continuous\n\
+      --set-mem-mode=MODE    Memory mode 0=disabled, 1=single, 2=continuous\n\
+      --get-unit             Unit\n\
+      --set-unit=U           Unit 'N', 'cN', 'kg', 'g', 'lb', 'oz'\n\
+\n\
+ Get read only settings:\n\
+      --digits               Digits of used fixed-point numbers\n\
+      --fmax                 Fmax\n\
+      --resolution           Resolution (1, 2 or 5)\n\
+\n\
+ Misc:\n\
+      --verbose              Be chatty\n\
+      --brief                Only output values  and errors (default)\n\
+      --delete-memory        Delete the measurement memory\n\
+      --get-digin            Get state of the digital input (firmware >=\n\
+                             V4.04.007/V5.04.007)\n\
+      --get-digout           Get state of the 3 digital outputs (firmware >=\n\
+                             V4.03.008/V5.03.008)\n\
+      --get-firmware         Get firmware of communication and measurement\n\
+                             processor\n\
+      --get-mem-count        Get number of values in memory\n\
+      --get-next-cal-date    Get the next calibration date as YYMM\n\
+      --get-stats            Get statistic (MAX_PLUS, MIN_PLUS, MAX_MINUS,\n\
+                             MIN_MINUS, AVERAGE, VARIANCE) from memory values.\n\
+                             All values are fixed-point numbers (see --digits)\n\
+                             except DEVIATION which uses 3 digits in firmware <\n\
+                             V5.04.007 and --digits in newer versions.\n\
+      --keypress=KEY         Sim. keypress. Bit 0=S1, 1=S2, 2=S3, 3=long_press.\n\
+                             For ex. 12 => long press of S3\n\
+      --power-off            Power off the device\n\
+      --read-memory=ADR      Read adr 0..999 or -1 for whole memory\n\
+      --set-digout=MASK      Set state of the 3 digital outputs = MASK\n\
+                             (firmware >= V4.03.008/V5.03.008)\n\
+      --set-keylock=V        Lock (V=1) or unlock (V=0) keys. Power-off with S1\n\
+                             is still possible. Disconnecting USB automatically\n\
+                             unlocks the keys. (firmware >=\n\
+                             V4.04.005/V5.04.005)\n\
+      --sleep=T              Sleep T milliseconds\n\
+      --state                Read RAM state\n\
+\n\
+      --help                 Give this help list\n\
+  -V, --version              Print program version\n\
+", stdout);
+}
 
 void termination_handler (int signum)
 {
-  //fprintf(stderr, "Received signal %i, terminating program\n", signum);
+  //fprintf (stderr, "Received signal %i, terminating program\n", signum);
   (void) signum;
   do_exit = 1;
-}
-
-static void print_value (int ret, int value)
-{
-  if (ret != LIBUSB_SUCCESS)
-    fprintf(stderr, "Error: '%s'\n", liballuris_error_name (ret));
-  else
-    printf ("%i\n", value);
 }
 
 static int print_multiple (libusb_device_handle *dev_handle, int num)
@@ -177,318 +153,207 @@ static int print_multiple (libusb_device_handle *dev_handle, int num)
   return ret;
 }
 
-/* Parse a single option. */
-static error_t
-parse_opt (int key, char *arg, struct argp_state *state)
+void list_devices (libusb_context* ctx)
 {
-  //printf ("DEBUG: key=%i, key=0x%x, key=%c\n", key, key, key);
+  // list accessible devices and exit
+  // FIXME: document that a running measurement prohibits reading the serial_number
 
-  /* Get the input argument from argp_parse, which we
-     know is a pointer to our arguments structure. */
-  struct arguments *arguments = state->input;
-  arguments->last_key = key;
+  struct alluris_device_description alluris_devs[MAX_NUM_DEVICES];
+  ssize_t cnt = liballuris_get_device_list (ctx, alluris_devs, MAX_NUM_DEVICES, 1);
 
-  char *endptr = NULL;
+  int k;
+  printf ("Device list:\n");
+  printf ("Num Bus Device Product                   Serial\n");
+  for (k=0; k < cnt; k++)
+    printf ("%3i %03d    %03d %-25s %s\n", k+1,
+            libusb_get_bus_number(alluris_devs[k].dev),
+            libusb_get_device_address(alluris_devs[k].dev),
+            alluris_devs[k].product,
+            alluris_devs[k].serial_number);
+
+  if (!cnt)
+    fprintf (stderr, "Error: No accessible device found\n");
+
+  // free device list
+  liballuris_free_device_list (alluris_devs, MAX_NUM_DEVICES);
+}
+
+/*!
+ * \brief Check if a device is already connected (h != 0) and connect else
+ *
+ * If serial_or_bus_id contains one dot (.), it's considered as a serial number
+ * for example L.12345, if it contains a comma (,) serial_or_bus_id is considered to
+ * be bus_id,device_id pair.
+ * \param[in] ctx pointer to libusb context
+ * \param[in] serial_or_bus_id serial or bus_id,device_id or NULL
+ * \return 0 if successful else \ref liballuris_error
+ */
+
+int open_if_not_opened (libusb_context* ctx, const char* serial_or_bus_id, libusb_device_handle** h)
+{
+  //printf ("open_if_not_opened h=%x\n", *h);
+
   int r = 0;
-  int value, num_samples;
-  int stats[6];
-  struct liballuris_state device_state;
-  char firmware_buf[21];
-
-  if (key == 'l')
+  if (! *h)
     {
-      // list accessible devices and exit
-      // FIXME: document that a running measurement prohibits reading the serial_number
-
-#define MAX_NUM_DEVICES 4
-      struct alluris_device_description alluris_devs[MAX_NUM_DEVICES];
-      ssize_t cnt = liballuris_get_device_list (arguments->ctx, alluris_devs, MAX_NUM_DEVICES, 1);
-
-      int k;
-      printf ("Device list:\n");
-      printf ("Num Bus Device Product                   Serial\n");
-      for (k=0; k < cnt; k++)
-        printf ("%3i %03d    %03d %-25s %s\n", k+1,
-                libusb_get_bus_number(alluris_devs[k].dev),
-                libusb_get_device_address(alluris_devs[k].dev),
-                alluris_devs[k].product,
-                alluris_devs[k].serial_number);
-
-      if (!cnt)
-        fprintf (stderr, "No accessible device found\n");
-
-      // free device list
-      liballuris_free_device_list (alluris_devs, MAX_NUM_DEVICES);
-
-      exit (0);
-    }
-
-  if (key == 1009)  // use specific serial number
-    {
-      if (!arguments->h)
+      if (! serial_or_bus_id) //connect to first available device
         {
-          r = liballuris_open_device (arguments->ctx, arg, &arguments->h);
+          r = liballuris_open_device (ctx, serial_or_bus_id, h);
           if (r)
             {
-              fprintf (stderr, "Couldn't open device with serial='%s': %s\n", arg, liballuris_error_name (r));
-              exit (EXIT_FAILURE);
+              fprintf (stderr, "Error: Couldn't open device: %s\n", liballuris_error_name (r));
             }
-          state->next = state->argc;
         }
-      return 0;
-    }
-
-  if (key == 'b')  // use specific bus and device id
-    {
-      // split "Bus,Device"
-      int bus = strtol (arg, &endptr, 10);
-      if (*endptr != ',')
+      else //bus,device or serial
         {
-          fprintf (stderr, "Error: Wrong delimiter '%c'\n", *endptr);
-          exit (EXIT_FAILURE);
+          // decide whether it's a serial number or a bus,device pair
+          char* pc = strchr (serial_or_bus_id, ',');
+          if (pc)
+            {
+              // split "Bus,Device"
+              char *endptr, *endptr2 = NULL;
+              int bus = strtol (serial_or_bus_id, &endptr, 10);
+              if (endptr == serial_or_bus_id)
+                {
+                  fprintf (stderr, "Error: Couldn't find bus_id in '%s'\n", serial_or_bus_id);
+                  return LIBALLURIS_PARSE_ERROR;
+                }
+              if (*endptr != ',')
+                {
+                  fprintf (stderr, "Error: Wrong delimiter '%c', please use ',' instead\n", *endptr);
+                  return LIBALLURIS_PARSE_ERROR;
+                }
+              int device = strtol (++endptr, &endptr2, 10);
+              if (endptr2 == endptr)
+                {
+                  fprintf (stderr, "Error: Couldn't find device_id in '%s'\n", serial_or_bus_id);
+                  return LIBALLURIS_PARSE_ERROR;
+                }
+
+              r = liballuris_open_device_with_id (ctx, bus, device, h);
+              if (r)
+                {
+                  fprintf (stderr, "Error: Couldn't open device with bus=%i and device=%i: %s\n", bus, device, liballuris_error_name (r));
+                }
+            }
+          else // serial
+            {
+              r = liballuris_open_device (ctx, serial_or_bus_id, h);
+              if (r)
+                {
+                  fprintf (stderr, "Error: Couldn't open device with serial='%s': %s\n", serial_or_bus_id, liballuris_error_name (r));
+                }
+            }
         }
-      int device = strtol (++endptr, &endptr, 10);
 
-      if (!arguments->h)
+      if (*h)
         {
-          r = liballuris_open_device_with_id (arguments->ctx, bus, device, &arguments->h);
+          r = libusb_claim_interface (*h, 0);
           if (r)
             {
-              fprintf (stderr, "Couldn't open device with bus=%i and device=%i: %s\n", bus, device, liballuris_error_name (r));
-              exit (EXIT_FAILURE);
+              fprintf (stderr, "Error: Couldn't claim interface: %s\n", liballuris_error_name (r));
             }
-          state->next = state->argc;
         }
-      return 0;
     }
+  //printf ("open_if_not_opened h=%x\n", *h);
+  return r;
+}
 
-  enum liballuris_measurement_mode r_mode;
-  enum liballuris_memory_mode r_mem_mode;
-  enum liballuris_unit r_unit;
-  if (arguments->h)
-    switch (key)
-      {
-      case 'v':
-        r = liballuris_get_value (arguments->h, &value);
-        print_value (r, value);
-        break;
-      case 'p':
-        r = liballuris_get_pos_peak (arguments->h, &value);
-        print_value (r, value);
-        break;
-      case 'n':
-        r = liballuris_get_neg_peak (arguments->h, &value);
-        print_value (r, value);
-        break;
-      case 's':
-        num_samples = strtol (arg, &endptr, 10);
-        if (!num_samples || num_samples > 1)
-          r = print_multiple (arguments->h, num_samples);
-        else
-          {
-            fprintf (stderr, "NUM has to be > 1 or 0 (read until sigint or sigterm)\n");
-            r = LIBALLURIS_OUT_OF_RANGE;
-          }
-        break;
-      case 't':
-        r = liballuris_tare (arguments->h);
-        break;
-      case 1000:
-        r = liballuris_clear_pos_peak (arguments->h);
-        break;
-      case 1001:
-        r = liballuris_clear_neg_peak (arguments->h);
-        break;
-      case 1002:
-        value = strtol (arg, &endptr, 10);
-        r = liballuris_set_upper_limit (arguments->h, value);
-        break;
-      case 1003:
-        value = strtol (arg, &endptr, 10);
-        r = liballuris_set_lower_limit (arguments->h, value);
-        break;
-      case 1004:
-        r = liballuris_get_upper_limit (arguments->h, &value);
-        print_value (r, value);
-        break;
-      case 1005:
-        r = liballuris_get_lower_limit (arguments->h, &value);
-        print_value (r, value);
-        break;
-      case 1006:
-        r = liballuris_start_measurement (arguments->h);
-        break;
-      case 1007:
-        r = liballuris_stop_measurement (arguments->h);
-        break;
-      case 1008:
-        r = liballuris_get_digits (arguments->h, &value);
-        print_value (r, value);
-        break;
-      case 1010:
-        r = liballuris_read_state (arguments->h, &device_state, 3000);
-        if (r == LIBUSB_SUCCESS)
-          liballuris_print_state (device_state);
-        break;
-      case 1011:
-        value = strtol (arg, &endptr, 10);
-        //printf ("sleep %s %i\n", arg, value);
-        usleep (value * 1000);
-        break;
-      case 1012:
-        r_mode = strtol (arg, &endptr, 10);
-        r = liballuris_set_mode (arguments->h, r_mode);
-        break;
-      case 1013:
-        r = liballuris_get_mode (arguments->h, &r_mode);
-        print_value (r, r_mode);
-        break;
-      case 1014:
-        r_mem_mode = strtol (arg, &endptr, 10);
-        r = liballuris_set_mem_mode (arguments->h, r_mem_mode);
-        break;
-      case 1015:
-        r = liballuris_get_mem_mode (arguments->h, &r_mem_mode);
-        print_value (r, r_mem_mode);
-        break;
-      case 1016:  //get-unit
-        r = liballuris_get_unit (arguments->h, &r_unit);
-        if (r != LIBUSB_SUCCESS)
-          fprintf(stderr, "Error: '%s'\n", liballuris_error_name (r));
-        else
-          printf ("%s\n", liballuris_unit_enum2str (r_unit));
-        break;
-      case 1017:  //set-unit
-        r_unit = liballuris_unit_str2enum (arg);
-        r = liballuris_set_unit (arguments->h, r_unit);
-        break;
-      case 1018:  //get fmax
-        r = liballuris_get_F_max (arguments->h, &value);
-        print_value (r, value);
-        break;
-      case 1019:  //set digout
-        value = strtol (arg, &endptr, 10);
-        r = liballuris_set_digout (arguments->h, value);
-        break;
-      case 1020:  //get digout
-        r = liballuris_get_digout (arguments->h, &value);
-        print_value (r, value);
-        break;
-      case 1021:  //get firmware
-        r = liballuris_get_firmware (arguments->h, 0, firmware_buf, 21);
-        if (r != LIBUSB_SUCCESS)
-          fprintf(stderr, "Error: '%s'\n", liballuris_error_name (r));
-        else
-          printf ("%s;", firmware_buf);
+void cleanup (libusb_device_handle* h)
+{
+  // cleanup after error
+  liballuris_clear_RX (h, 1000);
 
-        r = liballuris_get_firmware (arguments->h, 1, firmware_buf, 21);
-        if (r != LIBUSB_SUCCESS)
-          fprintf(stderr, "Error: '%s'\n", liballuris_error_name (r));
-        else
-          printf ("%s\n", firmware_buf);
-        break;
-      case 1022:  //restore factory defaults
-        r = liballuris_restore_factory_defaults (arguments->h);
-        break;
-      case 1023:  //power off device
-        r = liballuris_power_off (arguments->h);
-        break;
-      case 1024:  //delete-memory
-        r = liballuris_delete_memory (arguments->h);
-        break;
-      case 1025:  //read-memory
-        value = strtol (arg, &endptr, 10);
-        int star_adr = value;
-        int stop_adr = value;
-        if (value == -1)
-          {
-            star_adr = 0;
-            stop_adr = 999;
-          }
-        while (star_adr <= stop_adr)
-          {
-            r = liballuris_read_memory (arguments->h, star_adr++, &value);
-            print_value (r, value);
-          }
-        break;
-      case 1026:  //get-stats
-        r = liballuris_get_mem_statistics (arguments->h, stats, 6);
-        if (r != LIBUSB_SUCCESS)
-          fprintf(stderr, "Error: '%s'\n", liballuris_error_name (r));
-        else
-          {
-            printf ("MAX_PLUS  (raw) = %5i\n", stats[0]);
-            printf ("MIN_PLUS  (raw) = %5i\n", stats[1]);
-            printf ("MAX_MINUS (raw) = %5i\n", stats[2]);
-            printf ("MIN_MINUS (raw) = %5i\n", stats[3]);
-            printf ("AVERAGE   (raw) = %5i\n", stats[4]);
-            printf ("VARIANCE  (raw) = %5i\n", stats[5]);
-          }
-        break;
-      case 1027:  //simulate keypress
-        value = strtol (arg, &endptr, 10);
-        r = liballuris_sim_keypress (arguments->h, value);
-        break;
-      case 1028: //get-mem-count
-        r = liballuris_get_mem_count (arguments->h, &value);
-        print_value (r, value);
-        break;
-      case 1029: //next-cal-date
-        r = liballuris_get_next_calibration_date (arguments->h, &value);
-        print_value (r, value);
-        break;
+  // disable streaming
+  fprintf (stderr, "INFO: Disable streaming, ");
+  liballuris_cyclic_measurement (h, 0, 19);
 
-      case 1030: //get_resolution
-        r = liballuris_get_resolution (arguments->h, &value);
-        print_value (r, value);
-        break;
+  //empty read RX buffer
+  fprintf (stderr, "clearing RX buffer...\n");
+  liballuris_clear_RX (h, 1000);
+}
 
-      case 1031: //set-keylock
-        value = strtol (arg, &endptr, 10);
-        r = liballuris_set_key_lock (arguments->h, value);
-        break;
-
-      case 1032: //set-auto-stop
-        value = strtol (arg, &endptr, 10);
-        r = liballuris_set_autostop (arguments->h, value);
-        break;
-
-      case 1033: //get-auto-stop
-        r = liballuris_get_autostop (arguments->h, &value);
-        print_value (r, value);
-        break;
-
-      case 1034: //get-digin
-        r = liballuris_get_digin (arguments->h, &value);
-        print_value (r, value);
-        break;
-
-      default:
-        return ARGP_ERR_UNKNOWN;
-      }
-
-  if (r || do_exit)
-    {
-      if (do_exit)
-        arguments->error = 0;
-      else
-        arguments->error = r;
-      // stop parsing
-      state->next = state->argc;
-    }
-
+int get_base10_int (const char *p, int* value)
+{
+  char *endptr;
+  *value = strtol (p, &endptr, 10);
+  if (errno == ERANGE)
+    return LIBALLURIS_OUT_OF_RANGE;
+  if (endptr == p) // no digits
+    return LIBALLURIS_PARSE_ERROR;
   return 0;
 }
 
-/* Our argp parser. */
-static struct argp argp = { options, parse_opt, args_doc, doc, 0, 0, 0};
-
-int main(int argc, char** argv)
+static struct option const long_options[] =
 {
+  {"verbose", no_argument, &verbose_flag, 1},
+  {"brief", no_argument, &verbose_flag, 0},
+  {"list", no_argument, NULL, 'l'},
+  {"serial", required_argument, NULL, 'S'},
+
+  {"neg-peak", no_argument, NULL, 'n'},
+  {"pos-peak", no_argument, NULL, 'p'},
+  {"start", no_argument, NULL, 1000},
+  {"stop", no_argument, NULL, 1001},
+  {"sample", required_argument, NULL, 's'},
+  {"value", no_argument, NULL, 'v'},
+
+  {"clear-neg", no_argument, NULL, 1010},
+  {"clear-pos", no_argument, NULL, 1011},
+  {"tare", no_argument, NULL, 't'},
+
+  {"factory-defaults", no_argument, NULL, 1020},
+  {"get-auto-stop", no_argument, NULL, 1021},
+  {"set-auto-stop", required_argument, NULL, 1022},
+  {"get-lower-limit", no_argument, NULL, 1023},
+  {"set-lower-limit", required_argument, NULL, 1024},
+  {"get-upper-limit", no_argument, NULL, 1025},
+  {"set-upper-limit", required_argument, NULL, 1026},
+  {"get-mode", no_argument, NULL, 1027},
+  {"set-mode", required_argument, NULL, 1028},
+  {"get-mem-mode", no_argument, NULL, 1029},
+  {"set-mem-mode", required_argument, NULL, 1030},
+  {"get-unit", no_argument, NULL, 1031},
+  {"set-unit", required_argument, NULL, 1032},
+
+  {"digits", no_argument, NULL, 1040},
+  {"fmax", no_argument, NULL, 1041},
+  {"resolution", no_argument, NULL, 1042},
+
+  {"delete-memory", no_argument, NULL, 1060},
+  {"get-digin", no_argument, NULL, 1061},
+  {"get-digout", no_argument, NULL, 1062},
+  {"get-firmware", no_argument, NULL, 1063},
+  {"get-mem-count", no_argument, NULL, 1064},
+  {"get-next-cal-date", no_argument, NULL, 1065},
+  {"get-stats", no_argument, NULL, 1066},
+  {"keypress", required_argument, NULL, 1067},
+  {"power-off", no_argument, NULL, 1068},
+  {"read-memory", required_argument, NULL, 1069},
+  {"set-digout", required_argument, NULL, 1070},
+  {"set-keylock", required_argument, NULL, 1071},
+  {"sleep", required_argument, NULL, 1072},
+  {"state", no_argument, NULL, 1073},
+  {"help", no_argument, NULL, 1074},
+  {"version", no_argument, NULL, 'V'},
+
+  {NULL, 0, NULL, 0}
+};
+
+int
+main (int argc, char **argv)
+{
+  /*
+  int value;
+  int ret = get_base10_int ("-5888", &value);
+  fprintf (stderr, "get_base10_int returned '%s'\n", liballuris_error_name (ret));
+  return 0;
+  */
+
   if (argc == 1)
     {
-      fprintf (stderr, "ERROR: No commands.\n");
-      fprintf (stderr, "Try `gadc --help' or `gadc --usage' for more information.\n");
+      fprintf (stderr, "Error: No commands.\n");
+      fprintf (stderr, "Try `gadc --help' for more information.\n");
       return EXIT_FAILURE;
     }
 
@@ -501,64 +366,500 @@ int main(int argc, char** argv)
   if (signal (SIGPIPE, termination_handler) == SIG_IGN)
     signal (SIGPIPE, SIG_IGN);
 
-  struct arguments arguments;
 
-  arguments.ctx          = NULL;
-  arguments.h            = NULL;
-  arguments.error        = 0;
-  arguments.last_key     = 0;
+  libusb_context* ctx = 0;
+  libusb_device_handle* h = 0;
+  //int error = 0;
+  //int last_key = 0;
 
-  int r = libusb_init (&arguments.ctx);
+  int r = libusb_init (&ctx);
   if (r < 0)
     {
-      fprintf (stderr, "Couldn't init libusb %s\n", liballuris_error_name (r));
+      fprintf (stderr, "Error: Couldn't init libusb %s\n", liballuris_error_name (r));
       return EXIT_FAILURE;
     }
 
-  /* First parse to get optional device serial number or list devices*/
-  argp_parse (&argp, argc, argv, ARGP_NO_ARGS | ARGP_IN_ORDER, 0, &arguments);
+  int c = 0;
 
-  // No devices opened so far so open the first available
-  if (! arguments.h)
-    {
-      r = liballuris_open_device (arguments.ctx, NULL, &arguments.h);
-      if (r)
-        fprintf (stderr, "Couldn't open device: %s\n", liballuris_error_name (r));
-    }
+  //usage ();
 
-  if (arguments.h)
+  /* getopt_long stores the option index here. */
+  int option_index;
+
+  while (! do_exit && ! r)
     {
-      r = libusb_claim_interface (arguments.h, 0);
-      if (r)
-        fprintf (stderr, "Couldn't claim interface: %s\n", liballuris_error_name (r));
-      else
+      option_index = -1;
+      c = getopt_long (argc, argv, "b:lS:nps:vtV",
+                       long_options, &option_index);
+
+      /* Detect the end of the options. */
+      if (c == -1)
+        break;
+
+      /*
+      printf ("option_index=%i\n", option_index);
+      printf ("option name '%s'\n", long_options[option_index].name);
+      printf ("optind=%i\n", optind);
+      printf ("c='%c'=%i\n", c, c);
+      */
+
+      //be chatty
+      if (verbose_flag && c != '?' && c > 0)
         {
-          // Second parse, now execute the commands
-          argp_parse (&argp, argc, argv, ARGP_NO_ARGS | ARGP_IN_ORDER, 0, &arguments);
+          if (option_index >= 0)
+            printf ("Processing long option '%s'", long_options[option_index].name);
+          else if (c > 0)
+            printf ("Processing short option '%c'", c);
 
-          if (arguments.error)
-            {
-              fprintf(stderr, "Error executing key = %i: '%s'\n", arguments.last_key, liballuris_error_name (arguments.error));
-              r = arguments.error;
-
-              // cleanup after error
-              usleep (500000);
-              liballuris_clear_RX (arguments.h, 1000);
-
-              // disable streaming
-              liballuris_cyclic_measurement (arguments.h, 0, 19);
-
-              //empty read RX buffer
-              fprintf(stderr, "Clearing RX buffer, ");
-              liballuris_clear_RX (arguments.h, 1000);
-              fprintf(stderr, "closing application...\n");
-            }
-          //printf ("libusb_release_interface\n");
-          libusb_release_interface (arguments.h, 0);
+          if (optarg)
+            printf (" with optarg = '%s'", optarg);
+          printf ("\n");
         }
-      //printf ("libusb_close\n");
-      libusb_close (arguments.h);
+
+      if (c!='b' && c!='S' && c!='l' && c!='V' && c)
+        {
+          r = open_if_not_opened (ctx, NULL, &h);
+          if (r)
+            break;
+        }
+
+      switch (c)
+        {
+        case 0:
+          /* If this option set a flag, do nothing else now. */
+          break;
+
+        case 'l': // list
+          list_devices (ctx);
+          break;
+
+        case 'b': // bus,device id
+        case 'S': // serial
+          //printf ("option -%c with value `%s'\n", c, optarg);
+
+          if (h)
+            {
+              printf ("libusb_release_interface\n");
+              libusb_release_interface (h, 0);
+
+              printf ("libusb_close\n");
+              libusb_close (h);
+
+              h = 0;
+            }
+          r = open_if_not_opened (ctx, optarg, &h);
+          break;
+
+        case 'n': // neg-peak
+        {
+          int value;
+          r = liballuris_get_neg_peak (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
+          break;
+        }
+
+        case 'p': // pos-peak
+        {
+          int value;
+          r = liballuris_get_pos_peak (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
+          break;
+        }
+
+        case 1000: // start
+          r = liballuris_start_measurement (h);
+          break;
+
+        case 1001: // stop
+          r = liballuris_stop_measurement (h);
+          break;
+
+        case 's': // read multiple samples
+        {
+          int num_samples;
+          r = get_base10_int (optarg, &num_samples);
+          if (r == LIBUSB_SUCCESS)
+            {
+              if (num_samples >= 0)
+                {
+                  printf ("num_samples=%i\n", num_samples);
+                  r = print_multiple (h, num_samples);
+                  printf ("print_multiple returned %i\n", r);
+                }
+              else
+                {
+                  fprintf (stderr, "Error: NUM(=%i) has to be > 1 or 0 (read until sigint or sigterm)\n", num_samples);
+                  r = LIBALLURIS_OUT_OF_RANGE;
+                }
+            }
+          break;
+        }
+        case 'v': // read one sample
+        {
+          int value;
+          r = liballuris_get_value (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
+          break;
+        }
+
+        case 1010: // clear-neg
+          r = liballuris_clear_neg_peak (h);
+          break;
+        case 1011: // clear-pos
+          r = liballuris_clear_pos_peak (h);
+          break;
+        case 't': // tare
+          r = liballuris_tare (h);
+          break;
+        case 1020: // factory-defaults
+          r = liballuris_restore_factory_defaults (h);
+          break;
+
+        case 1021: // get-auto-stop
+        {
+          int value;
+          r = liballuris_get_autostop (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
+          break;
+        }
+
+        case 1022: // set-auto-stop
+        {
+          int value;
+          r = get_base10_int (optarg, &value);
+          if (r == LIBUSB_SUCCESS)
+            r = liballuris_set_autostop (h, value);
+          break;
+        }
+
+        case 1023: // get-lower-limit
+        {
+          int value;
+          r = liballuris_get_lower_limit (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
+          break;
+        }
+
+        case 1024: // set-lower-limit
+        {
+          int value;
+          r = get_base10_int (optarg, &value);
+          if (r == LIBUSB_SUCCESS)
+            r = liballuris_set_lower_limit (h, value);
+          break;
+        }
+
+        case 1025: // get-upper-limit
+        {
+          int value;
+          r = liballuris_get_upper_limit (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
+          break;
+        }
+
+        case 1026: // set-upper-limit
+        {
+          int value;
+          r = get_base10_int (optarg, &value);
+          if (r == LIBUSB_SUCCESS)
+            r = liballuris_set_upper_limit (h, value);
+          break;
+        }
+
+        case 1027: // get-mode
+        {
+          enum liballuris_measurement_mode r_mode;
+          r = liballuris_get_mode (h, &r_mode);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", r_mode);
+          break;
+        }
+
+        case 1028: // set-mode
+        {
+          int value;
+          r = get_base10_int (optarg, &value);
+          if (r == LIBUSB_SUCCESS)
+            {
+              enum liballuris_measurement_mode r_mode = value;
+              r = liballuris_set_mode (h, r_mode);
+            }
+          break;
+        }
+
+        case 1029: // get-mem-mode
+        {
+          enum liballuris_memory_mode r_mem_mode;
+          r = liballuris_get_mem_mode (h, &r_mem_mode);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", r_mem_mode);
+          break;
+        }
+
+        case 1030: // set-mem-mode
+        {
+          int value;
+          r = get_base10_int (optarg, &value);
+          if (r == LIBUSB_SUCCESS)
+            {
+              enum liballuris_memory_mode r_mem_mode = value;
+              r = liballuris_set_mem_mode (h, r_mem_mode);
+            }
+          break;
+        }
+
+        case 1031: // get-unit
+        {
+          enum liballuris_unit r_unit;
+          r = liballuris_get_unit (h, &r_unit);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%s\n", liballuris_unit_enum2str (r_unit));
+          break;
+        }
+
+        case 1032: // set-unit
+        {
+          enum liballuris_unit r_unit = liballuris_unit_str2enum (optarg);
+          r = liballuris_set_unit (h, r_unit);
+          break;
+        }
+
+        case 1040: // digits
+        {
+          int value;
+          r = liballuris_get_digits (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
+          break;
+        }
+
+        case 1041: // fmax
+        {
+          int value;
+          r = liballuris_get_F_max (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
+          break;
+        }
+
+        case 1042: // resolution
+        {
+          int value;
+          r = liballuris_get_resolution (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
+          break;
+        }
+
+        case 1060: // delete-memory
+          r = liballuris_delete_memory (h);
+          break;
+
+        case 1061: // get-digin
+        {
+          int value;
+          r = liballuris_get_digin (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
+          break;
+        }
+
+        case 1062: // get-digout
+        {
+          int value;
+          r = liballuris_get_digout (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
+          break;
+        }
+
+        case 1063: // get-firmware
+        {
+          char firmware_buf[21];
+          r = liballuris_get_firmware (h, 0, firmware_buf, 21);
+          if (r == LIBUSB_SUCCESS)
+            {
+              printf ("%s;", firmware_buf);
+              r = liballuris_get_firmware (h, 1, firmware_buf, 21);
+              if (r == LIBUSB_SUCCESS)
+                printf ("%s\n", firmware_buf);
+            }
+          break;
+        }
+
+        case 1064: // get-mem-count
+        {
+          int value;
+          r = liballuris_get_mem_count (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
+          break;
+        }
+
+        case 1065: // get-next-cal-date
+        {
+          int value;
+          r = liballuris_get_next_calibration_date (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
+          break;
+        }
+
+        case 1066: // get-stats
+        {
+          int stats[6];
+          r = liballuris_get_mem_statistics (h, stats, 6);
+          if (r == LIBUSB_SUCCESS)
+            {
+              printf ("MAX_PLUS  (raw) = %5i\n", stats[0]);
+              printf ("MIN_PLUS  (raw) = %5i\n", stats[1]);
+              printf ("MAX_MINUS (raw) = %5i\n", stats[2]);
+              printf ("MIN_MINUS (raw) = %5i\n", stats[3]);
+              printf ("AVERAGE   (raw) = %5i\n", stats[4]);
+              printf ("VARIANCE  (raw) = %5i\n", stats[5]);
+            }
+          break;
+        }
+
+        case 1067: // keypress
+        {
+          int value;
+          r = get_base10_int (optarg, &value);
+          if (r == LIBUSB_SUCCESS)
+            r = liballuris_sim_keypress (h, value);
+          break;
+        }
+
+        case 1068: // power-off
+          r = liballuris_power_off (h);
+          break;
+
+        case 1069: // read-memory
+        {
+          int value;
+          r = get_base10_int (optarg, &value);
+          if (r == LIBUSB_SUCCESS)
+            {
+              int start_adr = value;
+              int stop_adr = value;
+              if (value == -1)
+                {
+                  start_adr = 0;
+                  stop_adr = 999;
+                }
+              while (start_adr <= stop_adr)
+                {
+                  r = liballuris_read_memory (h, start_adr++, &value);
+                  if (r == LIBUSB_SUCCESS)
+                    printf ("%i\n", value);
+                }
+            }
+          break;
+        }
+
+        case 1070: // set-digout
+        {
+          int value;
+          r = get_base10_int (optarg, &value);
+          if (r == LIBUSB_SUCCESS)
+            r = liballuris_set_digout (h, value);
+          break;
+        }
+
+        case 1071: // set-keylock
+        {
+          int value;
+          r = get_base10_int (optarg, &value);
+          if (r == LIBUSB_SUCCESS)
+            r = liballuris_set_key_lock (h, value);
+          break;
+        }
+
+        case 1072: // sleep [ms]
+        {
+          int value;
+          r = get_base10_int (optarg, &value);
+          if (r == LIBUSB_SUCCESS)
+            usleep (value * 1000);
+          break;
+        }
+
+        case 1073: // state
+        {
+          struct liballuris_state device_state;
+          r = liballuris_read_state (h, &device_state, 3000);
+          if (r == LIBUSB_SUCCESS)
+            liballuris_print_state (device_state);
+          break;
+        }
+
+        case 1074: // help
+          usage ();
+          break;
+
+        case 'V': // version
+          printf ("%s version %s, Copyright (c) 2015-2016 Alluris GmbH & Co. KG\n",
+                  program_name,
+                  program_version);
+          printf (" built on %s %s. ", __DATE__, __TIME__);
+          printf ("Please report problems to %s\n", program_bug_address);
+          break;
+
+        case '?':
+          /* getopt_long already printed an error message. */
+          printf ("Use '--help' to see possible options\n");
+          break;
+
+        default:
+          fprintf (stderr, "Error: This should never happen...\n");
+          abort ();
+        }
     }
-  libusb_exit (arguments.ctx);
+
+  // check if the loop was exited due to an error
+  // add option info
+  if (r)
+    {
+      fprintf (stderr, "Error: '%s' ", liballuris_error_name (r));
+
+      if (option_index >= 0)
+        fprintf (stderr, "while processing long option '%s'",
+                 long_options[option_index].name);
+      else if (c > 0)
+        fprintf (stderr, "while processing short option '%c'", c);
+
+      if (optarg)
+        fprintf (stderr, " with optarg = '%s'", optarg);
+      fprintf (stderr, "\n");
+    }
+
+  // check if we have any remaining command line arguments (not options)
+  if (c == -1 && optind < argc)
+    {
+      fprintf (stderr, "Error: non-option arguments aren't allowed (yet)\n");
+      r = LIBALLURIS_OUT_OF_RANGE;
+    }
+
+  if (   r == LIBALLURIS_MALFORMED_REPLY
+         || r == LIBUSB_ERROR_OVERFLOW
+         || r == LIBUSB_ERROR_TIMEOUT)
+    cleanup (h);
+
+  if (h)
+    {
+      //printf ("libusb_release_interface\n");
+      libusb_release_interface (h, 0);
+
+      //printf ("libusb_close\n");
+      libusb_close (h);
+    }
+
+  libusb_exit (ctx);
   return r;
 }
