@@ -8,7 +8,7 @@
 
 const char *program_name = "gadc";
 
-const char *program_version = "0.2.3";
+const char *program_version = "0.2.4";
 
 const char *program_bug_address = "<software@alluris.de>";
 
@@ -55,6 +55,8 @@ Generic Alluris device control\n\
       --set-mem-mode=MODE    Memory mode 0=disabled, 1=single, 2=continuous\n\
       --get-unit             Unit\n\
       --set-unit=U           Unit 'N', 'cN', 'kg', 'g', 'lb', 'oz'\n\
+      --get-peak-level       Get CTT/TTT peak-threshold\n\
+      --set-peak-level       Set CTT/TTT peak-threshold 1..99%\n\
 \n\
  Get read only settings:\n\
       --digits               Digits of used fixed-point numbers\n\
@@ -315,6 +317,8 @@ static struct option const long_options[] =
   {"set-mem-mode", required_argument, NULL, 1030},
   {"get-unit", no_argument, NULL, 1031},
   {"set-unit", required_argument, NULL, 1032},
+  {"get-peak-level", no_argument, NULL, 1033},
+  {"set-peak-level", required_argument, NULL, 1034},
 
   {"digits", no_argument, NULL, 1040},
   {"fmax", no_argument, NULL, 1041},
@@ -343,12 +347,6 @@ static struct option const long_options[] =
 int
 main (int argc, char **argv)
 {
-  /*
-  int value;
-  int ret = get_base10_int ("-5888", &value);
-  fprintf (stderr, "get_base10_int returned '%s'\n", liballuris_error_name (ret));
-  return 0;
-  */
 
   if (argc == 1)
     {
@@ -363,9 +361,10 @@ main (int argc, char **argv)
   if (signal (SIGTERM, termination_handler) == SIG_IGN)
     signal (SIGTERM, SIG_IGN);
 
+#ifndef _WIN32
   if (signal (SIGPIPE, termination_handler) == SIG_IGN)
     signal (SIGPIPE, SIG_IGN);
-
+#endif
 
   libusb_context* ctx = 0;
   libusb_device_handle* h = 0;
@@ -620,6 +619,24 @@ main (int argc, char **argv)
         {
           enum liballuris_unit r_unit = liballuris_unit_str2enum (optarg);
           r = liballuris_set_unit (h, r_unit);
+          break;
+        }
+
+        case 1033: // get-peak-level
+        {
+          int value;
+          r = liballuris_get_peak_level (h, &value);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%i\n", value);
+          break;
+        }
+
+        case 1034: // set-peak-level
+        {
+          int value;
+          r = get_base10_int (optarg, &value);
+          if (r == LIBUSB_SUCCESS)
+            r = liballuris_set_peak_level (h, value);
           break;
         }
 

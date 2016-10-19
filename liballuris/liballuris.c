@@ -1581,7 +1581,7 @@ int liballuris_sim_keypress (libusb_device_handle *dev_handle, unsigned char mas
   return liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
 }
 
-// Parameter P7
+// Parameter P7 (only CTT/TTT)
 int liballuris_set_peak_level (libusb_device_handle *dev_handle, int v)
 {
   if (v < 1 || v > 99)
