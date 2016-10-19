@@ -260,7 +260,7 @@ int open_if_not_opened (libusb_context* ctx, const char* serial_or_bus_id, libus
 void cleanup (libusb_device_handle* h)
 {
   // cleanup after error
-  //liballuris_clear_RX (h, 1000);
+  liballuris_clear_RX (h, 1000);
 
   // disable streaming
   fprintf (stderr, "INFO: Disable streaming, ");
@@ -482,9 +482,9 @@ main (int argc, char **argv)
             {
               if (num_samples >= 0)
                 {
-                  //printf ("num_samples=%i\n", num_samples);
+                  printf ("num_samples=%i\n", num_samples);
                   r = print_multiple (h, num_samples);
-                  //printf ("print_multiple returned %i\n", r);
+                  printf ("print_multiple returned %i\n", r);
                 }
               else
                 {
@@ -581,10 +581,13 @@ main (int argc, char **argv)
 
         case 1028: // set-mode
         {
-          enum liballuris_measurement_mode r_mode;
-          r = get_base10_int (optarg, &r_mode);
+          int value;
+          r = get_base10_int (optarg, &value);
           if (r == LIBUSB_SUCCESS)
-            r = liballuris_set_mode (h, r_mode);
+            {
+              enum liballuris_measurement_mode r_mode = value;
+              r = liballuris_set_mode (h, r_mode);
+            }
           break;
         }
 
@@ -599,11 +602,13 @@ main (int argc, char **argv)
 
         case 1030: // set-mem-mode
         {
-          enum liballuris_memory_mode r_mem_mode;
           int value;
-          r = liballuris_get_upper_limit (h, &r_mem_mode);
+          r = get_base10_int (optarg, &value);
           if (r == LIBUSB_SUCCESS)
-            r = liballuris_set_mem_mode (h, r_mem_mode);
+            {
+              enum liballuris_memory_mode r_mem_mode = value;
+              r = liballuris_set_mem_mode (h, r_mem_mode);
+            }
           break;
         }
 
@@ -838,7 +843,9 @@ main (int argc, char **argv)
       r = LIBALLURIS_OUT_OF_RANGE;
     }
 
-  if (r == LIBALLURIS_MALFORMED_REPLY)
+  if (   r == LIBALLURIS_MALFORMED_REPLY
+         || r == LIBUSB_ERROR_OVERFLOW
+         || r == LIBUSB_ERROR_TIMEOUT)
     cleanup (h);
 
   if (h)
