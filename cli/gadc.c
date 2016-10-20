@@ -408,7 +408,7 @@ main (int argc, char **argv)
           printf ("\n");
         }
 
-      if (c!='b' && c!='S' && c!='l' && c!='V' && c)
+      if (c!='b' && c!='S' && c!='l' && c!='V' && c!='?' && c && c != 1074)
         {
           r = open_if_not_opened (ctx, NULL, &h);
           if (r)
