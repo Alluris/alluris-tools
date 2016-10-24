@@ -30,6 +30,8 @@ If not, see <http://www.gnu.org/licenses/>.
 static unsigned char out_buf[DEFAULT_SEND_BUF_LEN];
 static unsigned char in_buf[DEFAULT_RECV_BUF_LEN];
 
+int liballuris_debug_level;
+
 // minimum length of "in" is 2 bytes
 static unsigned short char_to_uint16 (unsigned char* in)
 {
@@ -145,20 +147,18 @@ enum liballuris_unit liballuris_unit_str2enum (const char *str)
     return (enum liballuris_unit) -1;
 }
 
-#ifdef PRINT_DEBUG_MSG
 //! Internal function to print send or receive buffers
 static void print_buffer (unsigned char* buf, int len)
 {
   int k;
   for (k=0; k < len; ++k)
     {
-      printf ("0x%02x", buf[k]);
+      fprintf (stderr, "0x%02x", buf[k]);
       if (k < (len - 1))
-        printf (", ");
+        fprintf (stderr, ", ");
     }
-  printf ("\n");
+  fprintf (stderr, "\n");
 }
-#endif
 
 //! Internal send and receive wrapper around libusb_interrupt_transfer
 static int liballuris_interrupt_transfer (libusb_device_handle* dev_handle,
@@ -170,6 +170,7 @@ static int liballuris_interrupt_transfer (libusb_device_handle* dev_handle,
 {
   int actual;
   int r = 0;
+  struct timeval t1, t2;
 
   if (send_len > DEFAULT_SEND_BUF_LEN)
     {
@@ -187,25 +188,24 @@ static int liballuris_interrupt_transfer (libusb_device_handle* dev_handle,
     {
       // check length in out_buf
       assert (out_buf[1] == send_len);
-#ifdef DEBUG_TIMING
-      struct timeval t1, t2;
-      gettimeofday (&t1, NULL);
-#endif
+
+      if (liballuris_debug_level)
+        gettimeofday (&t1, NULL);
+
       r = libusb_interrupt_transfer (dev_handle, (0x1 | LIBUSB_ENDPOINT_OUT), out_buf, send_len, &actual, send_timeout);
-#ifdef DEBUG_TIMING
-      gettimeofday (&t2, NULL);
-      double diff = (t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1.0e6;
-      fprintf (stderr, "%s send  took %f s\n", funcname, diff);
-#endif
 
-
-#ifdef PRINT_DEBUG_MSG
-      if ( r == LIBUSB_SUCCESS)
+      if (liballuris_debug_level)
         {
-          printf ("%s sent %2i/%2i bytes: ", funcname, actual, send_len);
+          gettimeofday (&t2, NULL);
+          double diff = (t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1.0e6;
+          fprintf (stderr, "DEBUG-INFO: %s send  took %f s\n", funcname, diff);
+        }
+
+      if (liballuris_debug_level > 1 && r == LIBUSB_SUCCESS)
+        {
+          fprintf (stderr, "DEBUG-INFO: %s sent %2i/%2i bytes: ", funcname, actual, send_len);
           print_buffer (out_buf, actual);
         }
-#endif
 
       if (r != LIBUSB_SUCCESS || actual != send_len)
         {
@@ -217,33 +217,32 @@ static int liballuris_interrupt_transfer (libusb_device_handle* dev_handle,
   if (reply_len > 0)
     {
 
-#ifdef DEBUG_TIMING
-      struct timeval t1, t2;
-      gettimeofday (&t1, NULL);
-#endif
+      if (liballuris_debug_level)
+        gettimeofday (&t1, NULL);
+
       memset (in_buf, 0, sizeof (in_buf));
       r = libusb_interrupt_transfer (dev_handle, 0x81 | LIBUSB_ENDPOINT_IN, in_buf, reply_len, &actual, receive_timeout);
-#ifdef DEBUG_TIMING
-      gettimeofday (&t2, NULL);
-      double diff = (t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1.0e6;
-      fprintf (stderr, "%s reply took %f s\n", funcname, diff);
-#endif
 
-#ifdef PRINT_DEBUG_MSG
-      if (r == LIBUSB_SUCCESS)
+      if (liballuris_debug_level)
         {
-          printf ("%s recv %2i/%2i bytes: ", funcname, actual, reply_len);
+          gettimeofday (&t2, NULL);
+          double diff = (t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1.0e6;
+          fprintf (stderr, "DEBUG-INFO: %s reply took %f s\n", funcname, diff);
+        }
+
+      if (liballuris_debug_level > 1 && r == LIBUSB_SUCCESS)
+        {
+          fprintf (stderr, "DEBUG-INFO: %s recv %2i/%2i bytes: ", funcname, actual, reply_len);
           print_buffer (in_buf, actual);
         }
-#endif
 
       if (r != LIBUSB_SUCCESS || actual != reply_len)
         {
           if (r == LIBUSB_ERROR_OVERFLOW)
             {
-#ifdef PRINT_DEBUG_MSG
-              fprintf(stderr, "LIBUSB_ERROR_OVERFLOW in '%s': expected %i bytes but got more.\n", funcname, reply_len);
-#endif
+              if (liballuris_debug_level)
+                fprintf (stderr, "DEBUG-INFO: LIBUSB_ERROR_OVERFLOW in '%s': expected %i bytes but got more.\n", funcname, reply_len);
+
               // Attention! You can't rely that data was written in in_buf
               // See: http://libusb.sourceforge.net/api-1.0/packetoverflow.html
               return r;
@@ -294,6 +293,9 @@ int liballuris_get_device_list (libusb_context* ctx, struct alluris_device_descr
 
   size_t num_alluris_devices = 0;
   libusb_device **devs;
+  if (liballuris_debug_level)
+    fprintf (stderr, "DEBUG-INFO: Searching for compatible USB devices...\n");
+
   ssize_t cnt = libusb_get_device_list (ctx, &devs);
   if (cnt > 0)
     {
@@ -309,14 +311,17 @@ int liballuris_get_device_list (libusb_context* ctx, struct alluris_device_descr
               continue;
             }
 
-          //debugging: list all devices
-#ifdef PRINT_DEBUG_MSG
-          printf ("desc.idVendor = 0x%04X, desc.idProduct = 0x%04X\n", desc.idVendor, desc.idProduct);
-#endif
+          if (liballuris_debug_level)
+            fprintf (stderr, "DEBUG-INFO: desc.idVendor = 0x%04X, desc.idProduct = 0x%04X", desc.idVendor, desc.idProduct);
+
           //check for compatible devices
           // FMIS or TTT
           if (desc.idVendor == 0x04d8 && (desc.idProduct == 0xfc30 || desc.idProduct == 0xf25e) )
             {
+
+              if (liballuris_debug_level)
+                fprintf (stderr, " (compatible)\n");
+
               alluris_devs[num_alluris_devices].dev = dev;
 
               //open device
@@ -358,8 +363,12 @@ int liballuris_get_device_list (libusb_context* ctx, struct alluris_device_descr
                 fprintf (stderr, "liballuris_get_device_list: Couldn't open device: %s\n", libusb_error_name(r));
             }
           else
-            // unref non Alluris device
-            libusb_unref_device (dev);
+            {
+              if (liballuris_debug_level)
+                fprintf (stderr, "\n");
+              // unref non Alluris device
+              libusb_unref_device (dev);
+            }
 
           if (num_alluris_devices == length)
             break; // maximum number of devices reached
@@ -396,9 +405,10 @@ int liballuris_open_device (libusb_context* ctx, const char* serial_number, libu
   libusb_device *dev = NULL;
   struct alluris_device_description alluris_devs[MAX_NUM_DEVICES];
   int cnt = liballuris_get_device_list (ctx, alluris_devs, MAX_NUM_DEVICES, (serial_number != NULL));
-#ifdef PRINT_DEBUG_MSG
-  printf ("liballuris_open_device cnt = %i\n", cnt);
-#endif
+
+  if (liballuris_debug_level)
+    fprintf (stderr, "DEBUG-INFO: liballuris_open_device: found %i device(s)\n", cnt);
+
   if (cnt >= 1)
     {
       if (serial_number == NULL)
@@ -463,12 +473,10 @@ void liballuris_clear_RX (libusb_device_handle* dev_handle, unsigned int timeout
 {
   unsigned char data[64];
   int actual;
-#ifdef PRINT_DEBUG_MSG
   int r = libusb_interrupt_transfer (dev_handle, 0x81 | LIBUSB_ENDPOINT_IN, data, 64, &actual, timeout);
-  printf ("clear_RX: libusb_interrupt_transfer returned '%s', actual = %i\n", libusb_error_name(r), actual);
-#else
-  libusb_interrupt_transfer (dev_handle, 0x81 | LIBUSB_ENDPOINT_IN, data, 64, &actual, timeout);
-#endif
+
+  if (liballuris_debug_level)
+    fprintf (stderr, "DEBUG-INFO: clear_RX: libusb_interrupt_transfer returned '%s', actual = %i\n", libusb_error_name(r), actual);
 }
 
 /*!

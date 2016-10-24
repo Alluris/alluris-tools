@@ -43,8 +43,12 @@ If not, see <http://www.gnu.org/licenses/>.
 #ifndef liballuris_h
 #define liballuris_h
 
-//#define PRINT_DEBUG_MSG
-//#define DEBUG_TIMING
+/*!
+ * 0 = no debugging
+ * 1 = print called functions and timing
+ * 2 = print low level communication
+ */
+extern int liballuris_debug_level;
 
 //! Number of device which can be enumerated and simultaneously opened
 #define MAX_NUM_DEVICES 8

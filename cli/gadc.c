@@ -67,6 +67,7 @@ Generic Alluris device control\n\
       --verbose              Be chatty\n\
       --brief                Only output values  and errors (default)\n\
       --delete-memory        Delete the measurement memory\n\
+      --debug=LVL            Set debug level 0..2\n\
       --get-digin            Get state of the digital input (firmware >=\n\
                              V4.04.007/V5.04.007)\n\
       --get-digout           Get state of the 3 digital outputs (firmware >=\n\
@@ -290,6 +291,7 @@ static struct option const long_options[] =
 {
   {"verbose", no_argument, &verbose_flag, 1},
   {"brief", no_argument, &verbose_flag, 0},
+  {"debug", required_argument, NULL, 'd'},
   {"list", no_argument, NULL, 'l'},
   {"serial", required_argument, NULL, 'S'},
 
@@ -347,7 +349,6 @@ static struct option const long_options[] =
 int
 main (int argc, char **argv)
 {
-
   if (argc == 1)
     {
       fprintf (stderr, "Error: No commands.\n");
@@ -388,12 +389,21 @@ main (int argc, char **argv)
   while (! do_exit && ! r)
     {
       option_index = -1;
-      c = getopt_long (argc, argv, "b:lS:nps:vtV",
+      c = getopt_long (argc, argv, "b:lS:nps:vtVd:",
                        long_options, &option_index);
 
       /* Detect the end of the options. */
       if (c == -1)
         break;
+
+      if (c == 'd') // debug
+        {
+          int tmp_debug;
+          r = get_base10_int (optarg, &tmp_debug);
+          if (! r)
+            liballuris_debug_level = tmp_debug;
+          continue;
+        }
 
       //be chatty
       if (verbose_flag && c != '?' && c > 0)
