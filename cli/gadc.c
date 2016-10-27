@@ -514,6 +514,8 @@ main (int argc, char **argv)
           break;
         case 't': // tare
           r = liballuris_tare (h);
+          // tare needs some time to calculate the mean (ca. 200ms)
+          // usleep (200000);
           break;
         case 1020: // factory-defaults
           r = liballuris_restore_factory_defaults (h);

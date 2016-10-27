@@ -954,9 +954,6 @@ int liballuris_tare (libusb_device_handle *dev_handle)
   out_buf[1] = 3;
   out_buf[2] = 0;
   int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__, 3, DEFAULT_SEND_TIMEOUT, 3, DEFAULT_RECEIVE_TIMEOUT);
-
-  // tare needs some time to calculate the mean
-  usleep (200000);
   return ret;
 }
 

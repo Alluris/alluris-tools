@@ -57,7 +57,7 @@ extern int liballuris_debug_level;
 #define DEFAULT_SEND_TIMEOUT 50
 
 //! Default timeout in milliseconds while reading from the device
-#define DEFAULT_RECEIVE_TIMEOUT 1000
+#define DEFAULT_RECEIVE_TIMEOUT 3000
 
 //! Default send buffer size. Should be multiple of wMaxPacketSize
 #define DEFAULT_SEND_BUF_LEN 64
