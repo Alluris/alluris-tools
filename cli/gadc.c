@@ -165,10 +165,9 @@ void list_devices (libusb_context* ctx)
   ssize_t cnt = liballuris_get_device_list (ctx, alluris_devs, MAX_NUM_DEVICES, 1);
 
   int k;
-  printf ("Device list:\n");
-  printf ("Num Bus Device Product                   Serial\n");
+  printf ("#Num; Bus; Dev; Product;                   Serial\n");
   for (k=0; k < cnt; k++)
-    printf ("%3i %03d    %03d %-25s %s\n", k+1,
+    printf (" %03i; %03d; %03d; %-25s; %s\n", k+1,
             libusb_get_bus_number(alluris_devs[k].dev),
             libusb_get_device_address(alluris_devs[k].dev),
             alluris_devs[k].product,
