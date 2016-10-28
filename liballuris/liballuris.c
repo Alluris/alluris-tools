@@ -351,9 +351,10 @@ int liballuris_get_device_list (libusb_context* ctx, struct alluris_device_descr
                       libusb_release_interface (h, 0);
                       libusb_close (h);
                     }
-                  else if (LIBUSB_ERROR_BUSY) //it's already in use
+                  else if (LIBUSB_ERROR_BUSY)
                     {
-                      //FIXME: what should we do?
+                      // On GNU/Linux this is raised if the device is already in use
+                      // for example from another application
                     }
                   else
                     fprintf (stderr, "liballuris_get_device_list: Couldn't claim interface: %s\n", libusb_error_name(r));
