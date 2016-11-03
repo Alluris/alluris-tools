@@ -860,6 +860,11 @@ int liballuris_read_state (libusb_device_handle *dev_handle, struct liballuris_s
             in_buf, sizeof (in_buf), timeout);
   if (ret == LIBALLURIS_SUCCESS)
     {
+      if (   in_buf[3] == 0xff
+             && in_buf[4] == 0xff
+             && in_buf[5] == 0xff)
+        return LIBALLURIS_DEVICE_BUSY;
+
       union __liballuris_state__ tmp;
       tmp._int = char_to_int24 (in_buf + 3);
       *state = tmp.bits;
@@ -983,7 +988,7 @@ int liballuris_poll_measurement_no_wait (libusb_device_handle *dev_handle, int* 
   size_t len = 5 + length * 3;
   unsigned char in_buf[len];
   *actual_num_values = 0;
-  r = libusb_interrupt_transfer (dev_handle, 0x81 | LIBUSB_ENDPOINT_IN, in_buf, len, &actual, 5);
+  r = libusb_interrupt_transfer (dev_handle, 0x81 | LIBUSB_ENDPOINT_IN, in_buf, len, &actual, 1);
   //printf ("actual = %i, %s\n", actual, libusb_error_name(r));
 
   if ((r == LIBUSB_SUCCESS || r == LIBUSB_ERROR_TIMEOUT ) && actual == (int) len)
@@ -997,7 +1002,7 @@ int liballuris_poll_measurement_no_wait (libusb_device_handle *dev_handle, int* 
     {
       // this isn't expected
       fprintf (stderr, "Error in liballuris_poll_measurement_no_wait: LIBUSB_ERROR_TIMEOUT and actual = %i, len = %li\n", actual, len);
-      fprintf (stderr, "please file a bug report\n");
+      fprintf (stderr, "It isn't expected that this could happen. Please file a bug report.\n");
       return r;
     }
 
