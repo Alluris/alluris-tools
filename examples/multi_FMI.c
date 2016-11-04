@@ -1,5 +1,5 @@
 /*
- *
+ * Program discovers FMI-S/B devices on USB
  */
 
 #include <stdio.h>
@@ -19,6 +19,16 @@ void termination_handler (int signum)
   do_exit = 1;
 }
 
+int all (char* p, int len)
+{
+  int k;
+  for (k=0; k<len; ++k)
+    if (!p[k])
+      return 0;
+
+  return 1;
+}
+
 int
 main (int argc, char **argv)
 {
@@ -34,7 +44,7 @@ main (int argc, char **argv)
 
 
   libusb_context* ctx = 0;
-  libusb_device_handle* h = 0;
+  //libusb_device_handle* h = 0;
   //int error = 0;
   //int last_key = 0;
 
@@ -46,63 +56,46 @@ main (int argc, char **argv)
     }
 
   // Check available devices
-#define MULTI_MAX_NUM_DEVICES 4
+#define MULTI_MAX_NUM_DEVICES 8
   struct alluris_device_description alluris_devs[MULTI_MAX_NUM_DEVICES];
   ssize_t cnt = liballuris_get_device_list (ctx, alluris_devs, MULTI_MAX_NUM_DEVICES, 1);
 
-  int k;
-  //~ printf ("#Num; Bus; Dev; Product;                   Serial\n");
-  //~ for (k=0; k < cnt; k++)
-    //~ {
-      //~ printf (" %03i; %03d; %03d; %-25s; %s\n", k+1,
-              //~ libusb_get_bus_number(alluris_devs[k].dev),
-              //~ libusb_get_device_address(alluris_devs[k].dev),
-              //~ alluris_devs[k].product,
-              //~ alluris_devs[k].serial_number);
-//~ 
-      //~ //stop devices which are running
-      //~ if (! strcmp (alluris_devs[k].serial_number, "*BUSY*"))
-        //~ {
-          //~ int bus = libusb_get_bus_number(alluris_devs[k].dev);
-          //~ int device = libusb_get_device_address(alluris_devs[k].dev);
-          //~ fprintf (stderr, "stopping device with bus_id = %i and device_id = %i ...\n", bus, device);
-          //~ r = liballuris_open_device_with_id (ctx, bus, device, &h);
-          //~ if (! r)
-            //~ {
-              //~ r = libusb_claim_interface (h, 0);
-              //~ if (r)
-                //~ {
-                  //~ fprintf (stderr, "Error: Couldn't claim interface: %s\n", liballuris_error_name (r));
-                //~ }
-            //~ }
-          //~ else
-            //~ fprintf (stderr, "Error: Couldn't open device with bus=%i and device=%i: %s\n", bus, device, liballuris_error_name (r));
-//~ 
-          //~ r = liballuris_stop_measurement (h);
-          //~ if (r)
-            //~ fprintf (stderr, "Error: Couldn't stop device: %s\n", liballuris_error_name (r));
-        //~ }
-    //~ }
 
-  // free device list
-  liballuris_free_device_list (alluris_devs, MULTI_MAX_NUM_DEVICES);
+  // print header with bus and device address
+  char *bus_device_adress_buffer;
+  size_t size_bus_device_adress_buffer;
+  FILE *stream_bus_device_adress_buffer = open_memstream (&bus_device_adress_buffer, &size_bus_device_adress_buffer);
 
-  // scan again
-  cnt = liballuris_get_device_list (ctx, alluris_devs, MULTI_MAX_NUM_DEVICES, 1);
+  char *serial_buffer;
+  size_t size_serial_buffer;
+  FILE *stream_serial_buffer = open_memstream (&serial_buffer, &size_serial_buffer);
 
-  // open all devices
+  // open all devices and output header
   libusb_device_handle* handles[cnt];
 
+  int k;
   for (k=0; k < cnt; k++)
     {
+      /*
       printf (" %03i; %03d; %03d; %-25s; %s\n", k+1,
               libusb_get_bus_number(alluris_devs[k].dev),
               libusb_get_device_address(alluris_devs[k].dev),
               alluris_devs[k].product,
               alluris_devs[k].serial_number);
+      */
 
       int bus = libusb_get_bus_number(alluris_devs[k].dev);
       int device = libusb_get_device_address(alluris_devs[k].dev);
+
+      fprintf (stream_bus_device_adress_buffer, "%03i,%03i", bus, device);
+      fprintf (stream_serial_buffer, "%s", alluris_devs[k].serial_number);
+
+      if (k < (cnt - 1))
+        {
+          fprintf (stream_bus_device_adress_buffer, " ");
+          fprintf (stream_serial_buffer, " ");
+        }
+
       r = liballuris_open_device_with_id (ctx, bus, device, handles + k);
       if (r)
         {
@@ -116,22 +109,49 @@ main (int argc, char **argv)
         }
 
     }
+  fflush (stream_bus_device_adress_buffer);
+  fflush (stream_serial_buffer);
 
-  //~ // start all devices
-  //~ for (k=0; k < cnt; k++)
-    //~ {
-      //~ liballuris_clear_RX (handles[k], 100);
-//~ 
-      //~ r = liballuris_set_mode (handles[k], 1);
-      //~ if (r)
-        //~ fprintf (stderr, "Error: Couldn't set mode=1: %s\n", liballuris_error_name (r));
-      //~ r = liballuris_start_measurement (handles[k]);
-      //~ if (r)
-        //~ fprintf (stderr, "Error: Couldn't start device: %s\n", liballuris_error_name (r));
-//~ 
-    //~ }
+  printf ("# %s\n", bus_device_adress_buffer, size_bus_device_adress_buffer);
+  printf ("# %s\n", serial_buffer, size_serial_buffer);
 
-  // check that measurment is running, start streaming
+  fclose (stream_bus_device_adress_buffer);
+  free (bus_device_adress_buffer);
+  fclose (stream_serial_buffer);
+  free (serial_buffer);
+
+  // check if measurement is running, if not start it
+  char do_sleep = 0;
+  for (k=0; k < cnt; k++)
+    {
+      liballuris_clear_RX (handles[k], 100);
+      struct liballuris_state state;
+      r = liballuris_read_state (handles[k], &state, 3000);
+      if (r == LIBUSB_SUCCESS)
+        {
+          if (! state.measuring)
+            {
+              do_sleep = 1;
+              printf ("# Starting measurements on device %i...\n", k);
+              r = liballuris_start_measurement (handles[k]);
+              if (r)
+                {
+                  fprintf (stderr, "Error: Couldn't start device %i : %s\n", k, liballuris_error_name (r));
+                  do_exit = 1;
+                }
+            }
+        }
+      else
+        {
+          fprintf (stderr, "Error: Couldn't read state of device %i: %s\n", k, liballuris_error_name (r));
+          do_exit = 1;
+        }
+    }
+
+  //if (do_sleep)
+  //  usleep (3e6);
+
+  // recheck that measurment is running, start streaming
   int block_size = 19;
   for (k=0; k < cnt; k++)
     {
@@ -144,45 +164,60 @@ main (int argc, char **argv)
             {
               // enable streaming
               r = liballuris_cyclic_measurement (handles[k], 1, block_size);
-            }
-          else
-            fprintf (stderr, "Error: Measurement is not running...\n");
-        }
-    }
-
-  //sleep (1);
-
-  //poll all device
-  int num = 25;
-  for (k=0; k < cnt; k++)
-    {
-      int tempx[block_size];
-      int cnt_values = 0;
-      // if num==0, read until sigint or sigterm
-      r = 0;
-      printf ("k = %i\n", k);
-      while (!do_exit && !r && (!num || num > cnt_values))
-        {
-          //printf ("polling %i, %i left\n", block_size, num);
-          r = liballuris_poll_measurement (handles[k], tempx, block_size);
-          printf ("poll...\n");
-          fflush (stdout);
-          if (r == LIBUSB_SUCCESS)
-            {
-              int i = 0;
-              while (i < block_size && (cnt_values < num || !num))
+              if (r)
                 {
-                  //printf ("%i\n", tempx[i++]);
-                  i++;
-                  printf ("device %i cnt=%i\n", k, cnt_values);
-                  cnt_values++;
+                  fprintf (stderr, "Error: Couldn't start streaming on device %i : %s\n", k, liballuris_error_name (r));
+                  do_exit = 1;
                 }
-              fflush (stdout);
             }
           else
-            fprintf (stderr, "Error: liballuris_poll_measurement failed: %s\n", liballuris_error_name (r));
+            {
+              fprintf (stderr, "Error: Device %i is still not running...\n", k);
+              do_exit = 1;
+            }
         }
     }
+
+  //poll all devices
+  int num = 2500000;
+  int row_cnt = 0;
+
+  int tempx [cnt][block_size];
+  char dvalid [cnt];
+
+  do
+    {
+      memset (dvalid, 0, cnt);
+
+      do
+        {
+          for (k=0; k < cnt; k++)
+            {
+              size_t act;
+              r = liballuris_poll_measurement_no_wait (handles[k], tempx[k], block_size, &act);
+              //printf ("k=%i act=%i\n", k, act);
+              if (act == block_size)
+                dvalid[k] = 1;
+
+              //printf (" %i", dvalid[k]);
+            }
+          //printf ("\n");
+        }
+      while (!all (dvalid, cnt) && !do_exit);
+
+      // display
+      if (! do_exit)
+        {
+          int i;
+          for (i = 0; i<block_size; ++i)
+            for (k=0; k < cnt; k++)
+              printf ("%8i%c", tempx[k][i], (k < (cnt - 1))? ' ':'\n');
+
+          row_cnt += block_size;
+        }
+
+    }
+  while (row_cnt < num && !do_exit);
 
   // stop all devices
   for (k=0; k < cnt; k++)
@@ -194,9 +229,9 @@ main (int argc, char **argv)
 
       liballuris_clear_RX (handles[k], 100);
 
-      //~ r = liballuris_stop_measurement (handles[k]);
-      //~ if (r)
-        //~ fprintf (stderr, "Error: Couldn't stop device: %s\n", liballuris_error_name (r));
+      //r = liballuris_stop_measurement (handles[k]);
+      //if (r)
+      //  fprintf (stderr, "Error: Couldn't stop device: %s\n", liballuris_error_name (r));
 
       //printf ("libusb_release_interface\n");
       libusb_release_interface (handles[k], 0);
@@ -211,3 +246,10 @@ main (int argc, char **argv)
   libusb_exit (ctx);
   return r;
 }
+
+/*
+ * 03.11.2016
+ * wenn man gadc -b 1,6 --debug 2 --stop --start -s19
+ * macht, komt beim read_state nach --start sporadisch ein busy zurück
+ * Ist dies der Fall, kann man streaming aktivieren, aber es kommen keine Werte
+ */

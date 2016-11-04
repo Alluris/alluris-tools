@@ -1092,6 +1092,10 @@ int liballuris_start_measurement (libusb_device_handle *dev_handle)
 
   if (ret == LIBALLURIS_SUCCESS)
     {
+      // WORKAROUND for <= V5.04.010
+      // sleep at least 600ms to avoid BUSY from read_state
+      usleep (600e3);
+
       // wait until measurement processor is configured and running
       struct liballuris_state state;
       ret = liballuris_read_state (dev_handle, &state, 3000);
