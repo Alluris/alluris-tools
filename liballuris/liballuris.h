@@ -187,7 +187,9 @@ enum liballuris_unit liballuris_unit_str2enum (const char *str);
 int liballuris_get_device_list (libusb_context* ctx, struct alluris_device_description* alluris_devs, size_t length, char read_serial);
 int liballuris_open_device (libusb_context* ctx, const char* serial_number, libusb_device_handle** h);
 int liballuris_open_device_with_id (libusb_context* ctx, int bus, int device, libusb_device_handle** h);
+int liballuris_open_if_not_opened (libusb_context* ctx, const char* serial_or_bus_id, libusb_device_handle** h);
 void liballuris_free_device_list (struct alluris_device_description* alluris_devs, size_t length);
+void liballuris_print_device_list (FILE *sink, libusb_context* ctx);
 
 void liballuris_clear_RX (libusb_device_handle* dev_handle, unsigned int timeout);
 

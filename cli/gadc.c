@@ -178,111 +178,6 @@ static int print_multiple (libusb_device_handle *dev_handle, int num)
   return ret;
 }
 
-void list_devices (libusb_context* ctx)
-{
-  // list accessible devices and exit
-  // FIXME: document that a running measurement prohibits reading the serial_number
-
-  struct alluris_device_description alluris_devs[MAX_NUM_DEVICES];
-  ssize_t cnt = liballuris_get_device_list (ctx, alluris_devs, MAX_NUM_DEVICES, 1);
-
-  int k;
-  printf ("#Num; Bus; Dev; Product;                   Serial\n");
-  for (k=0; k < cnt; k++)
-    printf (" %03i; %03d; %03d; %-25s; %s\n", k+1,
-            libusb_get_bus_number(alluris_devs[k].dev),
-            libusb_get_device_address(alluris_devs[k].dev),
-            alluris_devs[k].product,
-            alluris_devs[k].serial_number);
-
-  if (!cnt)
-    fprintf (stderr, "Error: No accessible device found\n");
-
-  // free device list
-  liballuris_free_device_list (alluris_devs, MAX_NUM_DEVICES);
-}
-
-/*!
- * \brief Check if a device is already connected (h != 0) and connect else
- *
- * If serial_or_bus_id contains one dot (.), it's considered as a serial number
- * for example L.12345, if it contains a comma (,) serial_or_bus_id is considered to
- * be bus_id,device_id pair.
- * \param[in] ctx pointer to libusb context
- * \param[in] serial_or_bus_id serial or bus_id,device_id or NULL
- * \return 0 if successful else \ref liballuris_error
- */
-
-int open_if_not_opened (libusb_context* ctx, const char* serial_or_bus_id, libusb_device_handle** h)
-{
-  //printf ("open_if_not_opened h=%x\n", *h);
-
-  int r = 0;
-  if (! *h)
-    {
-      if (! serial_or_bus_id) //connect to first available device
-        {
-          r = liballuris_open_device (ctx, serial_or_bus_id, h);
-          if (r)
-            {
-              fprintf (stderr, "Error: Couldn't open device: %s\n", liballuris_error_name (r));
-            }
-        }
-      else //bus,device or serial
-        {
-          // decide whether it's a serial number or a bus,device pair
-          char* pc = strchr (serial_or_bus_id, ',');
-          if (pc)
-            {
-              // split "Bus,Device"
-              char *endptr, *endptr2 = NULL;
-              int bus = strtol (serial_or_bus_id, &endptr, 10);
-              if (endptr == serial_or_bus_id)
-                {
-                  fprintf (stderr, "Error: Couldn't find bus_id in '%s'\n", serial_or_bus_id);
-                  return LIBALLURIS_PARSE_ERROR;
-                }
-              if (*endptr != ',')
-                {
-                  fprintf (stderr, "Error: Wrong delimiter '%c', please use ',' instead\n", *endptr);
-                  return LIBALLURIS_PARSE_ERROR;
-                }
-              int device = strtol (++endptr, &endptr2, 10);
-              if (endptr2 == endptr)
-                {
-                  fprintf (stderr, "Error: Couldn't find device_id in '%s'\n", serial_or_bus_id);
-                  return LIBALLURIS_PARSE_ERROR;
-                }
-
-              r = liballuris_open_device_with_id (ctx, bus, device, h);
-              if (r)
-                {
-                  fprintf (stderr, "Error: Couldn't open device with bus=%i and device=%i: %s\n", bus, device, liballuris_error_name (r));
-                }
-            }
-          else // serial
-            {
-              r = liballuris_open_device (ctx, serial_or_bus_id, h);
-              if (r)
-                {
-                  fprintf (stderr, "Error: Couldn't open device with serial='%s': %s\n", serial_or_bus_id, liballuris_error_name (r));
-                }
-            }
-        }
-
-      if (*h)
-        {
-          r = libusb_claim_interface (*h, 0);
-          if (r)
-            {
-              fprintf (stderr, "Error: Couldn't claim interface: %s\n", liballuris_error_name (r));
-            }
-        }
-    }
-  //printf ("open_if_not_opened h=%x\n", *h);
-  return r;
-}
-
 void cleanup (libusb_device_handle* h)
 {
   // cleanup after error
@@ -441,7 +336,7 @@ main (int argc, char **argv)
 
       if (c!='b' && c!='S' && c!='l' && c!='V' && c!='?' && c && c != 1074)
         {
-          r = open_if_not_opened (ctx, NULL, &h);
+          r = liballuris_open_if_not_opened (ctx, NULL, &h);
           if (r)
             break;
         }
@@ -453,7 +348,7 @@ main (int argc, char **argv)
           break;
 
         case 'l': // list
-          list_devices (ctx);
+          liballuris_print_device_list (stdout, ctx);
           break;
 
         case 'b': // bus,device id
@@ -470,7 +365,7 @@ main (int argc, char **argv)
 
               h = 0;
             }
-          r = open_if_not_opened (ctx, optarg, &h);
+          r = liballuris_open_if_not_opened (ctx, optarg, &h);
           break;
 
         case 'n': // neg-peak
