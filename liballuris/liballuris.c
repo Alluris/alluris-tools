@@ -795,6 +795,113 @@ int liballuris_get_digits (libusb_device_handle *dev_handle, int* v)
 }
 
 /*!
+ * \brief Query the variant FIXME
+ *
+ * Supported devices:
+ * 0x0000: FMI-S10
+ * 0x0001: FMI-S20
+ * 0x0002: FMI-S30
+ * 0x0003: FMI-W30
+ * 0x0004: FMI-W40
+ * 0x0005: FMI-S50
+ * 0x0006: FMI-W20
+ * 0x0007: FMT-W10
+ * 0x0010: FMI-B10
+ * 0x0011: FMI-B20
+ * 0x0012: FMI-B30
+ * 0x0015: FMI-B50
+ * 0x0020: FMT-315
+ * 0x0040: CTT-200
+ * 0x0080: CTT-300
+ * 0x0100: TTT-200
+ * 0x0200: TTT-300
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[out] v output location for the returned variant. Only populated if the return code is 0.
+ * \return 0 if successful else \ref liballuris_error
+ * \sa liballuris_get_value
+ */
+int liballuris_get_variant (libusb_device_handle *dev_handle, char* buf, size_t length)
+{
+  unsigned char out_buf[3];
+  unsigned char in_buf[6];
+  int v;
+
+  out_buf[0] = 0x08;
+  out_buf[1] = 3;
+  out_buf[2] = 4;
+  int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__,
+            out_buf, sizeof (out_buf), DEFAULT_SEND_TIMEOUT,
+            in_buf, sizeof (in_buf), DEFAULT_RECEIVE_TIMEOUT);
+  if (ret == LIBALLURIS_SUCCESS)
+    {
+      v = char_to_int24 (in_buf + 3);
+      if (v == -1)
+        return LIBALLURIS_DEVICE_BUSY;
+
+      switch (v)
+        {
+        case LIBALLURIS_VARIANT_S10:
+          snprintf (buf, length, "FMI-S10");
+          break;
+          break;
+        case LIBALLURIS_VARIANT_S20:
+          snprintf (buf, length, "FMI-S20");
+          break;
+        case LIBALLURIS_VARIANT_S30:
+          snprintf (buf, length, "FMI-S30");
+          break;
+        case LIBALLURIS_VARIANT_W30:
+          snprintf (buf, length, "FMT-W30");
+          break;
+        case LIBALLURIS_VARIANT_W40:
+          snprintf (buf, length, "FMT-W40");
+          break;
+        case LIBALLURIS_VARIANT_S50:
+          snprintf (buf, length, "FMI-S50");
+          break;
+        case LIBALLURIS_VARIANT_W20:
+          snprintf (buf, length, "FMI-W20");
+          break;
+        case LIBALLURIS_VARIANT_W10:
+          snprintf (buf, length, "FMT-W10");
+          break;
+        case LIBALLURIS_VARIANT_B10:
+          snprintf (buf, length, "FMI-B10");
+          break;
+        case LIBALLURIS_VARIANT_B20:
+          snprintf (buf, length, "FMI-B20");
+          break;
+        case LIBALLURIS_VARIANT_B30:
+          snprintf (buf, length, "FMI-B30");
+          break;
+        case LIBALLURIS_VARIANT_B50:
+          snprintf (buf, length, "FMI-B50");
+          break;
+        case LIBALLURIS_VARIANT_FMT_315:
+          snprintf (buf, length, "FMT-315");
+          break;
+        case LIBALLURIS_VARIANT_CTT_200:
+          snprintf (buf, length, "CTT-200");
+          break;
+        case LIBALLURIS_VARIANT_CTT_300:
+          snprintf (buf, length, "CTT-300");
+          break;
+        case LIBALLURIS_VARIANT_TTT_200:
+          snprintf (buf, length, "TTT-200");
+          break;
+        case LIBALLURIS_VARIANT_TTT_300:
+          snprintf (buf, length, "TTT-300");
+          break;
+        default:
+          snprintf (buf, length, "unknown");
+          break;
+        }
+    }
+  return ret;
+}
+
+/*!
  * \brief Query the resolution
  *
  * Since firmware 5.04.005
@@ -1119,6 +1226,8 @@ int liballuris_poll_measurement_no_wait (libusb_device_handle *dev_handle, int* 
  *
  * Calculate the mean over several samples and store this internally as offset.
  * This effectively "zeros" the displayed value.
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
  * \return 0 if successful else \ref liballuris_error
  */
 int liballuris_tare (libusb_device_handle *dev_handle)
@@ -1244,6 +1353,40 @@ int liballuris_stop_measurement (libusb_device_handle *dev_handle)
         return LIBALLURIS_TIMEOUT;
     }
   return ret;
+}
+
+/*!
+ * \brief Set motor state
+ *
+ * Disables or enables motor functionality
+ * Suported devices:
+ * FMI-S30, FMI-S50, FMI-B30, FMI-B50 in combination with FMT-200M
+ * FMT-W20, FMT-W40
+ *
+ * Prevents any movement of integrated or external motor until
+ * - power restart of device
+ * - motor enable ist set again
+ *
+ * Other functionality of the device will not be affected.
+ * A running measurement will be stopped by disabling motor.
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \param[in] enable = 0 for disabling or 1 for enabling.
+ * \return 0 if successful else \ref liballuris_error
+ */
+int liballuris_set_motor_state (libusb_device_handle *dev_handle, char enable)
+{
+  printf ("liballuris_set_motor_state enable = %i\n", enable);
+
+  unsigned char out_buf[3];
+  unsigned char in_buf[3];
+
+  out_buf[0] = 0x63;
+  out_buf[1] = 3;
+  out_buf[2] = (enable)? 0:1;
+  return liballuris_interrupt_transfer (dev_handle, __FUNCTION__,
+                                        out_buf, sizeof (out_buf), DEFAULT_SEND_TIMEOUT,
+                                        in_buf, sizeof (in_buf), DEFAULT_RECEIVE_TIMEOUT);
 }
 
 /*!

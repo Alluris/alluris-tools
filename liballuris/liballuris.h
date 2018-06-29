@@ -112,6 +112,28 @@ enum liballuris_unit
   LIBALLURIS_UNIT_oz  = 5, //!< oz (only devices with range 5N or 10N)
 };
 
+//! liballuris_variant
+enum liballuris_variant
+{
+  LIBALLURIS_VARIANT_S10 = 0x0000,
+  LIBALLURIS_VARIANT_S20 = 0x0001,
+  LIBALLURIS_VARIANT_S30 = 0x0002,
+  LIBALLURIS_VARIANT_W30 = 0x0003,
+  LIBALLURIS_VARIANT_W40 = 0x0004,
+  LIBALLURIS_VARIANT_S50 = 0x0005,
+  LIBALLURIS_VARIANT_W20 = 0x0006,
+  LIBALLURIS_VARIANT_W10 = 0x0007,
+  LIBALLURIS_VARIANT_B10 = 0x0010,
+  LIBALLURIS_VARIANT_B20 = 0x0011,
+  LIBALLURIS_VARIANT_B30 = 0x0012,
+  LIBALLURIS_VARIANT_B50 = 0x0015,
+  LIBALLURIS_VARIANT_FMT_315 = 0x0020,
+  LIBALLURIS_VARIANT_CTT_200 = 0x0040,
+  LIBALLURIS_VARIANT_CTT_300 = 0x0080,
+  LIBALLURIS_VARIANT_TTT_200 = 0x0100,
+  LIBALLURIS_VARIANT_TTT_300 = 0x0200
+};
+
 //! liballuris_state
 struct liballuris_state
 {
@@ -204,6 +226,7 @@ int liballuris_get_uncertainty (libusb_device_handle *dev_handle, double* v);
 int liballuris_get_digits (libusb_device_handle *dev_handle, int* v);
 int liballuris_get_resolution (libusb_device_handle *dev_handle, int* v);
 int liballuris_get_F_max (libusb_device_handle *dev_handle, int* fmax);
+int liballuris_get_variant (libusb_device_handle *dev_handle, char* buf, size_t length);
 
 int liballuris_get_value (libusb_device_handle *dev_handle, int* value);
 int liballuris_get_pos_peak (libusb_device_handle *dev_handle, int* peak);
@@ -262,6 +285,8 @@ int liballuris_set_autostop (libusb_device_handle *dev_handle, int v);
 int liballuris_get_autostop (libusb_device_handle *dev_handle, int *v);
 
 int liballuris_set_key_lock (libusb_device_handle *dev_handle, char active);
+
+int liballuris_set_motor_state (libusb_device_handle *dev_handle, char enable);
 
 #ifdef __cplusplus
 }
