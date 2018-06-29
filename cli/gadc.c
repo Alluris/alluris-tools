@@ -30,7 +30,7 @@ If not, see <http://www.gnu.org/licenses/>.
 
 const char *program_name = "gadc";
 
-const char *program_version = "0.2.4";
+const char *program_version = "0.3.0";
 
 const char *program_bug_address = "<software@alluris.de>";
 
@@ -84,12 +84,14 @@ Generic Alluris device control\n\
       --digits               Digits of used fixed-point numbers\n\
       --fmax                 Fmax\n\
       --resolution           Resolution (1, 2 or 5)\n\
+      --variant              Variant as string\n\
 \n\
  Misc:\n\
       --verbose              Be chatty\n\
       --brief                Only output values  and errors (default)\n\
       --delete-memory        Delete the measurement memory\n\
       --debug=LVL            Set debug level 0..2\n\
+      --disable-motor        Disables or enables motor funtionality\n\
       --get-digin            Get state of the digital input (firmware >=\n\
                              V4.04.007/V5.04.007)\n\
       --get-digout           Get state of the 3 digital outputs (firmware >=\n\
@@ -241,6 +243,7 @@ static struct option const long_options[] =
   {"digits", no_argument, NULL, 1040},
   {"fmax", no_argument, NULL, 1041},
   {"resolution", no_argument, NULL, 1042},
+  {"variant", no_argument, NULL, 1043},
 
   {"delete-memory", no_argument, NULL, 1060},
   {"get-digin", no_argument, NULL, 1061},
@@ -257,6 +260,8 @@ static struct option const long_options[] =
   {"sleep", required_argument, NULL, 1072},
   {"state", no_argument, NULL, 1073},
   {"help", no_argument, NULL, 1074},
+  {"disable-motor", no_argument, NULL, 1075},
+  {"enable-motor", no_argument, NULL, 1076},
   {"version", no_argument, NULL, 'V'},
 
   {NULL, 0, NULL, 0}
@@ -595,6 +600,15 @@ main (int argc, char **argv)
           break;
         }
 
+        case 1043: // variant
+        {
+          char variant_buf[10];
+          r = liballuris_get_variant (h, variant_buf, 10);
+          if (r == LIBUSB_SUCCESS)
+            printf ("%s\n", variant_buf);
+          break;
+        }
+
         case 1060: // delete-memory
           r = liballuris_delete_memory (h);
           break;
@@ -740,6 +754,18 @@ main (int argc, char **argv)
         case 1074: // help
           usage ();
           break;
+
+        case 1075: // disable-motor
+          {
+            r = liballuris_set_motor_state (h, 0);
+            break;
+          }
+
+        case 1076: // enable-motor
+          {
+            r = liballuris_set_motor_state (h, 1);
+            break;
+          }
 
         case 'V': // version
           printf ("%s version %s, Copyright (c) 2015-2016 Alluris GmbH & Co. KG\n",
