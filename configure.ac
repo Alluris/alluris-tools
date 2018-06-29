@@ -18,13 +18,10 @@ AM_CONDITIONAL([HAVE_DOXYGEN], [test -n "$DOXYGEN"])
 AM_COND_IF([HAVE_DOXYGEN], [AC_CONFIG_FILES([doc/Doxyfile])])
 
 # Checks for header files.
-AC_CHECK_HEADERS([stdio.h stdlib.h string.h argp.h libusb-1.0/libusb.h])
+AC_CHECK_HEADERS([stdio.h stdlib.h string.h libusb-1.0/libusb.h])
 
 AC_CHECK_LIB([usb-1.0], [libusb_open],,
   [AC_MSG_ERROR(["Error: Required library usb-1.0 not found. Install the usb-1.0 development package and try again"])])
-
-# FIXME: this is only needed for MacOS X: find a better way
-AC_CHECK_LIB(argp, argp_parse)
 
 CFLAGS+=" -Wall -Wextra"
 

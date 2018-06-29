@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
 ## Tests gadc --digits
-## only wotks if measurement is stopped
+## only works if measurement is stopped
 
 GADC=../cli/gadc
 
@@ -22,7 +22,7 @@ GADC=../cli/gadc
 }
 
 @test "Get digits while running, check for LIBALLURIS_DEVICE_BUSY" {
-  run $GADC --sleep 500 --digits
+  run $GADC --digits
   [ "$status" -eq 2 ]
 }
 

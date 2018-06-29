@@ -57,7 +57,7 @@ GADC=../cli/gadc
 
 ## trigger limits
 @test "Set lower limit = 10, start, check state, stop" {
-  run $GADC --set-lower-limit 10 --start --state --stop
+  run $GADC --set-lower-limit 10 --start --sleep 1500 --state --stop
   [ "$status" -eq 0 ]
   [ "${lines[0]}"  = "[ ] upper limit exceeded" ]
   [ "${lines[1]}"  = "[X] lower limit underrun" ]
@@ -65,7 +65,7 @@ GADC=../cli/gadc
 }
 
 @test "Set lower limit = -100, upper limit = -10, start, check state, stop" {
-  run $GADC --set-upper-limit -10 --set-lower-limit -100 --clear-neg --clear-pos --start --state --stop
+  run $GADC --set-upper-limit -10 --set-lower-limit -100 --clear-neg --clear-pos --start --sleep 1500 --state --stop
   [ "$status" -eq 0 ]
   [ "${lines[0]}"  = "[X] upper limit exceeded" ]
   [ "${lines[1]}"  = "[ ] lower limit underrun" ]

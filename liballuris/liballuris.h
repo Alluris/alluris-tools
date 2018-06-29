@@ -43,17 +43,21 @@ If not, see <http://www.gnu.org/licenses/>.
 #ifndef liballuris_h
 #define liballuris_h
 
-//#define PRINT_DEBUG_MSG
-//#define DEBUG_TIMING
+/*!
+ * 0 = no debugging
+ * 1 = print called functions and timing
+ * 2 = print low level communication
+ */
+extern int liballuris_debug_level;
 
 //! Number of device which can be enumerated and simultaneously opened
-#define MAX_NUM_DEVICES 4
+#define MAX_NUM_DEVICES 8
 
 //! Default timeout in milliseconds while writing to the device
 #define DEFAULT_SEND_TIMEOUT 50
 
-//! Default timeout in milliseconds while reading from the device
-#define DEFAULT_RECEIVE_TIMEOUT 100
+//! Default timeout in milliseconds while reading from the device (>800ms)
+#define DEFAULT_RECEIVE_TIMEOUT 4000
 
 //! Default send buffer size. Should be multiple of wMaxPacketSize
 #define DEFAULT_SEND_BUF_LEN 64
@@ -75,7 +79,8 @@ enum liballuris_error
   LIBALLURIS_TIMEOUT         = 3, //!< No response or status change in given time
   //! \brief Parameter out of valid range or invalid mode/state
   //! For example set unit which isn't supported (for example 'oz' for 500N device)
-  LIBALLURIS_OUT_OF_RANGE    = 4
+  LIBALLURIS_OUT_OF_RANGE    = 4,
+  LIBALLURIS_PARSE_ERROR     = 5
 };
 
 //! measurement mode
@@ -204,7 +209,9 @@ enum liballuris_unit liballuris_unit_str2enum (const char *str);
 int liballuris_get_device_list (libusb_context* ctx, struct alluris_device_description* alluris_devs, size_t length, char read_serial);
 int liballuris_open_device (libusb_context* ctx, const char* serial_number, libusb_device_handle** h);
 int liballuris_open_device_with_id (libusb_context* ctx, int bus, int device, libusb_device_handle** h);
+int liballuris_open_if_not_opened (libusb_context* ctx, const char* serial_or_bus_id, libusb_device_handle** h);
 void liballuris_free_device_list (struct alluris_device_description* alluris_devs, size_t length);
+void liballuris_print_device_list (FILE *sink, libusb_context* ctx);
 
 void liballuris_clear_RX (libusb_device_handle* dev_handle, unsigned int timeout);
 
@@ -226,7 +233,7 @@ int liballuris_get_pos_peak (libusb_device_handle *dev_handle, int* peak);
 int liballuris_get_neg_peak (libusb_device_handle *dev_handle, int* peak);
 
 /* read and print state */
-int liballuris_read_state (libusb_device_handle *dev_handle, struct liballuris_state* state);
+int liballuris_read_state (libusb_device_handle *dev_handle, struct liballuris_state* state, unsigned int timeout);
 void liballuris_print_state (struct liballuris_state state);
 
 int liballuris_cyclic_measurement (libusb_device_handle *dev_handle, char enable, size_t length);
