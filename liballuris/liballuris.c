@@ -404,10 +404,10 @@ void liballuris_print_device_list (FILE *sink, libusb_context* ctx)
   fprintf (sink, "#Num; Bus; Dev; Product;                   Serial\n");
   for (k=0; k < cnt; k++)
     fprintf (sink, " %03i; %03d; %03d; %-25s; %s\n", k+1,
-                    libusb_get_bus_number(alluris_devs[k].dev),
-                    libusb_get_device_address(alluris_devs[k].dev),
-                    alluris_devs[k].product,
-                    alluris_devs[k].serial_number);
+             libusb_get_bus_number(alluris_devs[k].dev),
+             libusb_get_device_address(alluris_devs[k].dev),
+             alluris_devs[k].product,
+             alluris_devs[k].serial_number);
 
   if (!cnt)
     fprintf (stderr, "Error: No accessible device found\n");
@@ -795,7 +795,7 @@ int liballuris_get_digits (libusb_device_handle *dev_handle, int* v)
 }
 
 /*!
- * \brief Query the variant FIXME
+ * \brief Query the variant
  *
  * Supported devices:
  * 0x0000: FMI-S10
@@ -1376,8 +1376,6 @@ int liballuris_stop_measurement (libusb_device_handle *dev_handle)
  */
 int liballuris_set_motor_state (libusb_device_handle *dev_handle, char enable)
 {
-  printf ("liballuris_set_motor_state enable = %i\n", enable);
-
   unsigned char out_buf[3];
   unsigned char in_buf[3];
 
