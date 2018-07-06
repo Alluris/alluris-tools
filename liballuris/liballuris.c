@@ -425,7 +425,6 @@ void liballuris_print_device_list (FILE *sink, libusb_context* ctx)
  */
 int liballuris_open_device (libusb_context* ctx, const char* serial_number, libusb_device_handle** h)
 {
-  int k;
   libusb_device *dev = NULL;
   struct alluris_device_description alluris_devs[MAX_NUM_DEVICES];
   int cnt = liballuris_get_device_list (ctx, alluris_devs, MAX_NUM_DEVICES, (serial_number != NULL));
@@ -438,7 +437,7 @@ int liballuris_open_device (libusb_context* ctx, const char* serial_number, libu
       if (serial_number == NULL)
         dev = alluris_devs[0].dev;
       else
-        for (k=0; k < cnt; k++)
+        for (int k = 0; k < cnt; k++)
           if (! strncmp (serial_number, alluris_devs[k].serial_number, sizeof (alluris_devs[0].serial_number)))
             dev = alluris_devs[k].dev;
     }
@@ -463,14 +462,13 @@ int liballuris_open_device (libusb_context* ctx, const char* serial_number, libu
  */
 int liballuris_open_device_with_id (libusb_context* ctx, int bus, int device, libusb_device_handle** h)
 {
-  int k;
   libusb_device *dev = NULL;
   struct alluris_device_description alluris_devs[MAX_NUM_DEVICES];
   int cnt = liballuris_get_device_list (ctx, alluris_devs, MAX_NUM_DEVICES, 0);
 
   if (cnt >= 1)
     {
-      for (k=0; k < cnt; k++)
+      for (int k = 0; k < cnt; k++)
         if (   libusb_get_bus_number (alluris_devs[k].dev) == bus
                && libusb_get_device_address (alluris_devs[k].dev) == device)
           dev = alluris_devs[k].dev;
@@ -1113,12 +1111,11 @@ int liballuris_cyclic_measurement (libusb_device_handle *dev_handle, char enable
 {
   if (length < 1 || length > 19)
     {
-      fprintf (stderr, "Error: packetlen %li out of range 1..19.\n", length);
+      fprintf (stderr, "Error: packetlen %zu out of range 1..19.\n", length);
       return LIBALLURIS_OUT_OF_RANGE;
     }
 
   unsigned char out_buf[4];
-  unsigned char in_buf[4];
 
   out_buf[0] = 0x01;
   out_buf[1] = 4;
@@ -1128,9 +1125,12 @@ int liballuris_cyclic_measurement (libusb_device_handle *dev_handle, char enable
   //printf ("liballuris_cyclic_measurement enable=%i\n", enable);
   int ret;
   if (enable)
-    ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__,
-                                         out_buf, sizeof (out_buf), DEFAULT_SEND_TIMEOUT,
-                                         in_buf, sizeof (in_buf), DEFAULT_RECEIVE_TIMEOUT);
+    {
+      unsigned char in_buf[4];
+      ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__,
+                                           out_buf, sizeof (out_buf), DEFAULT_SEND_TIMEOUT,
+                                           in_buf, sizeof (in_buf), DEFAULT_RECEIVE_TIMEOUT);
+    }
   else
     {
       ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__,
@@ -1213,7 +1213,7 @@ int liballuris_poll_measurement_no_wait (libusb_device_handle *dev_handle, int* 
   else if (r == LIBUSB_ERROR_TIMEOUT && actual > 0)
     {
       // this isn't expected
-      fprintf (stderr, "Error in liballuris_poll_measurement_no_wait: LIBUSB_ERROR_TIMEOUT and actual = %i, len = %li\n", actual, len);
+      fprintf (stderr, "Error in liballuris_poll_measurement_no_wait: LIBUSB_ERROR_TIMEOUT and actual = %i, len = %zu\n", actual, len);
       fprintf (stderr, "It isn't expected that this could happen. Please file a bug report.\n");
       return r;
     }
