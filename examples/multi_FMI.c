@@ -74,7 +74,7 @@ main (int argc, char **argv)
   libusb_device_handle* handles[cnt];
 
   int k;
-  for (k=0; k < cnt; k++)
+  for (k = 0; k < cnt; k++)
     {
       /*
       printf (" %03i; %03d; %03d; %-25s; %s\n", k+1,
@@ -112,8 +112,8 @@ main (int argc, char **argv)
   fflush (stream_bus_device_adress_buffer);
   fflush (stream_serial_buffer);
 
-  printf ("# %s\n", bus_device_adress_buffer, size_bus_device_adress_buffer);
-  printf ("# %s\n", serial_buffer, size_serial_buffer);
+  printf ("# %s %zu\n", bus_device_adress_buffer, size_bus_device_adress_buffer);
+  printf ("# %s %zu\n", serial_buffer, size_serial_buffer);
 
   fclose (stream_bus_device_adress_buffer);
   free (bus_device_adress_buffer);
@@ -121,7 +121,7 @@ main (int argc, char **argv)
   free (serial_buffer);
 
   // check if measurement is running, if not start it
-  char do_sleep = 0;
+  // char do_sleep = 0;
   for (k=0; k < cnt; k++)
     {
       liballuris_clear_RX (handles[k], 100);
@@ -131,7 +131,7 @@ main (int argc, char **argv)
         {
           if (! state.measuring)
             {
-              do_sleep = 1;
+              //do_sleep = 1;
               printf ("# Starting measurements on device %i...\n", k);
               r = liballuris_start_measurement (handles[k]);
               if (r)
@@ -152,7 +152,7 @@ main (int argc, char **argv)
   //  usleep (3e6);
 
   // recheck that measurment is running, start streaming
-  int block_size = 19;
+  size_t block_size = 19;
   for (k=0; k < cnt; k++)
     {
       struct liballuris_state state;
@@ -208,9 +208,8 @@ main (int argc, char **argv)
       // display
       if (! do_exit)
         {
-          int i;
-          for (i = 0; i<block_size; ++i)
-            for (k=0; k < cnt; k++)
+          for (size_t i = 0; i < block_size; ++i)
+            for (k = 0; k < cnt; k++)
               printf ("%8i%c", tempx[k][i], (k < (cnt - 1))? ' ':'\n');
 
           row_cnt += block_size;
