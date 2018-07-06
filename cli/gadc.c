@@ -756,16 +756,16 @@ main (int argc, char **argv)
           break;
 
         case 1075: // disable-motor
-          {
-            r = liballuris_set_motor_state (h, 0);
-            break;
-          }
+        {
+          r = liballuris_set_motor_state (h, 0);
+          break;
+        }
 
         case 1076: // enable-motor
-          {
-            r = liballuris_set_motor_state (h, 1);
-            break;
-          }
+        {
+          r = liballuris_set_motor_state (h, 1);
+          break;
+        }
 
         case 'V': // version
           printf ("%s version %s, Copyright (c) 2015-2016 Alluris GmbH & Co. KG\n",
