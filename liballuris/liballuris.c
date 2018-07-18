@@ -512,7 +512,7 @@ int liballuris_open_if_not_opened (libusb_context* ctx, const char* serial_or_bu
       else //bus,device or serial
         {
           // decide whether it's a serial number or a bus,device pair
-          char* pc = strchr (serial_or_bus_id, ',');
+          const char* pc = strchr (serial_or_bus_id, ',');
           if (pc)
             {
               // split "Bus,Device"
