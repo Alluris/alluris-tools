@@ -625,6 +625,9 @@ int liballuris_get_serial_number (libusb_device_handle *dev_handle, char* buf, s
  * If the measurement is running, the firmware can't be read from the measurement processor
  * and "V255.255.255" is returned instead.
  *
+ * Since firmware V5.05.003 the measurement processor firmware can no longer
+ * been read separately and will always return V0.255.255
+ *
  * \param[in] dev_handle a handle for the device to communicate with
  * \param[in] dev 0=USB communication processor, 1=measurement processor
  * \param[out] buf output location for the firmware string. Only populated if the return code is 0.
