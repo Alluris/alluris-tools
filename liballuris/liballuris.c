@@ -1363,7 +1363,7 @@ int liballuris_stop_measurement (libusb_device_handle *dev_handle)
  *
  * Prevents any movement of integrated or external motor until
  * - power restart of device
- * - motor enable ist set again
+ * - motor enable is set again
  *
  * Other functionality of the device will not be affected.
  * A running measurement will be stopped by disabling motor.
