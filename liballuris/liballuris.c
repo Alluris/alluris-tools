@@ -2123,3 +2123,27 @@ int liballuris_set_key_lock (libusb_device_handle *dev_handle, char active)
 
   return ret;
 }
+
+// since firmware 4.02.002/5.02.002 (06/2013)
+// Divider for 900Hz or 10Hz base frequency
+// v == 0 or 1 disables decimation
+int liballuris_set_data_ratio (libusb_device_handle *dev_handle, int v)
+{
+  if (v < 0 || v > 255)
+    return LIBALLURIS_OUT_OF_RANGE;
+
+  unsigned char out_buf[3];
+  unsigned char in_buf[3];
+
+  out_buf[0] = 0x30;
+  out_buf[1] = 3;
+  out_buf[2] = v;
+
+  int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__,
+            out_buf, sizeof (out_buf), DEFAULT_SEND_TIMEOUT,
+            in_buf, sizeof (in_buf), DEFAULT_RECEIVE_TIMEOUT);
+  if (in_buf[2] != v)
+    return LIBALLURIS_DEVICE_BUSY;
+
+  return ret;
+}

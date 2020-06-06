@@ -193,7 +193,7 @@ union __liballuris_state__
 struct alluris_device_description
 {
   libusb_device* dev;     //!< pointer to a structure representing a USB device detected on the system
-  char product[30];       //!< product identification, for example "FMI-S Force-Gauge"
+  char product[35];       //!< product identification, for example "FMI-S Force-Gauge"
   char serial_number[30]; //!< serial number of device, for example "P.25412"
 };
 
@@ -287,6 +287,8 @@ int liballuris_get_autostop (libusb_device_handle *dev_handle, int *v);
 int liballuris_set_key_lock (libusb_device_handle *dev_handle, char active);
 
 int liballuris_set_motor_state (libusb_device_handle *dev_handle, char enable);
+
+int liballuris_set_data_ratio (libusb_device_handle *dev_handle, int v);
 
 #ifdef __cplusplus
 }

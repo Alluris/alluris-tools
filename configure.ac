@@ -1,4 +1,4 @@
-AC_INIT([liballuris], [0.3.0], [software@alluris.de], [https://github.com/alluris])
+AC_INIT([liballuris], [0.4.0], [software@alluris.de], [https://github.com/alluris])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([liballuris/liballuris.c])
 
