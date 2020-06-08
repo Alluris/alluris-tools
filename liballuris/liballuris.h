@@ -1,6 +1,6 @@
 /*
 
-Copyright (C) 2015 Alluris GmbH & Co. KG <weber@alluris.de>
+Copyright (C) 2015-2020 Alluris GmbH & Co. KG <weber@alluris.de>
 
 This file is part of liballuris.
 
@@ -59,9 +59,7 @@ extern int liballuris_debug_level;
 //! Default timeout in milliseconds while reading from the device (>800ms)
 #define DEFAULT_RECEIVE_TIMEOUT 4000
 
-//! Default send buffer size. Should be multiple of wMaxPacketSize
-#define DEFAULT_SEND_BUF_LEN 64
-//! Default receive buffer size.
+//! Default receive buffer size. Should be multiple of wMaxPacketSize
 #define DEFAULT_RECV_BUF_LEN 256
 
 //! liballuris specific errors

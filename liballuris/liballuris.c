@@ -1,6 +1,6 @@
 /*
 
-Copyright (C) 2015 Alluris GmbH & Co. KG <weber@alluris.de>
+Copyright (C) 2015-2020 Alluris GmbH & Co. KG <weber@alluris.de>
 
 This file is part of liballuris.
 
@@ -171,12 +171,6 @@ static int liballuris_interrupt_transfer (libusb_device_handle* dev_handle,
   int r = 0;
   struct timeval t1, t2;
 
-  if (send_len > DEFAULT_SEND_BUF_LEN)
-    {
-      fprintf (stderr, "Error: Send len %i > receive buffer len %i. This looks like a programming error.\n", send_len, DEFAULT_SEND_BUF_LEN);
-      exit (-1);
-    }
-
   if (reply_len > DEFAULT_RECV_BUF_LEN)
     {
       fprintf (stderr, "Error: Reply len %i > receive buffer len %i. This looks like a programming error.\n", reply_len, DEFAULT_RECV_BUF_LEN);
@@ -215,54 +209,61 @@ static int liballuris_interrupt_transfer (libusb_device_handle* dev_handle,
 
   if (reply_len > 0)
     {
-
-      if (liballuris_debug_level)
-        gettimeofday (&t1, NULL);
-
-      memset (in_buf, 0, reply_len);
-      r = libusb_interrupt_transfer (dev_handle, 0x81 | LIBUSB_ENDPOINT_IN, in_buf, reply_len, &actual, receive_timeout);
-
-      if (liballuris_debug_level)
+      unsigned char tmp_in_buf[DEFAULT_RECV_BUF_LEN];
+      // ID_SAMPLE bis zu 3 mal ignorieren, falls ein anderes Kommando gesendet wurde
+      int sample_ignore_cnt = 3;
+      do
         {
-          gettimeofday (&t2, NULL);
-          double diff = (t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1.0e6;
-          fprintf (stderr, "DEBUG-INFO: %s reply took %f s\n", funcname, diff);
-        }
+          //~ if (sample_ignore_cnt < 3)
+            //~ printf ("retry...\n");
+          if (liballuris_debug_level)
+            gettimeofday (&t1, NULL);
 
-      if (liballuris_debug_level > 1 && r == LIBUSB_SUCCESS)
-        {
-          fprintf (stderr, "DEBUG-INFO: %s recv %2i/%2i bytes: ", funcname, actual, reply_len);
-          print_buffer (in_buf, actual);
-        }
+          r = libusb_interrupt_transfer (dev_handle, 0x81 | LIBUSB_ENDPOINT_IN, tmp_in_buf, DEFAULT_RECV_BUF_LEN, &actual, receive_timeout);
 
-      if (r != LIBUSB_SUCCESS || actual != reply_len)
-        {
-          if (r == LIBUSB_ERROR_OVERFLOW)
+          if (liballuris_debug_level)
             {
-              if (liballuris_debug_level)
-                fprintf (stderr, "DEBUG-INFO: LIBUSB_ERROR_OVERFLOW in '%s': expected %i bytes but got more.\n", funcname, reply_len);
+              gettimeofday (&t2, NULL);
+              double diff = (t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec)/1.0e6;
+              fprintf (stderr, "DEBUG-INFO: %s reply took %f s\n", funcname, diff);
+            }
 
-              // Attention! You can't rely that data was written in in_buf
-              // See: http://libusb.sourceforge.net/api-1.0/packetoverflow.html
+          if (liballuris_debug_level > 1 && r == LIBUSB_SUCCESS)
+            {
+              fprintf (stderr, "DEBUG-INFO: %s recv %2i/%2i bytes: ", funcname, actual, DEFAULT_RECV_BUF_LEN);
+              print_buffer (in_buf, actual);
+            }
+
+          if (r != LIBUSB_SUCCESS)
+            {
+              if (r == LIBUSB_ERROR_OVERFLOW)
+                {
+                  if (liballuris_debug_level)
+                    fprintf (stderr, "DEBUG-INFO: LIBUSB_ERROR_OVERFLOW in '%s': expected max. %i bytes but got more.\n", funcname, DEFAULT_RECV_BUF_LEN);
+
+                  // Attention! You can't rely that data was written in in_buf
+                  // See: http://libusb.sourceforge.net/api-1.0/libusb_packetoverflow.html
+                }
+              else
+                fprintf(stderr, "Read error in '%s': '%s', tried to read %i, got %i bytes.\n", funcname, libusb_error_name(r), DEFAULT_RECV_BUF_LEN, actual);
+
               return r;
             }
-          else
-            fprintf(stderr, "Read error in '%s': '%s', tried to read %i, got %i bytes.\n", funcname, libusb_error_name(r), reply_len, actual);
         }
+      // ID_SAMPLE bis zu sample_ignore_cnt mal igorieren/verwerfen wenn nicht gewünscht (falls streaming aktiv ist)
+      while (sample_ignore_cnt-- > 0 && tmp_in_buf[0] == 0x02 && send_len > 0);
 
-      // check reply
-      if (!r
-          && send_len > 0
-          && in_buf[0] != 0x02
-          && (in_buf[0] != out_buf[0]
-              ||  in_buf[1] != actual))
+      if (send_len > 0              // nur dann ist out_buf[0] valide
+          && (tmp_in_buf[0] != out_buf[0] ||  tmp_in_buf[1] != reply_len))
         {
           fprintf(stderr, "Error: Malformed reply. Check physical connection and EMI.\n");
-          fprintf(stderr, "(send_cmd=0x%02X != recv_cmd=0x%02X) || (recv_len=%i != actual_recv=%i),\n", out_buf[0], in_buf[0], in_buf[1], actual);
+          fprintf(stderr, "(send_cmd=0x%02X != recv_cmd=0x%02X) || (recv_len=%i != actual_recv=%i),\n", out_buf[0], tmp_in_buf[0], tmp_in_buf[1], actual);
 
           return LIBALLURIS_MALFORMED_REPLY;
         }
-    }
+
+      memcpy (in_buf, tmp_in_buf, reply_len);
+  }
   return r;
 }
 
@@ -1163,7 +1164,7 @@ int liballuris_poll_measurement (libusb_device_handle *dev_handle, int* buf, siz
   unsigned char in_buf[len];
 
   /* Increased receive timeout:
-   * The sampling frequency can be selected between 10Hz and 990Hz
+   * The sampling frequency can be selected between 10Hz and 900Hz
    * Therefore the maximum delay until one measurement completes is 1/10Hz = 100ms.
    * Since the block size can be up to 19 (see liballuris_cyclic_measurement) the typically delay
    * in 10Hz mode and blocksize 19 is >1.9s
