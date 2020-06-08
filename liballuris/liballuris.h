@@ -290,10 +290,7 @@ int liballuris_set_motor_state (libusb_device_handle *dev_handle, char enable);
 
 int liballuris_set_data_ratio (libusb_device_handle *dev_handle, int v);
 
-void liballuris_set_debug_level (int l)
-{
-  liballuris_debug_level = l;
-}
+void liballuris_set_debug_level (int l);
 
 #ifdef __cplusplus
 }
