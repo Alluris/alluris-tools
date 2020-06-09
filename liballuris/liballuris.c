@@ -1390,6 +1390,29 @@ int liballuris_set_motor_state (libusb_device_handle *dev_handle, char enable)
 }
 
 /*!
+ * \brief Query the motor state
+ */
+int liballuris_get_motor_state (libusb_device_handle *dev_handle, char *v)
+{
+  unsigned char out_buf[3];
+  unsigned char in_buf[6];
+
+  out_buf[0] = 0x08;
+  out_buf[1] = 3;
+  out_buf[2] = 15;
+  int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__,
+            out_buf, sizeof (out_buf), DEFAULT_SEND_TIMEOUT,
+            in_buf, sizeof (in_buf), DEFAULT_RECEIVE_TIMEOUT);
+  if (ret == LIBALLURIS_SUCCESS)
+    {
+      *v = char_to_int24 (in_buf + 3);
+      if (*v == -1)
+        return LIBALLURIS_DEVICE_BUSY;
+    }
+  return ret;
+}
+
+/*!
  * \brief Set the upper limit
  *
  * Set the upper threshold value for the "LIMIT" symbol on the LCD
