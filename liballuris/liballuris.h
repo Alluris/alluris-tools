@@ -284,6 +284,7 @@ int liballuris_get_autostop (libusb_device_handle *dev_handle, int *v);
 
 int liballuris_set_key_lock (libusb_device_handle *dev_handle, char active);
 
+int liballuris_start_motor_reference_run (libusb_device_handle *dev_handle, char start);
 int liballuris_set_motor_disable (libusb_device_handle *dev_handle, char disable);
 int liballuris_get_motor_enable (libusb_device_handle *dev_handle, char *enable);
 

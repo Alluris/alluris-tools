@@ -1358,6 +1358,22 @@ int liballuris_stop_measurement (libusb_device_handle *dev_handle)
 }
 
 /*!
+ * \brief MotorReferenz / ID_MOTOR_REFERENZ
+ */
+int liballuris_start_motor_reference_run (libusb_device_handle *dev_handle, char start)
+{
+  unsigned char out_buf[3];
+  unsigned char in_buf[3];
+
+  out_buf[0] = 0x62;
+  out_buf[1] = 3;
+  out_buf[2] = start;
+  return liballuris_interrupt_transfer (dev_handle, __FUNCTION__,
+                                        out_buf, sizeof (out_buf), DEFAULT_SEND_TIMEOUT,
+                                        in_buf, sizeof (in_buf), DEFAULT_RECEIVE_TIMEOUT);
+}
+
+/*!
  * \brief Disable motor
  *
  * Disables or enables motor functionality
