@@ -257,7 +257,7 @@ static int liballuris_interrupt_transfer (libusb_device_handle* dev_handle,
           && (tmp_in_buf[0] != out_buf[0] ||  tmp_in_buf[1] != reply_len))
         {
           fprintf(stderr, "Error: Malformed reply. Check physical connection and EMI.\n");
-          fprintf(stderr, "(send_cmd=0x%02X != recv_cmd=0x%02X) || (recv_len=%i != actual_recv=%i),\n", out_buf[0], tmp_in_buf[0], tmp_in_buf[1], actual);
+          fprintf(stderr, "(send_cmd=0x%02X != recv_cmd=0x%02X) || (recv_len=%i != reply_len=%i),\n", out_buf[0], tmp_in_buf[0], tmp_in_buf[1], reply_len);
 
           return LIBALLURIS_MALFORMED_REPLY;
         }
@@ -1454,7 +1454,7 @@ int liballuris_set_buzzer_motor (libusb_device_handle *dev_handle, char state)
 int liballuris_get_buzzer_motor (libusb_device_handle *dev_handle, char *v)
 {
   unsigned char out_buf[2];
-  unsigned char in_buf[6];
+  unsigned char in_buf[3];
 
   out_buf[0] = 0x26;
   out_buf[1] = 2;
@@ -1462,11 +1462,7 @@ int liballuris_get_buzzer_motor (libusb_device_handle *dev_handle, char *v)
             out_buf, sizeof (out_buf), DEFAULT_SEND_TIMEOUT,
             in_buf, sizeof (in_buf), DEFAULT_RECEIVE_TIMEOUT);
   if (ret == LIBALLURIS_SUCCESS)
-    {
-      *v = char_to_int24 (in_buf + 3);
-      if (*v == -1)
-        return LIBALLURIS_DEVICE_BUSY;
-    }
+    *v = in_buf[2];
   return ret;
 }
 

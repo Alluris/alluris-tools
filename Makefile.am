@@ -5,6 +5,9 @@ style:
 	find . \( -name "*.c" -or -name "*.h" \) -exec sed -i 's/[[:space:]]*$$//' {} \;
 	find . \( -name "*.c" -or -name "*.h" \) -exec astyle --style=gnu -s2 -n {} \;
 
+check:
+	cppcheck -q --enable=all --language=c liballuris/liballuris.h liballuris/liballuris.c cli/gadc.c
+
 realclean:
 	$(MAKE) maintainer-clean
 	rm -rf m4 autom4te.cache

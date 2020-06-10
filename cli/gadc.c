@@ -757,13 +757,13 @@ main (int argc, char **argv)
 
         case 1075: // disable-motor
         {
-          r = liballuris_set_motor_state (h, 0);
+          r = liballuris_set_motor_disable (h, 1);
           break;
         }
 
-        case 1076: // enable-motor
+        case 1076: // reenable-motor
         {
-          r = liballuris_set_motor_state (h, 1);
+          r = liballuris_set_motor_disable (h, 0);
           break;
         }
 
