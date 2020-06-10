@@ -1358,7 +1358,7 @@ int liballuris_stop_measurement (libusb_device_handle *dev_handle)
 }
 
 /*!
- * \brief Set motor state
+ * \brief Disable motor
  *
  * Disables or enables motor functionality
  * Suported devices:
@@ -1371,28 +1371,29 @@ int liballuris_stop_measurement (libusb_device_handle *dev_handle)
  *
  * Other functionality of the device will not be affected.
  * A running measurement will be stopped by disabling motor.
+ * You should start a reference run after eenabling the motor.
  *
  * \param[in] dev_handle a handle for the device to communicate with
- * \param[in] enable = 0 for disabling or 1 for enabling.
+ * \param[in] disable = 1 for disabling or 0 for enabling.
  * \return 0 if successful else \ref liballuris_error
  */
-int liballuris_set_motor_state (libusb_device_handle *dev_handle, char enable)
+int liballuris_set_motor_disable (libusb_device_handle *dev_handle, char disable)
 {
   unsigned char out_buf[3];
   unsigned char in_buf[3];
 
   out_buf[0] = 0x63;
   out_buf[1] = 3;
-  out_buf[2] = (enable)? 0:1;
+  out_buf[2] = disable != 0;
   return liballuris_interrupt_transfer (dev_handle, __FUNCTION__,
                                         out_buf, sizeof (out_buf), DEFAULT_SEND_TIMEOUT,
                                         in_buf, sizeof (in_buf), DEFAULT_RECEIVE_TIMEOUT);
 }
 
 /*!
- * \brief Query the motor state
+ * \brief Query ID_INFO "Motor Enable", "Motorfreigabe"
  */
-int liballuris_get_motor_state (libusb_device_handle *dev_handle, char *v)
+int liballuris_get_motor_enable (libusb_device_handle *dev_handle, char *v)
 {
   unsigned char out_buf[3];
   unsigned char in_buf[6];
@@ -1410,6 +1411,86 @@ int liballuris_get_motor_state (libusb_device_handle *dev_handle, char *v)
         return LIBALLURIS_DEVICE_BUSY;
     }
   return ret;
+}
+
+/*!
+ * \brief Set P17 (Buzzer) / P19 (Motor FMT-220M)
+ *
+ * \param[in] dev_handle a handle for the device to communicate with
+ * \return 0 if successful else \ref liballuris_error
+ */
+int liballuris_set_buzzer_motor (libusb_device_handle *dev_handle, char state)
+{
+  unsigned char out_buf[3];
+  unsigned char in_buf[3];
+
+  out_buf[0] = 0x25;
+  out_buf[1] = 3;
+  out_buf[2] = state != 0;
+  return liballuris_interrupt_transfer (dev_handle, __FUNCTION__,
+                                        out_buf, sizeof (out_buf), DEFAULT_SEND_TIMEOUT,
+                                        in_buf, sizeof (in_buf), DEFAULT_RECEIVE_TIMEOUT);
+}
+
+/*!
+ * \brief Query P17 (Buzzer) / P19 (Motor FMT-220M)
+ */
+int liballuris_get_buzzer_motor (libusb_device_handle *dev_handle, char *v)
+{
+  unsigned char out_buf[2];
+  unsigned char in_buf[6];
+
+  out_buf[0] = 0x26;
+  out_buf[1] = 2;
+  int ret = liballuris_interrupt_transfer (dev_handle, __FUNCTION__,
+            out_buf, sizeof (out_buf), DEFAULT_SEND_TIMEOUT,
+            in_buf, sizeof (in_buf), DEFAULT_RECEIVE_TIMEOUT);
+  if (ret == LIBALLURIS_SUCCESS)
+    {
+      *v = char_to_int24 (in_buf + 3);
+      if (*v == -1)
+        return LIBALLURIS_DEVICE_BUSY;
+    }
+  return ret;
+}
+
+/*!
+ * \brief MotorStart / ID_MOTOR_START
+ * state
+ * 0 Start Motor per USB sperren   : Motor starten bei Messung Start
+ * 1 Start Motor per USB freigeben : Motor nicht starten bei Messung Start sondern per USB-Befehl
+ * 2 Motor starten, falls freigegeben
+ */
+int liballuris_set_motor_start (libusb_device_handle *dev_handle, char start)
+{
+  unsigned char out_buf[3];
+  unsigned char in_buf[3];
+
+  out_buf[0] = 0x66;
+  out_buf[1] = 3;
+  out_buf[2] = start;
+  return liballuris_interrupt_transfer (dev_handle, __FUNCTION__,
+                                        out_buf, sizeof (out_buf), DEFAULT_SEND_TIMEOUT,
+                                        in_buf, sizeof (in_buf), DEFAULT_RECEIVE_TIMEOUT);
+}
+
+/*!
+ * \brief MotorStopp / ID_MOTOR_STOPP
+ * state
+ * 0 : Keine Auswirkung
+ * 1 : Motor stoppen
+ */
+int liballuris_set_motor_stopp (libusb_device_handle *dev_handle, char state)
+{
+  unsigned char out_buf[3];
+  unsigned char in_buf[3];
+
+  out_buf[0] = 0x67;
+  out_buf[1] = 3;
+  out_buf[2] = state;
+  return liballuris_interrupt_transfer (dev_handle, __FUNCTION__,
+                                        out_buf, sizeof (out_buf), DEFAULT_SEND_TIMEOUT,
+                                        in_buf, sizeof (in_buf), DEFAULT_RECEIVE_TIMEOUT);
 }
 
 /*!

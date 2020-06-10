@@ -284,8 +284,14 @@ int liballuris_get_autostop (libusb_device_handle *dev_handle, int *v);
 
 int liballuris_set_key_lock (libusb_device_handle *dev_handle, char active);
 
-int liballuris_set_motor_state (libusb_device_handle *dev_handle, char enable);
-int liballuris_get_motor_state (libusb_device_handle *dev_handle, char *enable);
+int liballuris_set_motor_disable (libusb_device_handle *dev_handle, char disable);
+int liballuris_get_motor_enable (libusb_device_handle *dev_handle, char *enable);
+
+int liballuris_set_buzzer_motor (libusb_device_handle *dev_handle, char state);
+int liballuris_get_buzzer_motor (libusb_device_handle *dev_handle, char *v);
+
+int liballuris_set_motor_start (libusb_device_handle *dev_handle, char start);
+int liballuris_set_motor_stopp (libusb_device_handle *dev_handle, char state);
 
 int liballuris_set_data_ratio (libusb_device_handle *dev_handle, int v);
 
