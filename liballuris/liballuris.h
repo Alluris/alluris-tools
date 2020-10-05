@@ -54,7 +54,7 @@ extern int liballuris_debug_level;
 #define MAX_NUM_DEVICES 8
 
 //! Default timeout in milliseconds while writing to the device
-#define DEFAULT_SEND_TIMEOUT 50
+#define DEFAULT_SEND_TIMEOUT 250
 
 //! Default timeout in milliseconds while reading from the device (>800ms)
 #define DEFAULT_RECEIVE_TIMEOUT 4000
